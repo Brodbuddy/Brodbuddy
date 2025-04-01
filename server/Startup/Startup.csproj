@@ -4,12 +4,9 @@
     <ProjectReference Include="..\Api.Http\Api.Http.csproj" />
     <ProjectReference Include="..\Api.Mqtt\Api.Mqtt.csproj" />
     <ProjectReference Include="..\Api.Websocket\Api.Websocket.csproj" />
-    <ProjectReference Include="..\Infrastructure.Mqtt\Infrastructure.Mqtt.csproj" />
-    <ProjectReference Include="..\Infrastructure.Postgres\Infrastructure.Postgres.csproj" />
-    <ProjectReference Include="..\Infrastructure.Websocket\Infrastructure.Websocket.csproj" />
+    <ProjectReference Include="..\Infrastructure.Data\Infrastructure.Data.csproj" />
+    <ProjectReference Include="..\Infrastructure.Communication\Infrastructure.Communication.csproj" />
     <ProjectReference Include="..\Infrastructure.Auth\Infrastructure.Auth.csproj" />
-    <ProjectReference Include="..\Infrastructure.Mail\Infrastructure.Mail.csproj" />
-    <ProjectReference Include="..\Infrastructure.Redis\Infrastructure.Redis.csproj" />
     <ProjectReference Include="..\Application\Application.csproj" />
   </ItemGroup>
 
