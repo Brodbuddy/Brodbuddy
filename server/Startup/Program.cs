@@ -1,7 +1,9 @@
 using Api.Http;
+using Application;
 using Application.Interfaces;
 using Infrastructure.Communication.Mail;
-using Infrastructure.Websocket;
+using Infrastructure.Communication;
+using Microsoft.Extensions.Options;
 
 namespace Startup;
 
@@ -10,13 +12,18 @@ public class Program
 
     private static void ConfigureServices(IServiceCollection services)
     {
+        services.AddOptions<AppOptions>()
+                .BindConfiguration(nameof(AppOptions))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
         services.AddCommunicationInfrastructure();
         services.AddHttpApi();
     }
 
     private static void ConfigureMiddleware(WebApplication app)
     {
-        app.ConfigureHttpApi(2020);
+        var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
+        app.ConfigureHttpApi(appOptions.HttpPort);
     }
     
     public static async Task Main(string[] args)

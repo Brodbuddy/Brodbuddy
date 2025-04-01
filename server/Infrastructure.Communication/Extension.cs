@@ -1,7 +1,7 @@
 ﻿using FluentEmail.MailKitSmtp;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Infrastructure.Websocket;
+namespace Infrastructure.Communication;
 
 public static class Extension
 {

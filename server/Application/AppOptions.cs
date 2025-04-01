@@ -1,0 +1,17 @@
+﻿using Application.Interfaces;
+
+namespace Application;
+
+public class AppOptions
+{
+    public int HttpPort { get; set; } = 5001;
+    public EmailOptions Email { get; set; } = new();
+}
+
+public class EmailOptions
+{
+    public string Host { get; set; } = "localhost";
+    public int Port { get; set; } = 1025;
+    public string Sender { get; set; } = "Brian Petersen";
+    public string FromEmail { get; set; } = "TestMail@test.dk";
+}
