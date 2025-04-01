@@ -3,6 +3,7 @@ using Application;
 using Application.Interfaces;
 using Infrastructure.Communication.Mail;
 using Infrastructure.Communication;
+using Infrastructure.Data;
 using Microsoft.Extensions.Options;
 
 namespace Startup;
@@ -17,6 +18,7 @@ public class Program
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
         services.AddCommunicationInfrastructure();
+        services.AddDataInfrastructure();
         services.AddHttpApi();
     }
 

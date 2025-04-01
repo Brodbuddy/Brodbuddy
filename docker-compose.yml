@@ -1,4 +1,32 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=${APPOPTIONS__POSTGRES__USERNAME:-user}
+      - POSTGRES_PASSWORD=${APPOPTIONS__POSTGRES__PASSWORD:-pass}
+      - POSTGRES_DB=${APPOPTIONS__POSTGRES__DATABASE:-db}
+    ports:
+      - '${APPOPTIONS__POSTGRES__PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    
+  flyway:
+    image: flyway/flyway:latest
+    depends_on:
+      - postgres
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/${APPOPTIONS__POSTGRES__DATABASE:-db}
+      FLYWAY_USER: ${APPOPTIONS__POSTGRES__USERNAME:-user}
+      FLYWAY_PASSWORD: ${APPOPTIONS__POSTGRES__PASSWORD:-pass}
+      FLYWAY_CONNECT_RETRIES: 5
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+    volumes:
+      - ./db/migrations:/flyway/sql
+    command: migrate
+      
+      
   mailhog:
     image: mailhog/mailhog
     ports:
@@ -6,3 +34,6 @@ services:
       - '8025:8025'
     restart: always
     
+    
+volumes:
+  postgres_data:
