@@ -1,4 +1,5 @@
-﻿using Application.Interfaces;
+﻿using System.ComponentModel.DataAnnotations;
+using Application.Interfaces;
 
 namespace Application;
 
@@ -7,6 +8,8 @@ public class AppOptions
     public int HttpPort { get; set; } = 5001;
     public EmailOptions Email { get; set; } = new();
     public PostgresOptions Postgres { get; set; } = new();
+    
+    [Required] public string JwtSecret { get; set; } = string.Empty!;
 }
 
 public class EmailOptions
