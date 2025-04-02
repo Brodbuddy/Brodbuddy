@@ -12,46 +12,31 @@ public partial class PostgresDbContext : DbContext
     {
     }
 
-    public virtual DbSet<PizzaOrder> PizzaOrders { get; set; }
-
-    public virtual DbSet<SourdoughLog> SourdoughLogs { get; set; }
+    public virtual DbSet<Onetimepassword> Onetimepasswords { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("uuid-ossp");
 
-        modelBuilder.Entity<PizzaOrder>(entity =>
+        modelBuilder.Entity<Onetimepassword>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("pizza_orders_pkey");
+            entity.HasKey(e => e.Id).HasName("onetimepassword_pkey");
 
-            entity.ToTable("pizza_orders");
+            entity.ToTable("onetimepassword");
 
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("id");
-            entity.Property(e => e.Content).HasColumnName("content");
-            entity.Property(e => e.CreatedAt)
+            entity.Property(e => e.Code).HasColumnName("code");
+            entity.Property(e => e.Createdat)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnName("created_at");
-            entity.Property(e => e.OrderNumber).HasColumnName("order_number");
-            entity.Property(e => e.Toppings).HasColumnName("toppings");
-        });
-
-        modelBuilder.Entity<SourdoughLog>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("sourdough_logs_pkey");
-
-            entity.ToTable("sourdough_logs");
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("uuid_generate_v4()")
-                .HasColumnName("id");
-            entity.Property(e => e.Content).HasColumnName("content");
-            entity.Property(e => e.CreatedAt)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnName("created_at");
-            entity.Property(e => e.RisingTime).HasColumnName("rising_time");
-            entity.Property(e => e.Status).HasColumnName("status");
+                .HasColumnName("createdat");
+            entity.Property(e => e.Expiresat)
+                .HasDefaultValueSql("(CURRENT_TIMESTAMP + '00:15:00'::interval)")
+                .HasColumnName("expiresat");
+            entity.Property(e => e.Isused)
+                .HasDefaultValue(false)
+                .HasColumnName("isused");
         });
 
         OnModelCreatingPartial(modelBuilder);
