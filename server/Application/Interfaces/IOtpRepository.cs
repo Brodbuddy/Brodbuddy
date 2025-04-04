@@ -4,5 +4,5 @@ namespace Application.Interfaces;
 
 public interface IOtpRepository
 {
-    Task<Guid> GenerateAsync(int code);
+    Task<Guid> SaveAsync(int code);
 }

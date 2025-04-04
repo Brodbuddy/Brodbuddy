@@ -1,30 +1,33 @@
-﻿using Application.Interfaces;
+﻿using System.Security.Cryptography;
+using Application.Interfaces;
 
 namespace Application.Services;
 
-public interface IOtp
+public interface IOtpService
 {
     Task<int> GenerateAsync();
 }
 
-public class OtpService : IOtp
+
+public class OtpService : IOtpService
 {
     private readonly IOtpRepository _otpRepository;
-    private readonly Random _random;
+
 
     public OtpService(IOtpRepository otpRepository)
     {
         _otpRepository = otpRepository;
-        _random = new Random();
     }
 
     public async Task<int> GenerateAsync()
     {
-        int code = _random.Next(100000, 999999);
+        //Benytter RandomNumberGenerator da det er kryptografisk sikker
+        int code = RandomNumberGenerator.GetInt32(100000, 999999);
 
-        await _otpRepository.GenerateAsync(code);
+        await _otpRepository.SaveAsync(code);
 
         return code;
     }
 
+   
 }

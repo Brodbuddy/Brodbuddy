@@ -14,26 +14,21 @@ public class PostgresOtpRepository : IOtpRepository
         _timeProvider = timeProvider;
     }
 
-    public async Task<Guid> GenerateAsync(int code)
+    public async Task<Guid> SaveAsync(int code)
     {
-        
-        var otp = new Onetimepassword
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var otp = new OneTimePassword
         {
-            Code = code
-            /*
-             * Databasen sætter flere default værdier:
-             * Generer et UUID
-             * CreatedAt bruger (CURRENT_TIMESTAMP)
-             * ExpiresAt bruger (CURRENT_TIMESTAMP + 15) så vi sikrer at Otp koden udløber efter 15 min.
-             * IsUsed er som default sat til (false)
-             */
+            Code = code,
+            CreatedAt = now,
+            ExpiresAt = now.AddMinutes(15),
+            IsUsed = false
+           
         };
         
-        await _dbContext.Onetimepasswords.AddAsync(otp);
+        await _dbContext.OneTimePasswords.AddAsync(otp);
         await _dbContext.SaveChangesAsync();
 
         return otp.Id;
     }
-
-   
 }

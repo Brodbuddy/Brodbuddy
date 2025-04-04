@@ -12,31 +12,27 @@ public partial class PostgresDbContext : DbContext
     {
     }
 
-    public virtual DbSet<Onetimepassword> Onetimepasswords { get; set; }
+    public virtual DbSet<OneTimePassword> OneTimePasswords { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("uuid-ossp");
 
-        modelBuilder.Entity<Onetimepassword>(entity =>
+        modelBuilder.Entity<OneTimePassword>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("onetimepassword_pkey");
+            entity.HasKey(e => e.Id).HasName("one_time_passwords_pkey");
 
-            entity.ToTable("onetimepassword");
+            entity.ToTable("one_time_passwords");
 
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("id");
             entity.Property(e => e.Code).HasColumnName("code");
-            entity.Property(e => e.Createdat)
-                .HasDefaultValueSql("CURRENT_TIMESTAMP")
-                .HasColumnName("createdat");
-            entity.Property(e => e.Expiresat)
-                .HasDefaultValueSql("(CURRENT_TIMESTAMP + '00:15:00'::interval)")
-                .HasColumnName("expiresat");
-            entity.Property(e => e.Isused)
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.IsUsed)
                 .HasDefaultValue(false)
-                .HasColumnName("isused");
+                .HasColumnName("is_used");
         });
 
         OnModelCreatingPartial(modelBuilder);

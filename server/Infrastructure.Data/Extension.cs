@@ -19,9 +19,7 @@ public static class Extensions
             options.EnableSensitiveDataLogging();
         });
         
-        services.AddSingleton(TimeProvider.System);
         services.AddScoped<IOtpRepository, PostgresOtpRepository>();
-        services.AddScoped<IOtp, OtpService>();
         return services;
     }
 }
