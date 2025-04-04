@@ -7,6 +7,7 @@ public interface IOtpService
 {
     Task<int> GenerateAsync();
     Task<bool> IsValidAsync(Guid id, int code);
+    Task<bool> MarkAsUsedAsync(Guid id);
 }
 
 
@@ -33,5 +34,10 @@ public class OtpService : IOtpService
     public async Task<bool> IsValidAsync(Guid id, int code)
     {
         return await _otpRepository.IsValidAsync(id, code);
+    }
+
+    public async Task<bool> MarkAsUsedAsync(Guid id)
+    {
+        return await _otpRepository.MarkAsUsedAsync(id);
     }
 }

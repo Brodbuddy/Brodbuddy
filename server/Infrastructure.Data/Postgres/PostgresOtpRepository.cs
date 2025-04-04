@@ -36,7 +36,7 @@ public class PostgresOtpRepository : IOtpRepository
     public async Task<bool> IsValidAsync(Guid id, int code)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-
+        
         var otp = await _dbContext.OneTimePasswords
             .FirstOrDefaultAsync(otp => otp.Id == id && otp.Code == code);
 
@@ -56,8 +56,21 @@ public class PostgresOtpRepository : IOtpRepository
         }
 
         await _dbContext.SaveChangesAsync();
-        
         return true;
+    }
 
+    public async Task<bool> MarkAsUsedAsync(Guid id)
+    {
+        var otp = await _dbContext.OneTimePasswords
+            .FirstOrDefaultAsync(otp => otp.Id == id);
+        
+        if (otp == null)
+        {
+            return false;
+        }
+
+        otp.IsUsed = true;
+        await _dbContext.SaveChangesAsync();
+        return true;
     }
 }
