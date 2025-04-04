@@ -6,6 +6,7 @@ namespace Application.Services;
 public interface IOtpService
 {
     Task<int> GenerateAsync();
+    Task<bool> IsValidAsync(Guid id, int code);
 }
 
 
@@ -29,5 +30,8 @@ public class OtpService : IOtpService
         return code;
     }
 
-   
+    public async Task<bool> IsValidAsync(Guid id, int code)
+    {
+        return await _otpRepository.IsValidAsync(id, code);
+    }
 }

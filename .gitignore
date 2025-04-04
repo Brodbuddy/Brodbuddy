@@ -8,6 +8,9 @@ worktrees/
 # dotenv files
 .env
 
+# Ignore test controller - only for local testing
+server/Api.Http/Controllers/TestController.cs
+
 #dist
 dist/
 node_modules

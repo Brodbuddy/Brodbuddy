@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Core.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
 
@@ -30,5 +31,33 @@ public class PostgresOtpRepository : IOtpRepository
         await _dbContext.SaveChangesAsync();
 
         return otp.Id;
+    }
+
+    public async Task<bool> IsValidAsync(Guid id, int code)
+    {
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+
+        var otp = await _dbContext.OneTimePasswords
+            .FirstOrDefaultAsync(otp => otp.Id == id && otp.Code == code);
+
+        if (otp == null)
+        {
+            return false; // Otp kan ikke findes i db.
+        }
+
+        if (otp.IsUsed)
+        {
+            return false; // Otp er allerede brugt 
+        }
+
+        if (otp.ExpiresAt < now)
+        {
+            return false; // Otp er udløbet
+        }
+
+        await _dbContext.SaveChangesAsync();
+        
+        return true;
+
     }
 }
