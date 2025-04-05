@@ -20,6 +20,7 @@ public class Program
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
         services.AddHttpApi();
+        services.AddApplicationServices();
     }
 
     private static void ConfigureMiddleware(WebApplication app)
