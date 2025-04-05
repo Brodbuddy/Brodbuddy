@@ -20,6 +20,7 @@ public static class Extensions
         });
         
         services.AddScoped<IOtpRepository, PostgresOtpRepository>();
+        services.AddScoped<IUserIdentityRepository, PostgresUserIdentityRepository>();
         return services;
     }
 }

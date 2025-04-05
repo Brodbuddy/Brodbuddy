@@ -14,6 +14,8 @@ public partial class PostgresDbContext : DbContext
 
     public virtual DbSet<OneTimePassword> OneTimePasswords { get; set; }
 
+    public virtual DbSet<User> Users { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("uuid-ossp");
@@ -33,6 +35,21 @@ public partial class PostgresDbContext : DbContext
             entity.Property(e => e.IsUsed)
                 .HasDefaultValue(false)
                 .HasColumnName("is_used");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("users_pkey");
+
+            entity.ToTable("users");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.Email)
+                .HasColumnType("character varying")
+                .HasColumnName("email");
+            entity.Property(e => e.RegisterDate).HasColumnName("register_date");
         });
 
         OnModelCreatingPartial(modelBuilder);

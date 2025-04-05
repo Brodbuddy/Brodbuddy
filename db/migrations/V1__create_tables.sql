@@ -7,3 +7,9 @@ CREATE TABLE one_time_passwords (
     expires_at TIMESTAMPTZ NOT NULL,
     is_used BOOLEAN DEFAULT FALSE NOT NULL
 );
+
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR NOT NULL,
+    register_date TIMESTAMPTZ NOT NULL
+)
