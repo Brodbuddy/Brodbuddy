@@ -7,7 +7,7 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <RootNamespace>RefreshTokenTests</RootNamespace>
+        <RootNamespace>Application.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
