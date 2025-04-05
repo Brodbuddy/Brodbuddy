@@ -1,11 +1,10 @@
+namespace Application.Tests;
+
 using Xunit;
 using Shouldly;
-using Application;
 using Application.Interfaces;
 using Application.Services;
 using Moq;
-
-namespace OtpTests;
 
 public class OtpServiceTests
 {
@@ -34,7 +33,7 @@ public class OtpServiceTests
     }
 
     [Fact]
-    public async Task IsValidAsync_CallsRepository()
+    public async Task IsValidAsync_WithValidCode_ReturnsTrue()
     {
         // Arrange
         Guid id = Guid.NewGuid();
@@ -64,24 +63,10 @@ public class OtpServiceTests
         _repositoryMock.Verify(r => r.IsValidAsync(It.IsAny<Guid>(), It.IsAny<int>()), Times.Never);
     }
 
-    [Fact]
-    public async Task IsValidAsync_ReturnsNonNullValue()
-    {
-        // Arrange
-        Guid id = Guid.NewGuid();
-        int validcode = 222222;
-        _repositoryMock.Setup(r => r.IsValidAsync(id, validcode))
-            .ReturnsAsync(true);
-        
-        // Act
-        bool? result = await _service.IsValidAsync(Guid.NewGuid(), validcode);
-        
-        // Assert
-        result.ShouldNotBeNull();
-    }
+    
 
     [Fact]
-    public async Task MarkAsUsedAsync_CallsRepository()
+    public async Task MarkAsUsedAsync_WithValidCode_ReturnsTrue()
     {
         // Arrange
         Guid id = Guid.NewGuid();
@@ -110,7 +95,4 @@ public class OtpServiceTests
         // Assert
         result.ShouldNotBeNull();
     }
-    
-    
-   
 }

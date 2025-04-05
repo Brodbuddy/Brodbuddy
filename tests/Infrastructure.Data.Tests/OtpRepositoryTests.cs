@@ -1,12 +1,11 @@
-﻿using Xunit;
+using SharedTestDependencies;
+
+namespace Infrastructure.Data.Tests;
+using Xunit;
 using Shouldly;
-using Application;
-using Application.Interfaces;
 using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
-using Core.Entities;
 
-namespace OtpTests;
 
 public class OtpRepositoryTests
 {
@@ -55,6 +54,20 @@ public class OtpRepositoryTests
 
         // Assert
         isValid.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task IsValidAsync_WithIncorrectCode_ReturnsFalse()
+    {
+        // Arrange
+        int code = 333333;
+        Guid id = await _repository.SaveAsync(code);
+
+        // Act
+        bool isValid = await _repository.IsValidAsync(id, 444444);
+
+        // Assert
+        isValid.ShouldBeFalse();
     }
 
     [Fact]
