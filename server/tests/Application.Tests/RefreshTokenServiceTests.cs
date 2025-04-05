@@ -38,7 +38,6 @@ public class RefreshTokenServiceTests
                 repositoryMock.Verify(r => r.CreateAsync(It.IsAny<string>(), utcNow.AddDays(30)), Times.Once);
             }
     }
-
     
     public class TryValidateAsync : RefreshTokenServiceTests
     {
@@ -98,7 +97,6 @@ public class RefreshTokenServiceTests
 
     }
     
-    
     public class RotateAsync : RefreshTokenServiceTests
     {
          [Fact]
@@ -156,7 +154,5 @@ public class RefreshTokenServiceTests
                
             }
     }
-
     
-   
 }
