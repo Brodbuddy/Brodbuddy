@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Communicatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Startup", "server\Startup\Startup.csproj", "{7A868899-B348-41B0-B0BE-B5770FB91429}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AccessTokenTests", "server\tests\AccessTokenTests\AccessTokenTests.csproj", "{6AE6DC2A-78BF-445C-AEA5-A8712AAD8252}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Tests", "server\tests\Application.Tests\Application.Tests.csproj", "{6AE6DC2A-78BF-445C-AEA5-A8712AAD8252}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
