@@ -6,37 +6,23 @@ using Testcontainers.PostgreSql;
 
 namespace Infrastructure.Data.Tests;
 
-public class UserIdentityRepositoryTests : IAsyncLifetime
+public class UserIdentityRepositoryTests
 {
-    private readonly PostgreSqlContainer _postgresContainer;
     private PostgresDbContext _dbContext;
     private FakeTimeProvider _timeProvider;
     private PostgresUserIdentityRepository _repository;
 
     public UserIdentityRepositoryTests()
     {
-        // Opsætning af PostgreSQL container til testning.
-        _postgresContainer = new PostgreSqlBuilder()
-            .WithDatabase("test_db")
-            .WithUsername("postgres")
-            .WithPassword("postgres")
-            .WithImage("postgres:16")
-            .Build();
-    }
-    
-    public async Task InitializeAsync()
-    {
-        await _postgresContainer.StartAsync();
-
         var options = new DbContextOptionsBuilder<PostgresDbContext>()
-            .UseNpgsql(_postgresContainer.GetConnectionString())
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _dbContext = new PostgresDbContext(options);
-        await _dbContext.Database.EnsureCreatedAsync();
-
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         _repository = new PostgresUserIdentityRepository(_dbContext, _timeProvider);
     }
+    
+   
     
     [Fact]
     public async Task SaveAsync_WithValidEmail_SavesUserToDatabase()
@@ -180,11 +166,5 @@ public class UserIdentityRepositoryTests : IAsyncLifetime
         user.ShouldNotBeNull();
         user.Id.ShouldBe(userId);
         user.Email.ShouldBe(email);
-    }
-
-    public async Task DisposeAsync()
-    {
-        await _dbContext.DisposeAsync();
-        await _postgresContainer.StopAsync();
     }
 }
