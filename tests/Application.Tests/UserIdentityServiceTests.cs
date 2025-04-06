@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Application.Services;
+using Core.Entities;
 using Moq;
 using SharedTestDependencies;
 using Shouldly;
@@ -65,5 +66,154 @@ public class UserIdentityServiceTests
         exception.Message.ShouldContain("Invalid email format");
     }
     
-   
+    [Fact]
+    public async Task ExistsAsync_WithExistingUserId_ReturnsTrue()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        _repositoryMock.Setup(r => r.ExistsAsync(userId))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _service.ExistsAsync(userId);
+
+        // Assert
+        result.ShouldBeTrue();
+        _repositoryMock.Verify(r => r.ExistsAsync(userId), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExistsAsync_WithNonExistingUserId_ReturnsFalse()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        _repositoryMock.Setup(r => r.ExistsAsync(userId))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _service.ExistsAsync(userId);
+
+        // Assert
+        result.ShouldBeFalse();
+        _repositoryMock.Verify(r => r.ExistsAsync(userId), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExistsAsync_WithExistingEmail_ReturnsTrue()
+    {
+        // Arrange
+        var email = "test@email.com";
+        _repositoryMock.Setup(r => r.ExistsAsync(email))
+            .ReturnsAsync(true);
+
+        // Act
+        var result = await _service.ExistsAsync(email);
+
+        // Assert
+        result.ShouldBeTrue();
+        _repositoryMock.Verify(r => r.ExistsAsync(email), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExistsAsync_WithNonExistingEmail_ReturnsFalse()
+    {
+        // Arrange
+        var email = "test@email.com";
+        _repositoryMock.Setup(r => r.ExistsAsync(email))
+            .ReturnsAsync(false);
+
+        // Act
+        var result = await _service.ExistsAsync(email);
+
+        // Assert
+        result.ShouldBeFalse();
+        _repositoryMock.Verify(r => r.ExistsAsync(email), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithValidUserId_ReturnsUser()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var expectedUser = new User { Id = userId, Email = "test@email.com" };
+        _repositoryMock.Setup(r => r.GetAsync(userId))
+            .ReturnsAsync(expectedUser);
+
+        // Act
+        var result = await _service.GetAsync(userId);
+
+        // Assert
+        result.ShouldBe(expectedUser);
+        _repositoryMock.Verify(r => r.GetAsync(userId), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithEmptyUserId_ThrowsArgumentException()
+    {
+        // Arrange
+        var emptyId = Guid.Empty;
+
+        // Act & Assert
+        var exception = await Should.ThrowAsync<ArgumentException>(() => 
+            _service.GetAsync(emptyId));
+    
+        exception.ParamName.ShouldBe("id");
+        exception.Message.ShouldContain("User ID cannot be empty");
+        _repositoryMock.Verify(r => r.GetAsync(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetAsync_WithValidEmail_ReturnsUser()
+    {
+        // Arrange
+        var email = "test@email.com";
+        var expectedUser = new User { Id = Guid.NewGuid(), Email = email };
+        _repositoryMock.Setup(r => r.GetAsync(email))
+            .ReturnsAsync(expectedUser);
+
+        // Act
+        var result = await _service.GetAsync(email);
+
+        // Assert
+        result.ShouldBe(expectedUser);
+        _repositoryMock.Verify(r => r.GetAsync(email), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task GetAsync_WithNullOrEmptyEmail_ThrowsArgumentException(string email)
+    {
+        // Act & Assert
+        var exception = await Should.ThrowAsync<ArgumentException>(() => 
+            _service.GetAsync(email));
+    
+        exception.ParamName.ShouldBe("email");
+        exception.Message.ShouldContain("Email cannot be null or empty");
+        _repositoryMock.Verify(r => r.GetAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithExistingEmail_ReturnsExistingUserId()
+    {
+        // Arrange
+        var email = "test@email.com";
+        var existingId = Guid.NewGuid();
+        var existingUser = new User { Id = existingId, Email = email };
+    
+        _repositoryMock.Setup(r => r.ExistsAsync(email))
+            .ReturnsAsync(true);
+        _repositoryMock.Setup(r => r.GetAsync(email))
+            .ReturnsAsync(existingUser);
+
+        // Act
+        var result = await _service.CreateAsync(email);
+
+        // Assert
+        result.ShouldBe(existingId);
+        _repositoryMock.Verify(r => r.ExistsAsync(email), Times.Once);
+        _repositoryMock.Verify(r => r.GetAsync(email), Times.Once);
+        _repositoryMock.Verify(r => r.SaveAsync(It.IsAny<string>()), Times.Never);
+    }
 }
