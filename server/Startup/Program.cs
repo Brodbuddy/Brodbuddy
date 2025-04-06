@@ -34,10 +34,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
         ConfigureServices(builder.Services);
 
-        builder.Services.AddScoped<IEmailSender, FluentEmailSender>();
-        
         var app = builder.Build();
-        
         ConfigureMiddleware(app);
 
         await app.RunAsync();
