@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Core.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
 
@@ -29,23 +30,27 @@ public class PostgresUserIdentityRepository : IUserIdentityRepository
         return user.Id;
     }
 
-    public Task<bool> ExistsAsync(Guid id)
+    public async Task<bool> ExistsAsync(Guid id)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Users.AnyAsync(u => u.Id == id);
     }
 
-    public Task<bool> ExistsAsync(string email)
+    public async Task<bool> ExistsAsync(string email)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Users.AnyAsync(u => u.Email == email);
     }
 
-    public Task<User> GetAsync(Guid id)
+    public async Task<User> GetAsync(Guid id)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Users
+           .FirstOrDefaultAsync(u => u.Id == id)
+           ?? throw new KeyNotFoundException($"User with ID {id} not found");
     }
 
-    public Task<User> GetAsync(string email)
+    public async Task<User> GetAsync(string email)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Users
+           .FirstOrDefaultAsync(u => u.Email == email.Trim().ToLowerInvariant())
+           ?? throw new KeyNotFoundException($"User with email {email} not found");
     }
 }

@@ -38,6 +38,12 @@ public class UserIdentityService : IUserIdentityService
         {
             throw new ArgumentException("Invalid email format", nameof(email));
         }
+
+        if (await ExistsAsync(email))
+        {
+            var existingUser = await _repository.GetAsync(email);
+            return existingUser.Id;
+        }
         
         return await _repository.SaveAsync(email);
     }
@@ -62,21 +68,32 @@ public class UserIdentityService : IUserIdentityService
 
     public Task<bool> ExistsAsync(Guid id)
     {
-        throw new NotImplementedException();
+        return _repository.ExistsAsync(id);
     }
 
     public Task<bool> ExistsAsync(string email)
     {
-        throw new NotImplementedException();
+        return _repository.ExistsAsync(email);
     }
 
-    public Task<User> GetAsync(Guid id)
+    public async Task<User> GetAsync(Guid id)
     {
-        throw new NotImplementedException();
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("User ID cannot be empty", nameof(id));
+        }
+
+        return await _repository.GetAsync(id);
     }
 
-    public Task<User> GetAsync(string email)
+    public async Task<User> GetAsync(string email)
     {
-        throw new NotImplementedException();
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email cannot be null or empty", nameof(email));
+        }
+
+        email = email.Trim().ToLowerInvariant();
+        return await _repository.GetAsync(email);
     }
 }
