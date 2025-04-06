@@ -1,4 +1,5 @@
-﻿using Application.Interfaces;
+﻿using System.Net.Mail;
+using Application.Interfaces;
 using Core.Entities;
 
 namespace Application.Services;
@@ -26,7 +27,37 @@ public class UserIdentityService : IUserIdentityService
 
     public async Task<Guid> CreateAsync(string email)
     {
-        return await _repository.CreateAsync(email);
+        if (string.IsNullOrWhiteSpace(email))
+        { 
+            throw new ArgumentException("Email cannot be null or empty", nameof(email)); 
+        }
+
+        email = email.Trim().ToLowerInvariant();
+
+        if (!IsValidEmail(email))
+        {
+            throw new ArgumentException("Invalid email format", nameof(email));
+        }
+        
+        return await _repository.SaveAsync(email);
+    }
+
+    private bool IsValidEmail(string email)
+    {
+        if (!MailAddress.TryCreate(email, out var _))
+            return false;
+        
+        if (!email.Contains('@') || !email.Contains('.'))
+            return false;
+        
+        var parts = email.Split('@');
+        if (parts.Length != 2 || string.IsNullOrEmpty(parts[0]) || string.IsNullOrEmpty(parts[1]))
+            return false;
+        
+        if (!parts[1].Contains('.'))
+            return false;
+        
+        return true;
     }
 
     public Task<bool> ExistsAsync(Guid id)

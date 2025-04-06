@@ -15,7 +15,7 @@ public class PostgresUserIdentityRepository : IUserIdentityRepository
         _timeProvider = timeProvider;
     }
 
-    public async Task<Guid> CreateAsync(string email)
+    public async Task<Guid> SaveAsync(string email)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
         var user = new User

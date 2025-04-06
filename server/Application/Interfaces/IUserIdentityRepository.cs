@@ -4,7 +4,7 @@ namespace Application.Interfaces;
 
 public interface IUserIdentityRepository
 {
-    Task<Guid> CreateAsync(string email);
+    Task<Guid> SaveAsync(string email);
     Task<bool> ExistsAsync(Guid id);
     Task<bool> ExistsAsync(string email);
     Task<User> GetAsync(Guid id);
