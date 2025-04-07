@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: postgres
+    container_name: brodbuddy-postgres
     environment:
       - POSTGRES_USER=${APPOPTIONS__POSTGRES__USERNAME:-user}
       - POSTGRES_PASSWORD=${APPOPTIONS__POSTGRES__PASSWORD:-pass}
