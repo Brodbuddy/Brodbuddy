@@ -1,6 +1,5 @@
 using Application;
 using Application.Interfaces;
-using Application.Services;
 using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +20,7 @@ public static class Extensions
 
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IOtpRepository, PostgresOtpRepository>();
+        services.AddScoped<IUserIdentityRepository, PostgresUserIdentityRepository>();
         return services;
     }
 }
