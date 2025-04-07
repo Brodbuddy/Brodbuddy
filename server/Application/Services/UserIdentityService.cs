@@ -16,28 +16,21 @@ public interface IUserIdentityService
 public class UserIdentityService : IUserIdentityService
 {
     private readonly IUserIdentityRepository _repository;
-    private readonly TimeProvider _timeProvider;
     
     
-    public UserIdentityService(IUserIdentityRepository repository, TimeProvider timeProvider)
+    public UserIdentityService(IUserIdentityRepository repository)
     {
         _repository = repository;
-        _timeProvider = timeProvider;
     }
 
     public async Task<Guid> CreateAsync(string email)
     {
-        if (string.IsNullOrWhiteSpace(email))
-        { 
-            throw new ArgumentException("Email cannot be null or empty", nameof(email)); 
-        }
-
-        email = email.Trim().ToLowerInvariant();
-
         if (!IsValidEmail(email))
         {
             throw new ArgumentException("Invalid email format", nameof(email));
         }
+        
+        email = email.Trim().ToLowerInvariant();
 
         if (await ExistsAsync(email))
         {
@@ -50,6 +43,11 @@ public class UserIdentityService : IUserIdentityService
 
     private bool IsValidEmail(string email)
     {
+        if (string.IsNullOrWhiteSpace(email))
+        { 
+            throw new ArgumentException("Email cannot be null or empty", nameof(email)); 
+        }
+        
         if (!MailAddress.TryCreate(email, out var _))
             return false;
         
@@ -83,7 +81,13 @@ public class UserIdentityService : IUserIdentityService
             throw new ArgumentException("User ID cannot be empty", nameof(id));
         }
 
-        return await _repository.GetAsync(id);
+        var user = await _repository.GetAsync(id);
+        if (user == null)
+        {
+            throw new ArgumentException($"User with ID {id} not found");
+        }
+
+        return user;
     }
 
     public async Task<User> GetAsync(string email)
@@ -94,6 +98,12 @@ public class UserIdentityService : IUserIdentityService
         }
 
         email = email.Trim().ToLowerInvariant();
-        return await _repository.GetAsync(email);
+        
+        var user = await _repository.GetAsync(email);
+        if (user == null)
+        {
+            throw new ArgumentException($"User with email {email} not found");
+        }
+        return user;
     }
 }

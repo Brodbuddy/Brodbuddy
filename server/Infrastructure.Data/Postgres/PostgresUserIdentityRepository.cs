@@ -22,7 +22,7 @@ public class PostgresUserIdentityRepository : IUserIdentityRepository
         var user = new User
         {
             Email = email,
-            RegisterDate = now
+            CreatedAt = now
         };
         await _dbContext.Users.AddAsync(user);
         await _dbContext.SaveChangesAsync();
@@ -40,17 +40,15 @@ public class PostgresUserIdentityRepository : IUserIdentityRepository
         return await _dbContext.Users.AnyAsync(u => u.Email.ToLower() == email.Trim().ToLowerInvariant());
     }
 
-    public async Task<User> GetAsync(Guid id)
+    public async Task<User?> GetAsync(Guid id)
     {
         return await _dbContext.Users
-           .FirstOrDefaultAsync(u => u.Id == id)
-           ?? throw new KeyNotFoundException($"User with ID {id} not found");
+            .FirstOrDefaultAsync(u => u.Id == id);
     }
 
-    public async Task<User> GetAsync(string email)
+    public async Task<User?> GetAsync(string email)
     {
         return await _dbContext.Users
-           .FirstOrDefaultAsync(u => u.Email.ToLower() == email.Trim().ToLowerInvariant())
-           ?? throw new KeyNotFoundException($"User with email {email} not found");
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == email.Trim().ToLowerInvariant());
     }
 }

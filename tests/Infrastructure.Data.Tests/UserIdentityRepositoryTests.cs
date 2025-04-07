@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies;
 using Shouldly;
-using Testcontainers.PostgreSql;
 
 namespace Infrastructure.Data.Tests;
 
@@ -21,15 +20,14 @@ public class UserIdentityRepositoryTests
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         _repository = new PostgresUserIdentityRepository(_dbContext, _timeProvider);
     }
-    
-   
-    
+
+
     [Fact]
-    public async Task SaveAsync_WithValidEmail_SavesUserToDatabase()
+    public async Task SaveAsync_WithValidEmail_SavesUserAndReturnsId()
     {
         // Arrange
         var email = "Test@email.com";
-        
+
         // Act
         Guid userId = await _repository.SaveAsync(email);
 
@@ -37,134 +35,140 @@ public class UserIdentityRepositoryTests
         var savedUser = await _dbContext.Users.FindAsync(userId);
         savedUser.ShouldNotBeNull();
         savedUser.Email.ShouldBe(email);
-        savedUser.RegisterDate.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
-    } 
-    
-    [Fact]
-    public async Task ExistsAsync_WithExistingUserId_ReturnsTrue()
-    {
-        // Arrange
-        var email = "test@email.com";
-        var userId = await _repository.SaveAsync(email);
-
-        // Act
-        var exists = await _repository.ExistsAsync(userId);
-
-        // Assert
-        exists.ShouldBeTrue();
+        savedUser.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
     }
 
-    [Fact]
-    public async Task ExistsAsync_WithNonExistingUserId_ReturnsFalse()
+    public class ExistsAsync : UserIdentityRepositoryTests
     {
-        // Arrange
-        var nonExistingId = Guid.NewGuid();
+        [Fact]
+        public async Task ExistsAsync_WithExistingUserId_ReturnsTrue()
+        {
+            // Arrange
+            var email = "test@email.com";
+            var userId = await _repository.SaveAsync(email);
 
-        // Act
-        var exists = await _repository.ExistsAsync(nonExistingId);
+            // Act
+            var exists = await _repository.ExistsAsync(userId);
 
-        // Assert
-        exists.ShouldBeFalse();
+            // Assert
+            exists.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task ExistsAsync_WithNonExistingUserId_ReturnsFalse()
+        {
+            // Arrange
+            var nonExistingId = Guid.NewGuid();
+
+            // Act
+            var exists = await _repository.ExistsAsync(nonExistingId);
+
+            // Assert
+            exists.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task ExistsAsync_WithExistingEmail_ReturnsTrue()
+        {
+            // Arrange
+            var email = "test@email.com";
+            await _repository.SaveAsync(email);
+
+            // Act
+            var exists = await _repository.ExistsAsync(email);
+
+            // Assert
+            exists.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task ExistsAsync_WithNonExistingEmail_ReturnsFalse()
+        {
+            // Arrange
+            var nonExistingEmail = "nonexisting@email.com";
+
+            // Act
+            var exists = await _repository.ExistsAsync(nonExistingEmail);
+
+            // Assert
+            exists.ShouldBeFalse();
+        }
     }
 
-    [Fact]
-    public async Task ExistsAsync_WithExistingEmail_ReturnsTrue()
+    public class GetAsync : UserIdentityRepositoryTests
     {
-        // Arrange
-        var email = "test@email.com";
-        await _repository.SaveAsync(email);
+        [Fact]
+        public async Task GetAsync_WithExistingUserId_ReturnsUser()
+        {
+            // Arrange
+            var email = "test@email.com";
+            var userId = await _repository.SaveAsync(email);
 
-        // Act
-        var exists = await _repository.ExistsAsync(email);
+            // Act
+            var user = await _repository.GetAsync(userId);
 
-        // Assert
-        exists.ShouldBeTrue();
-    }
+            // Assert
+            user.ShouldNotBeNull();
+            user.Id.ShouldBe(userId);
+            user.Email.ShouldBe(email);
+        }
 
-    [Fact]
-    public async Task ExistsAsync_WithNonExistingEmail_ReturnsFalse()
-    {
-        // Arrange
-        var nonExistingEmail = "nonexisting@email.com";
+        [Fact]
+        public async Task GetAsync_WithNonExistingUserId_ReturnsNull()
+        {
+            // Arrange
+            var nonExistingId = Guid.NewGuid();
 
-        // Act
-        var exists = await _repository.ExistsAsync(nonExistingEmail);
+            // Act
+            var result = await _repository.GetAsync(nonExistingId);
 
-        // Assert
-        exists.ShouldBeFalse();
-    }
+            // Assert
+            result.ShouldBeNull();
+        }
 
-    [Fact]
-    public async Task GetAsync_WithExistingUserId_ReturnsUser()
-    {
-        // Arrange
-        var email = "test@email.com";
-        var userId = await _repository.SaveAsync(email);
+        [Fact]
+        public async Task GetAsync_WithExistingEmail_ReturnsUser()
+        {
+            // Arrange
+            var email = "test@email.com";
+            var userId = await _repository.SaveAsync(email);
 
-        // Act
-        var user = await _repository.GetAsync(userId);
+            // Act
+            var user = await _repository.GetAsync(email);
 
-        // Assert
-        user.ShouldNotBeNull();
-        user.Id.ShouldBe(userId);
-        user.Email.ShouldBe(email);
-    }
+            // Assert
+            user.ShouldNotBeNull();
+            user.Id.ShouldBe(userId);
+            user.Email.ShouldBe(email);
+        }
 
-    [Fact]
-    public async Task GetAsync_WithNonExistingUserId_ThrowsKeyNotFoundException()
-    {
-        // Arrange
-        var nonExistingId = Guid.NewGuid();
+        [Fact]
+        public async Task GetAsync_WithNonExistingEmail_ReturnsNull()
+        {
+            // Arrange
+            var nonExistingEmail = "nonexisting@email.com";
 
-        // Act & Assert
-        var exception = await Should.ThrowAsync<KeyNotFoundException>(() => 
-            _repository.GetAsync(nonExistingId));
-    
-        exception.Message.ShouldContain($"User with ID {nonExistingId} not found");
-    }
+            // Act 
+            var result = await _repository.GetAsync(nonExistingEmail);
 
-    [Fact]
-    public async Task GetAsync_WithExistingEmail_ReturnsUser()
-    {
-        // Arrange
-        var email = "test@email.com";
-        var userId = await _repository.SaveAsync(email);
+            // Assert
+            result.ShouldBeNull();
+        }
 
-        // Act
-        var user = await _repository.GetAsync(email);
+        [Fact]
+        public async Task GetAsync_WithDifferentCaseEmail_ReturnsCorrectUser()
+        {
+            // Arrange
+            var email = "Test@Email.com";
+            var userId = await _repository.SaveAsync(email);
 
-        // Assert
-        user.ShouldNotBeNull();
-        user.Id.ShouldBe(userId);
-        user.Email.ShouldBe(email);
-    }
+            // Act
+            var user = await _repository.GetAsync("test@email.com");
 
-    [Fact]
-    public async Task GetAsync_WithNonExistingEmail_ThrowsKeyNotFoundException()
-    {
-        // Arrange
-        var nonExistingEmail = "nonexisting@email.com";
-
-        // Act & Assert
-        var exception = await Should.ThrowAsync<KeyNotFoundException>(() => 
-            _repository.GetAsync(nonExistingEmail));
-    
-        exception.Message.ShouldContain($"User with email {nonExistingEmail} not found");
-    }
-
-    [Fact]
-    public async Task GetAsync_WithDifferentCaseEmail_ReturnsCorrectUser()
-    {
-        // Arrange
-        var email = "Test@Email.com";
-        var userId = await _repository.SaveAsync(email);
-
-        // Act
-        var user = await _repository.GetAsync("test@email.com");
-
-        // Assert
-        user.ShouldNotBeNull();
-        user.Id.ShouldBe(userId);
-        user.Email.ShouldBe(email);
+            // Assert
+            user.ShouldNotBeNull();
+            user.Id.ShouldBe(userId);
+            user.Email.ShouldBe(email);
+        }
     }
 }

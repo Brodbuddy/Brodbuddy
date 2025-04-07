@@ -9,5 +9,5 @@ public partial class User
 
     public string Email { get; set; } = null!;
 
-    public DateTime RegisterDate { get; set; }
+    public DateTime CreatedAt { get; set; }
 }

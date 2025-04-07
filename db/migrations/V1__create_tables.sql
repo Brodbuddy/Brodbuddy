@@ -10,6 +10,6 @@ CREATE TABLE one_time_passwords (
 
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email VARCHAR NOT NULL,
-    register_date TIMESTAMPTZ NOT NULL
-)
+    email VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL
+);

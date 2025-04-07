@@ -46,10 +46,10 @@ public partial class PostgresDbContext : DbContext
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             entity.Property(e => e.Email)
-                .HasColumnType("character varying")
+                .HasMaxLength(255)
                 .HasColumnName("email");
-            entity.Property(e => e.RegisterDate).HasColumnName("register_date");
         });
 
         OnModelCreatingPartial(modelBuilder);
