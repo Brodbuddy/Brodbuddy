@@ -63,7 +63,7 @@ public class DeviceService : IDeviceService
 
     public Task<bool> ExistsAsync(Guid id)
     {
-        throw new NotImplementedException();
+        return _repository.ExistsAsync(id);
     }
 
     public Task<bool> UpdateLastSeenAsync(Guid id)

@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Core.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
 
@@ -48,9 +49,9 @@ public class PostgresDeviceRepository : IDeviceRepository
         throw new NotImplementedException();
     }
 
-    public Task<bool> ExistsAsync(Guid id)
+    public async Task<bool> ExistsAsync(Guid id)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Devices.AnyAsync(d => d.Id == id);
     }
 
     public Task<bool> UpdateLastSeenAsync(Guid id)
