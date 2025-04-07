@@ -7,7 +7,6 @@
 
         <IsPackable>false</IsPackable>
         <IsTestProject>true</IsTestProject>
-        <RootNamespace>Application.Tests</RootNamespace>
     </PropertyGroup>
     
     <PropertyGroup>
@@ -24,7 +23,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Application\Application.csproj" />
-      <ProjectReference Include="..\SharedTestDependencies\SharedTestDependencies.csproj" />
+        <Using Include="Xunit"/>
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Infrastructure.Data\Infrastructure.Data.csproj" />
+        <ProjectReference Include="..\SharedTestDependencies\SharedTestDependencies.csproj" />
+    </ItemGroup>
+
 </Project>

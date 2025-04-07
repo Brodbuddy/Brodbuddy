@@ -1,10 +1,10 @@
-using Application;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using SharedTestDependencies;
+using Xunit;
 
-namespace AccessTokenTests;
-
+namespace Application.Tests;
 
 public class JwtServiceTests
 {
@@ -22,7 +22,7 @@ public class JwtServiceTests
             ExpirationMinutes = 15
         };
         _options = new AppOptions { Jwt = jwtOptions };
-        
+
         var mockOptionsMonitor = new Mock<IOptionsMonitor<AppOptions>>();
         mockOptionsMonitor.Setup(x => x.CurrentValue).Returns(_options);
 
@@ -44,10 +44,10 @@ public class JwtServiceTests
             var subject = "user123";
             var email = "test@example.com";
             var role = "User";
-            
+
             // Act
             var token = _jwtService.Generate(subject, email, role);
-            
+
             // Assert
             Assert.True(_jwtService.TryValidate(token, out var decodedClaims));
             Assert.NotNull(decodedClaims);
@@ -67,15 +67,15 @@ public class JwtServiceTests
         {
             // Arrange
             var invalidToken = "this.is.not.a.valid.jwt.format";
-            
+
             // Act
             var isValid = _jwtService.TryValidate(invalidToken, out var claims);
-            
+
             // Assert
             Assert.False(isValid);
             Assert.Null(claims);
         }
-        
+
         [Fact]
         public void TryValidate_ShouldReturnFalse_WhenTokenIsExpired()
         {
@@ -83,14 +83,14 @@ public class JwtServiceTests
             var subject = "user123";
             var email = "test@example.com";
             var role = "User";
-            var token = _jwtService.Generate(subject, email, role); 
+            var token = _jwtService.Generate(subject, email, role);
 
             // Act
             _timeProvider.Advance(TimeSpan.FromMinutes(16));
             var isValid = _jwtService.TryValidate(token, out var claims);
 
             // Assert
-            Assert.False(isValid); 
+            Assert.False(isValid);
             Assert.Null(claims);
         }
 
@@ -102,7 +102,7 @@ public class JwtServiceTests
             var email = "test@example.com";
             var role = "User";
             var token = _jwtService.Generate(subject, email, role);
-            
+
             // Act 1: Valider LIGE FØR udløb
             _timeProvider.Advance(TimeSpan.FromMinutes(14).Add(TimeSpan.FromSeconds(59)));
             var isValidBeforeExpiration = _jwtService.TryValidate(token, out var claimsBefore);
@@ -110,7 +110,7 @@ public class JwtServiceTests
             // Act 2: Valider LIGE EFTER udløb
             _timeProvider.Advance(TimeSpan.FromSeconds(2)); // Nu 15 min + 1 sekund
             var isValidAfterExpiration = _jwtService.TryValidate(token, out var claimsAfter);
-            
+
             // Assert
             Assert.True(isValidBeforeExpiration, "Token should be valid just before expiration");
             Assert.NotNull(claimsBefore);
