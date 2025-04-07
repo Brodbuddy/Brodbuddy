@@ -1,4 +1,4 @@
-﻿using Application;
+using Application;
 using Application.Interfaces;
 using Application.Services;
 using Infrastructure.Data.Postgres;
@@ -18,7 +18,8 @@ public static class Extensions
             options.UseNpgsql(provider.GetRequiredService<IOptionsMonitor<AppOptions>>().CurrentValue.Postgres.ConnectionString);
             options.EnableSensitiveDataLogging();
         });
-        
+
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IOtpRepository, PostgresOtpRepository>();
         return services;
     }
