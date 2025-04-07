@@ -9,6 +9,7 @@ public static class Extensions
         services.AddSingleton(TimeProvider.System); 
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<IUserIdentityService, UserIdentityService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         return services;
     }
 }

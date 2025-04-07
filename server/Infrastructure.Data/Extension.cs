@@ -1,6 +1,5 @@
-﻿using Application;
+using Application;
 using Application.Interfaces;
-using Application.Services;
 using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +17,8 @@ public static class Extensions
             options.UseNpgsql(provider.GetRequiredService<IOptionsMonitor<AppOptions>>().CurrentValue.Postgres.ConnectionString);
             options.EnableSensitiveDataLogging();
         });
-        
+
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IOtpRepository, PostgresOtpRepository>();
         services.AddScoped<IUserIdentityRepository, PostgresUserIdentityRepository>();
         return services;

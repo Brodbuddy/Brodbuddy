@@ -35,7 +35,7 @@ public class UserIdentityService : IUserIdentityService
         if (await ExistsAsync(email))
         {
             var existingUser = await _repository.GetAsync(email);
-            return existingUser.Id;
+            return existingUser!.Id;
         }
         
         return await _repository.SaveAsync(email);

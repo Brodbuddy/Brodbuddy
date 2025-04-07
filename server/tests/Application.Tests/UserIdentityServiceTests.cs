@@ -3,6 +3,7 @@ using Application.Services;
 using Core.Entities;
 using Moq;
 using Shouldly;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace Application.Tests;

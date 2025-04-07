@@ -1,11 +1,9 @@
-using SharedTestDependencies;
-
-namespace Infrastructure.Data.Tests;
-using Xunit;
-using Shouldly;
 using Infrastructure.Data.Postgres;
+using SharedTestDependencies;
+using Shouldly;
 using Microsoft.EntityFrameworkCore;
 
+namespace Infrastructure.Data.Tests;
 
 public class OtpRepositoryTests
 {
@@ -119,6 +117,7 @@ public class OtpRepositoryTests
 
         // verificer i databasen at Otp er ændret til brugt
         var otp = await _dbContext.OneTimePasswords.FindAsync(id);
+        otp.ShouldNotBeNull();
         otp.IsUsed.ShouldBeTrue();
     }
 }
