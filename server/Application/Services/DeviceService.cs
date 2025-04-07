@@ -51,9 +51,14 @@ public class DeviceService : IDeviceService
 
     }
 
-    public Task<Device> GetByIdAsync(Guid id)
+    public async Task<Device> GetByIdAsync(Guid id)
     {
-        throw new NotImplementedException();
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("User ID cannot be empty", nameof(id));
+        }
+
+        return await _repository.GetAsync(id);
     }
 
     public Task<IEnumerable<Device>> GetByIdsAsync(IEnumerable<Guid> ids)

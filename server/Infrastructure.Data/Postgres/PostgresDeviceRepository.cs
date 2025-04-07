@@ -39,9 +39,11 @@ public class PostgresDeviceRepository : IDeviceRepository
         }
 }
 
-    public Task<Device> GetAsync(Guid id)
+    public async Task<Device> GetAsync(Guid id)
     {
-        throw new NotImplementedException();
+        return await _dbContext.Devices
+                   .FirstOrDefaultAsync(r => r.Id == id)
+               ?? throw new KeyNotFoundException($"Device with ID {id} not found");
     }
 
     public Task<IEnumerable<Device>> Get(IEnumerable<Guid> ids)
