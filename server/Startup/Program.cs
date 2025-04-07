@@ -17,9 +17,11 @@ public class Program
                 .BindConfiguration(nameof(AppOptions))
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
+        services.AddApplicationServices();
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
         services.AddHttpApi();
+        services.AddApplicationServices();
     }
 
     private static void ConfigureMiddleware(WebApplication app)
@@ -33,10 +35,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
         ConfigureServices(builder.Services);
 
-        builder.Services.AddScoped<IEmailSender, FluentEmailSender>();
-        
         var app = builder.Build();
-        
         ConfigureMiddleware(app);
 
         await app.RunAsync();
