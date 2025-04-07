@@ -1,7 +1,9 @@
 using Application.Interfaces;
 using Microsoft.Extensions.Logging;
 using Moq;
+using SharedTestDependencies;
 using Shouldly;
+using Xunit;
 
 namespace Application.Tests;
 
