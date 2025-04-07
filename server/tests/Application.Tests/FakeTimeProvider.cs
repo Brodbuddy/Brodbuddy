@@ -1,6 +1,4 @@
-
 namespace Application.Tests;
-
 
 public class FakeTimeProvider(DateTimeOffset startDateTime) : TimeProvider
 {
@@ -10,6 +8,6 @@ public class FakeTimeProvider(DateTimeOffset startDateTime) : TimeProvider
     {
         _currentTime = _currentTime.Add(timeSpan);
     }
-    
+
     public override DateTimeOffset GetUtcNow() => _currentTime;
 }
