@@ -1,4 +1,5 @@
 using Application.Interfaces;
+using Application.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SharedTestDependencies;
@@ -20,7 +21,7 @@ public class RefreshTokenServiceTests
         _loggerMock = new Mock<ILogger<RefreshTokenService>>();
         _service = new RefreshTokenService(_repositoryMock.Object, timeProvider, _loggerMock.Object);
     }
-    
+
     public class GenerateAsync : RefreshTokenServiceTests
     {
         [Fact]
@@ -28,119 +29,172 @@ public class RefreshTokenServiceTests
         {
             // Arrange
             var utcNow = DateTime.UtcNow;
-            
+
             var timeProvider = new FakeTimeProvider(new DateTimeOffset(utcNow));
             var service = new RefreshTokenService(_repositoryMock.Object, timeProvider, _loggerMock.Object);
-        
+
             // Act
             var token = await service.GenerateAsync();
-        
+
             // Assert
             token.ShouldNotBeNullOrEmpty();
             _repositoryMock.Verify(r => r.CreateAsync(It.IsAny<string>(), utcNow.AddDays(30)), Times.Once);
         }
     }
-    
+
     public class TryValidateAsync : RefreshTokenServiceTests
     {
         [Fact]
-            public async Task TryValidateAsync_ShouldReturnResultFromRepository()
-            {
-                // Arrange
-                var token = "testToken";
-                var expectedResult = (true, Guid.NewGuid());
-                _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync(expectedResult);
-        
-                // Act
-                var result = await _service.TryValidateAsync(token);
-        
-                // Assert
-                result.ShouldBe(expectedResult);
-            }
+        public async Task TryValidateAsync_ShouldReturnResultFromRepository()
+        {
+            // Arrange
+            var token = "testToken";
+            var expectedResult = (true, Guid.NewGuid());
+            _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync(expectedResult);
+
+            // Act
+            var result = await _service.TryValidateAsync(token);
+
+            // Assert
+            result.ShouldBe(expectedResult);
+        }
     }
-   
+
     public class RevokeAsync : RefreshTokenServiceTests
     {
         [Fact]
-            public async Task RevokeAsync_ShouldReturnFalse_WhenTokenIsInvalid()
-            {
-                // Arrange
-                var token = "invalidToken";
-                _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((false, Guid.Empty));
-        
-                // Act
-                var result = await _service.RevokeAsync(token);
-        
-                // Assert
-                result.ShouldBeFalse();
-            }
-        
-            [Fact]
-            public async Task RevokeAsync_ShouldReturnTrue_WhenTokenIsValid()
-            {
-                // Arrange
-                var token = "validToken";
-                var tokenId = Guid.NewGuid();
-                _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((true, tokenId));
-                _repositoryMock.Setup(r => r.RevokeAsync(tokenId)).ReturnsAsync(true);
-        
-                // Act
-                var result = await _service.RevokeAsync(token);
-        
-                // Assert
-                result.ShouldBeTrue();
-            }
+        public async Task RevokeAsync_ShouldReturnFalse_WhenTokenIsInvalid()
+        {
+            // Arrange
+            var token = "invalidToken";
+            _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((false, Guid.Empty));
 
+            // Act
+            var result = await _service.RevokeAsync(token);
+
+            // Assert
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task RevokeAsync_ShouldReturnTrue_WhenTokenIsValid()
+        {
+            // Arrange
+            var token = "validToken";
+            var tokenId = Guid.NewGuid();
+            _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((true, tokenId));
+            _repositoryMock.Setup(r => r.RevokeAsync(tokenId)).ReturnsAsync(true);
+
+            // Act
+            var result = await _service.RevokeAsync(token);
+
+            // Assert
+            result.ShouldBeTrue();
+        }
+        
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task RevokeAsync_ShouldReturnFalse_WhenTokenIsNullOrEmpty(string token)
+        {
+            // Act
+            var result = await _service.RevokeAsync(token);
+
+            // Assert
+            result.ShouldBeFalse();
+            _repositoryMock.Verify(r => r.TryValidateAsync(It.IsAny<string>()), Times.Never);
+            _repositoryMock.Verify(r => r.RevokeAsync(It.IsAny<Guid>()), Times.Never);
+        }
     }
-    
+
     public class RotateAsync : RefreshTokenServiceTests
     {
-         [Fact]
-            public async Task RotateAsync_ShouldReturnEmptyString_WhenTokenIsInvalid()
-            {
-                // Arrange
-                var token = "invalidToken";
-                _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((false, Guid.Empty));
+        [Fact]
+        public async Task RotateAsync_ShouldReturnEmptyString_WhenTokenIsInvalid()
+        {
+            // Arrange
+            var token = "invalidToken";
+            _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((false, Guid.Empty));
+
+            // Act
+            var result = await _service.RotateAsync(token);
+
+            // Assert
+            result.ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public async Task RotateAsync_ShouldReturnNewToken_WhenTokenIsValid()
+        {
+            // Arrange
+            var token = "validToken";
+            var tokenId = Guid.NewGuid();
+            var newToken = "newToken";
+            _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((true, tokenId));
+            _repositoryMock.Setup(r => r.RotateAsync(tokenId)).ReturnsAsync(newToken);
+
+            // Act
+            var result = await _service.RotateAsync(token);
+
+            // Assert
+            result.ShouldBe(newToken);
+        }
+
+        [Fact]
+        public async Task RotateAsync_ShouldReturnEmptyString_WhenInvalidOperationExceptionIsThrown()
+        {
+            // Arrange
+            var token = "validToken";
+            var tokenId = Guid.NewGuid();
+            _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((true, tokenId));
+            _repositoryMock.Setup(r => r.RotateAsync(tokenId))
+                .ThrowsAsync(new InvalidOperationException("Token rotation failed"));
+
+            // Act
+            var result = await _service.RotateAsync(token);
+
+            // Assert
+            result.ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public async Task RotateAsync_ShouldLogWarning_WhenInvalidOperationExceptionIsThrown()
+        {
+            // Arrange
+            var token = "validToken";
+            var tokenId = Guid.NewGuid();
+            _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((true, tokenId));
+            _repositoryMock.Setup(r => r.RotateAsync(tokenId))
+                .ThrowsAsync(new InvalidOperationException("Token rotation failed"));
+
+            // Act
+            var result = await _service.RotateAsync(token);
+
+            // Assert
+            result.ShouldBe(string.Empty);
+            _loggerMock.Verify(
+                x => x.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((o, t) =>
+                        o.ToString().Contains($"Failed to rotate refresh token. Token ID: {tokenId}")),
+                    It.IsAny<InvalidOperationException>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()), 
+                Times.Once);
+        }
         
-                // Act
-                var result = await _service.RotateAsync(token);
-        
-                // Assert
-                result.ShouldBe(string.Empty);
-            }
-        
-            [Fact]
-            public async Task RotateAsync_ShouldReturnNewToken_WhenTokenIsValid()
-            {
-                // Arrange
-                var token = "validToken";
-                var tokenId = Guid.NewGuid();
-                var newToken = "newToken";
-                _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((true, tokenId));
-                _repositoryMock.Setup(r => r.RotateAsync(tokenId)).ReturnsAsync(newToken);
-        
-                // Act
-                var result = await _service.RotateAsync(token);
-        
-                // Assert
-                result.ShouldBe(newToken);
-            }
-        
-            [Fact]
-            public async Task RotateAsync_ShouldReturnEmptyString_WhenInvalidOperationExceptionIsThrown()
-            {
-                // Arrange
-                var token = "validToken";
-                var tokenId = Guid.NewGuid();
-                _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((true, tokenId));
-                _repositoryMock.Setup(r => r.RotateAsync(tokenId))
-                    .ThrowsAsync(new InvalidOperationException("Token rotation failed"));
-        
-                // Act
-                var result = await _service.RotateAsync(token);
-        
-                // Assert
-                result.ShouldBe(string.Empty);
-            }
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public async Task RotateAsync_ShouldReturnEmptyString_WhenTokenIsNullOrEmpty(string token)
+        {
+            // Act
+            var result = await _service.RotateAsync(token);
+
+            // Assert
+            result.ShouldBe(string.Empty);
+            _repositoryMock.Verify(r => r.TryValidateAsync(It.IsAny<string>()), Times.Never);
+            _repositoryMock.Verify(r => r.RotateAsync(It.IsAny<Guid>()), Times.Never);
+        }
     }
 }

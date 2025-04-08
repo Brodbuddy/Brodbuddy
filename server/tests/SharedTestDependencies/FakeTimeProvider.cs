@@ -1,5 +1,6 @@
 namespace SharedTestDependencies;
 
+
 public class FakeTimeProvider(DateTimeOffset startDateTime) : TimeProvider
 {
     private DateTimeOffset _currentTime = startDateTime;
@@ -11,3 +12,4 @@ public class FakeTimeProvider(DateTimeOffset startDateTime) : TimeProvider
 
     public override DateTimeOffset GetUtcNow() => _currentTime;
 }
+

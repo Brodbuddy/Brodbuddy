@@ -53,6 +53,7 @@ public class RefreshTokenRepository(PostgresDbContext dbcontext, TimeProvider ti
         await dbcontext.SaveChangesAsync();
         return true;
     }
+    
 
     public async Task<string> RotateAsync(Guid oldTokenId)
     {

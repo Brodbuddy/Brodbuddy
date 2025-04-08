@@ -2,8 +2,7 @@ using System.Security.Cryptography;
 using Application.Interfaces;
 using Microsoft.Extensions.Logging;
 
-
-namespace Application;
+namespace Application.Services;
 
 
 public interface IRefreshTokenService
