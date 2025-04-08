@@ -80,9 +80,13 @@ public class DeviceService : IDeviceService
 
     }
 
-    public Task<bool> ExistsAsync(Guid id)
-    {
-        return _repository.ExistsAsync(id);
+    public async Task<bool> ExistsAsync(Guid id)
+    { 
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("User ID cannot be empty", nameof(id));
+        }
+        return await _repository.ExistsAsync(id);
     }
 
     public async Task<bool> UpdateLastSeenAsync(Guid id)
@@ -96,8 +100,13 @@ public class DeviceService : IDeviceService
         return await _repository.UpdateLastSeenAsync(id, now);
     }
 
-    public Task<bool> DisableAsync(Guid id)
+    public async Task<bool> DisableAsync(Guid id)
     {
-        throw new NotImplementedException();
+        if (id == Guid.Empty)
+        { 
+            throw new ArgumentException("Device ID cannot be empty", nameof(id));
+        }
+
+        return await _repository.DisableAsync(id);
     }
 }

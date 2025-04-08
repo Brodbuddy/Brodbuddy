@@ -68,8 +68,13 @@ public class PostgresDeviceRepository : IDeviceRepository
         return rowsAffected > 0;
     }
 
-    public Task<bool> DisableAsync(Guid id)
+    public async Task<bool> DisableAsync(Guid id)
     {
-        throw new NotImplementedException();
+        var rowsAffected = await _dbContext.Devices
+            .Where(d => d.Id == id)
+            .ExecuteUpdateAsync(setters =>
+                setters.SetProperty(d => d.IsActive, false));
+
+        return rowsAffected > 0;
     }
 }
