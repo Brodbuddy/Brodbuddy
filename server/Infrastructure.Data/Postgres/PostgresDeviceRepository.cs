@@ -58,9 +58,14 @@ public class PostgresDeviceRepository : IDeviceRepository
         return await _dbContext.Devices.AnyAsync(d => d.Id == id);
     }
 
-    public Task<bool> UpdateLastSeenAsync(Guid id)
+    public async Task<bool> UpdateLastSeenAsync(Guid id, DateTime lastSeenTime)
     {
-        throw new NotImplementedException();
+        var rowsAffected = await _dbContext.Devices
+            .Where(d => d.Id == id)
+            .ExecuteUpdateAsync(setters =>
+                setters.SetProperty(d => d.LastSeenAt, lastSeenTime));
+        
+        return rowsAffected > 0;
     }
 
     public Task<bool> DisableAsync(Guid id)

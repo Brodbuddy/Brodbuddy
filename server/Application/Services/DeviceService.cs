@@ -85,9 +85,15 @@ public class DeviceService : IDeviceService
         return _repository.ExistsAsync(id);
     }
 
-    public Task<bool> UpdateLastSeenAsync(Guid id)
+    public async Task<bool> UpdateLastSeenAsync(Guid id)
     {
-        throw new NotImplementedException();
+        if (id == Guid.Empty)
+        { 
+            throw new ArgumentException("Device ID cannot be empty", nameof(id));
+        }
+
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        return await _repository.UpdateLastSeenAsync(id, now);
     }
 
     public Task<bool> DisableAsync(Guid id)
