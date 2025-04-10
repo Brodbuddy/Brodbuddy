@@ -1,4 +1,5 @@
-﻿using Application.Interfaces;
+﻿using System.ComponentModel.DataAnnotations;
+using Application.Interfaces;
 
 namespace Application;
 
@@ -7,6 +8,8 @@ public class AppOptions
     public int HttpPort { get; set; } = 5001;
     public EmailOptions Email { get; set; } = new();
     public PostgresOptions Postgres { get; set; } = new();
+    
+    public JwtOptions Jwt { get; set; } = new();
 }
 
 public class EmailOptions
@@ -27,4 +30,12 @@ public class PostgresOptions
 
     public string ConnectionString =>
         $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password}";
+}
+
+public class JwtOptions
+{
+    public string Secret { get; set; } = "dfKDL0Rq26AEQhdHBcQkOvMNjj9S8/thdKhTVzm3UDWXfJ0gePCuWyf48VK9/hk1ID4VHqZjXpYhinms1r+Khg==";
+    public int ExpirationMinutes { get; set; } = 15;
+    public string Issuer { get; set; } = "localhost:5001";
+    public string Audience { get; set; } = "localhost:5173";
 }

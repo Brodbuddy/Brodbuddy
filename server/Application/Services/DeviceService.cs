@@ -39,7 +39,7 @@ public class DeviceService : IDeviceService
         browser = browser.Trim().ToLowerInvariant();
         os = os.Trim().ToLowerInvariant();
         
-        string name = $"{os}_{browser}";
+        string name = $"{browser}_{os}";
         var device = new Device
         {
             Browser = browser,
@@ -68,10 +68,17 @@ public class DeviceService : IDeviceService
             throw new ArgumentException("User ID cannot be empty", nameof(ids));
         }
 
-        // Filtrer tomme Guid'er fra
         var validIds = ids.Where(id => id != Guid.Empty).ToList();
+        
+        // Manuel check for om de er empty - var et krav for at Stryker ikke meldte mulig compileError..
+        bool hasValidIds = false;
+        foreach (var id in validIds)
+        {
+            hasValidIds = true;
+            break;
+        }
 
-        if (!validIds.Any())
+        if (!hasValidIds)
         {
             return Enumerable.Empty<Device>();
         }

@@ -2,8 +2,8 @@ namespace Application.Tests;
 
 using Xunit;
 using Shouldly;
-using Application.Interfaces;
-using Application.Services;
+using Interfaces;
+using Services;
 using Moq;
 
 public class OtpServiceTests
@@ -16,7 +16,7 @@ public class OtpServiceTests
         _repositoryMock = new Mock<IOtpRepository>();
         _service = new OtpService(_repositoryMock.Object);
     }
-    
+
     [Fact]
     public async Task GenerateAsync_ReturnsSixDigitCode()
     {
@@ -26,10 +26,11 @@ public class OtpServiceTests
 
         // Act
         int code = await _service.GenerateAsync();
-        
+
         // Assert
         code.ShouldBeInRange(100000, 999999);
-        _repositoryMock.Verify(repo => repo.SaveAsync(It.Is<int>(code => code >= 100000 && code <= 999999)), Times.Once);
+        _repositoryMock.Verify(repo => repo.SaveAsync(It.Is<int>(expectedCode => expectedCode >= 100000 && expectedCode <= 999999)),
+            Times.Once);
     }
 
     [Fact]
@@ -40,10 +41,10 @@ public class OtpServiceTests
         int validcode = 111111;
         _repositoryMock.Setup(r => r.IsValidAsync(id, validcode))
             .ReturnsAsync(true);
-        
+
         // Act
         bool result = await _service.IsValidAsync(id, validcode);
-        
+
         // Assert
         result.ShouldBeTrue();
         _repositoryMock.Verify(r => r.IsValidAsync(id, validcode), Times.Once);
@@ -54,16 +55,15 @@ public class OtpServiceTests
     {
         // Arrange
         int invalidCode = 11111; // ikke 6 cifre lang kode.
-        
+
         // Act
         bool result = await _service.IsValidAsync(Guid.NewGuid(), invalidCode);
-        
+
         // Assert
         result.ShouldBeFalse();
         _repositoryMock.Verify(r => r.IsValidAsync(It.IsAny<Guid>(), It.IsAny<int>()), Times.Never);
     }
 
-    
 
     [Fact]
     public async Task MarkAsUsedAsync_WithValidCode_ReturnsTrue()
@@ -72,7 +72,7 @@ public class OtpServiceTests
         Guid id = Guid.NewGuid();
         _repositoryMock.Setup(r => r.MarkAsUsedAsync(id))
             .ReturnsAsync(true);
-        
+
         // Act
         bool result = await _service.MarkAsUsedAsync(id);
 
@@ -88,10 +88,10 @@ public class OtpServiceTests
         Guid id = Guid.NewGuid();
         _repositoryMock.Setup(r => r.MarkAsUsedAsync(id))
             .ReturnsAsync(true);
-        
+
         // Act
         bool? result = await _service.MarkAsUsedAsync(id);
-        
+
         // Assert
         result.ShouldNotBeNull();
     }

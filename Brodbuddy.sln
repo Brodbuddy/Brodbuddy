@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -23,15 +22,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Communicatio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Startup", "server\Startup\Startup.csproj", "{7A868899-B348-41B0-B0BE-B5770FB91429}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Tests", "server\tests\Application.Tests\Application.Tests.csproj", "{F6B122BB-22F4-4FEA-803C-31A4103B076B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedTestDependencies", "server\tests\SharedTestDependencies\SharedTestDependencies.csproj", "{5CE4045C-79B9-4258-BB7E-0C870995589B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OtpTests", "tests\OtpTests\OtpTests.csproj", "{A72623B0-0B13-49AE-90C8-8E0BF9DDFBC7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Tests", "server\tests\Application.Tests\Application.Tests.csproj", "{4CE29D88-E184-477E-9899-E788DC79979B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharedTestDependencies", "tests\SharedTestDependencies\SharedTestDependencies.csproj", "{5CE4045C-79B9-4258-BB7E-0C870995589B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application.Tests", "tests\Application.Tests\Application.Tests.csproj", "{4CE29D88-E184-477E-9899-E788DC79979B}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Data.Tests", "tests\Infrastructure.Data.Tests\Infrastructure.Data.Tests.csproj", "{35A2DC01-D164-4422-A626-A4FD9BECB51D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Data.Tests", "server\tests\Infrastructure.Data.Tests\Infrastructure.Data.Tests.csproj", "{35A2DC01-D164-4422-A626-A4FD9BECB51D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -78,14 +73,6 @@ Global
 		{7A868899-B348-41B0-B0BE-B5770FB91429}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A868899-B348-41B0-B0BE-B5770FB91429}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A868899-B348-41B0-B0BE-B5770FB91429}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F6B122BB-22F4-4FEA-803C-31A4103B076B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F6B122BB-22F4-4FEA-803C-31A4103B076B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F6B122BB-22F4-4FEA-803C-31A4103B076B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F6B122BB-22F4-4FEA-803C-31A4103B076B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A72623B0-0B13-49AE-90C8-8E0BF9DDFBC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A72623B0-0B13-49AE-90C8-8E0BF9DDFBC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A72623B0-0B13-49AE-90C8-8E0BF9DDFBC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A72623B0-0B13-49AE-90C8-8E0BF9DDFBC7}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5CE4045C-79B9-4258-BB7E-0C870995589B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5CE4045C-79B9-4258-BB7E-0C870995589B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5CE4045C-79B9-4258-BB7E-0C870995589B}.Release|Any CPU.ActiveCfg = Release|Any CPU

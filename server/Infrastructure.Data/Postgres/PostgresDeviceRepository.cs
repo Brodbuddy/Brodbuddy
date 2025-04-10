@@ -35,15 +35,15 @@ public class PostgresDeviceRepository : IDeviceRepository
         }
         catch (Exception ex)
         {
-            throw new Exception("Failed to save device", ex);
+            throw new ArgumentException("Failed to save device", ex);
         }
-}
+    }
 
     public async Task<Device> GetAsync(Guid id)
     {
         return await _dbContext.Devices
                    .FirstOrDefaultAsync(r => r.Id == id)
-               ?? throw new KeyNotFoundException($"Device with ID {id} not found");
+               ?? throw new ArgumentException($"Device with ID {id} not found");
     }
 
     public async Task<IEnumerable<Device>> GetByIdsAsync(IEnumerable<Guid> ids)
