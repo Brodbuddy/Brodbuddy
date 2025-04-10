@@ -1,6 +1,7 @@
 ﻿using Application.Interfaces;
 using Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Data.Postgres;
 
@@ -8,9 +9,12 @@ public class PostgresOtpRepository : IOtpRepository
 {
     private readonly PostgresDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
+    private readonly ILogger<PostgresOtpRepository> _logger;
 
-    public PostgresOtpRepository(PostgresDbContext dbContext, TimeProvider timeProvider)
+    public PostgresOtpRepository(PostgresDbContext dbContext, TimeProvider timeProvider,
+        ILogger<PostgresOtpRepository> logger)
     {
+        _logger = logger;
         _dbContext = dbContext;
         _timeProvider = timeProvider;
     }
@@ -24,9 +28,8 @@ public class PostgresOtpRepository : IOtpRepository
             CreatedAt = now,
             ExpiresAt = now.AddMinutes(15),
             IsUsed = false
-           
         };
-        
+
         await _dbContext.OneTimePasswords.AddAsync(otp);
         await _dbContext.SaveChangesAsync();
 
@@ -36,7 +39,7 @@ public class PostgresOtpRepository : IOtpRepository
     public async Task<bool> IsValidAsync(Guid id, int code)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
-        
+
         var otp = await _dbContext.OneTimePasswords
             .FirstOrDefaultAsync(otp => otp.Id == id && otp.Code == code);
 
@@ -63,7 +66,7 @@ public class PostgresOtpRepository : IOtpRepository
     {
         var otp = await _dbContext.OneTimePasswords
             .FirstOrDefaultAsync(otp => otp.Id == id);
-        
+
         if (otp == null)
         {
             return false;
@@ -72,5 +75,25 @@ public class PostgresOtpRepository : IOtpRepository
         otp.IsUsed = true;
         await _dbContext.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<OneTimePassword?> GetLatestOtpAsync()
+    {
+        try
+        {
+            var latestOtp = await _dbContext.OneTimePasswords
+                .OrderByDescending(o => o.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            _logger.LogInformation("Retrieved {Result} latest OTP",
+                latestOtp != null ? "a" : "no");
+
+            return latestOtp;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving latest OTP");
+            throw;
+        }
     }
 }

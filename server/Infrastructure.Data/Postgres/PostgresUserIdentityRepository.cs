@@ -22,7 +22,8 @@ public class PostgresUserIdentityRepository : IUserIdentityRepository
         var user = new User
         {
             Email = email,
-            CreatedAt = now
+            CreatedAt = now,
+            VerificationContexts = new List<VerificationContext>()
         };
         await _dbContext.Users.AddAsync(user);
         await _dbContext.SaveChangesAsync();

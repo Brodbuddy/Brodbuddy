@@ -21,6 +21,7 @@ public static class Extensions
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IOtpRepository, PostgresOtpRepository>();
         services.AddScoped<IUserIdentityRepository, PostgresUserIdentityRepository>();
+        services.AddScoped<IIdentityVerificationRepository, IdentityVerificationRepository>();
         return services;
     }
 }

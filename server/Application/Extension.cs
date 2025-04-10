@@ -10,6 +10,7 @@ public static class Extensions
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<IIdentityVerificationService, IdentityVerificationService>();
         return services;
     }
 }

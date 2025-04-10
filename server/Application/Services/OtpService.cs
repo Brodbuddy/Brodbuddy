@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using Application.Interfaces;
+using Core.Entities;
 
 namespace Application.Services;
 
@@ -8,8 +9,8 @@ public interface IOtpService
     Task<int> GenerateAsync();
     Task<bool> IsValidAsync(Guid id, int code);
     Task<bool> MarkAsUsedAsync(Guid id);
+    Task<OneTimePassword?> GetLatestAsync();
 }
-
 
 public class OtpService : IOtpService
 {
@@ -37,11 +38,17 @@ public class OtpService : IOtpService
         {
             return false;
         }
+
         return await _otpRepository.IsValidAsync(id, code);
     }
 
     public async Task<bool> MarkAsUsedAsync(Guid id)
     {
         return await _otpRepository.MarkAsUsedAsync(id);
+    }
+
+    public async Task<OneTimePassword?> GetLatestAsync()
+    {
+        return await _otpRepository.GetLatestOtpAsync();
     }
 }

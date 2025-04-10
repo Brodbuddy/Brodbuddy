@@ -9,6 +9,12 @@ CREATE TABLE refresh_tokens (
     replaced_by_token_id UUID REFERENCES refresh_tokens(id)
 );
 
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL
+);
+
 CREATE TABLE one_time_passwords (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     code INTEGER NOT NULL,
@@ -17,8 +23,12 @@ CREATE TABLE one_time_passwords (
     is_used BOOLEAN DEFAULT FALSE NOT NULL
 );
 
-CREATE TABLE users (
+CREATE TABLE verification_contexts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL
+    user_id UUID NOT NULL REFERENCES users(id),
+    otp_id UUID NOT NULL REFERENCES one_time_passwords(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, otp_id)
 );
+
+CREATE INDEX idx_verification_contexts_user_id ON verification_contexts(user_id);
