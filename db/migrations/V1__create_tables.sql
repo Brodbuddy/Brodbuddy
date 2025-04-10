@@ -22,3 +22,12 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL
 );
+
+CREATE TABLE device_registry (
+    id         UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
+    user_id    UUID        NOT NULL REFERENCES users (id),
+    device_id  UUID        NOT NULL REFERENCES devices (id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, device_id),
+    UNIQUE (device_id)
+);
