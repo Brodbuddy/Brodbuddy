@@ -18,4 +18,6 @@ public partial class Device
     public DateTime LastSeenAt { get; set; }
 
     public bool IsActive { get; set; }
+
+    public virtual DeviceRegistry? DeviceRegistry { get; set; }
 }

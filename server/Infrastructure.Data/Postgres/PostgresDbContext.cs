@@ -1,3 +1,5 @@
+﻿using System;
+using System.Collections.Generic;
 using Core.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,10 +12,14 @@ public partial class PostgresDbContext : DbContext
     {
     }
 
-    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
     public virtual DbSet<Device> Devices { get; set; }
-    
+
+    public virtual DbSet<DeviceRegistry> DeviceRegistries { get; set; }
+
     public virtual DbSet<OneTimePassword> OneTimePasswords { get; set; }
+
+    public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -48,7 +54,54 @@ public partial class PostgresDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("os");
         });
-        
+
+        modelBuilder.Entity<DeviceRegistry>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("device_registry_pkey");
+
+            entity.ToTable("device_registry");
+
+            entity.HasIndex(e => e.DeviceId, "device_registry_device_id_key").IsUnique();
+
+            entity.HasIndex(e => new { e.UserId, e.DeviceId }, "device_registry_user_id_device_id_key").IsUnique();
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DeviceId).HasColumnName("device_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Device).WithOne(p => p.DeviceRegistry)
+                .HasForeignKey<DeviceRegistry>(d => d.DeviceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("device_registry_device_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.DeviceRegistries)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("device_registry_user_id_fkey");
+        });
+
+        modelBuilder.Entity<OneTimePassword>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("one_time_passwords_pkey");
+
+            entity.ToTable("one_time_passwords");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.Code).HasColumnName("code");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
+            entity.Property(e => e.IsUsed)
+                .HasDefaultValue(false)
+                .HasColumnName("is_used");
+        });
+
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("refresh_tokens_pkey");
@@ -71,23 +124,6 @@ public partial class PostgresDbContext : DbContext
                 .HasConstraintName("refresh_tokens_replaced_by_token_id_fkey");
         });
 
-        modelBuilder.Entity<OneTimePassword>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("one_time_passwords_pkey");
-
-            entity.ToTable("one_time_passwords");
-
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("uuid_generate_v4()")
-                .HasColumnName("id");
-            entity.Property(e => e.Code).HasColumnName("code");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
-            entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
-            entity.Property(e => e.IsUsed)
-                .HasDefaultValue(false)
-                .HasColumnName("is_used");
-        });
-        
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("users_pkey");
