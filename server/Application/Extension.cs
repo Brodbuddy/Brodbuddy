@@ -7,6 +7,7 @@ public static class Extensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         services.AddSingleton(TimeProvider.System); 
+        services.AddScoped<IDeviceService, DeviceService>();
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();

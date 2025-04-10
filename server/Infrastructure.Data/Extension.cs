@@ -1,4 +1,4 @@
-using Application;
+﻿using Application;
 using Application.Interfaces;
 using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +21,7 @@ public static class Extensions
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IOtpRepository, PostgresOtpRepository>();
         services.AddScoped<IUserIdentityRepository, PostgresUserIdentityRepository>();
+        services.AddScoped<IDeviceRepository, PostgresDeviceRepository>();
         return services;
     }
 }

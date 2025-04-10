@@ -11,6 +11,8 @@ public partial class PostgresDbContext : DbContext
     }
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+    public virtual DbSet<Device> Devices { get; set; }
+    
     public virtual DbSet<OneTimePassword> OneTimePasswords { get; set; }
     public virtual DbSet<User> Users { get; set; }
 
@@ -18,6 +20,35 @@ public partial class PostgresDbContext : DbContext
     {
         modelBuilder.HasPostgresExtension("uuid-ossp");
 
+        modelBuilder.Entity<Device>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("devices_pkey");
+
+            entity.ToTable("devices");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.Browser)
+                .HasMaxLength(255)
+                .HasColumnName("browser");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.LastSeenAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("last_seen_at");
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .HasColumnName("name");
+            entity.Property(e => e.Os)
+                .HasMaxLength(255)
+                .HasColumnName("os");
+        });
+        
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("refresh_tokens_pkey");
