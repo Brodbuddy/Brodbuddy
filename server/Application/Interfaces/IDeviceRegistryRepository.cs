@@ -2,5 +2,5 @@
 
 public interface IDeviceRegistryRepository
 {
-    Task<Guid> SaveAsync(Guid userId, string browser, string os);
+    Task<Guid> SaveAsync(Guid userId, Guid deviceId);
 }
