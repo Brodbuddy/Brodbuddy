@@ -38,6 +38,5 @@ CREATE TABLE device_registry (
     user_id    UUID        NOT NULL REFERENCES users (id),
     device_id  UUID        NOT NULL REFERENCES devices (id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (user_id, device_id),
-    UNIQUE (device_id)
+    UNIQUE (user_id, device_id)
 );
