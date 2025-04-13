@@ -20,4 +20,6 @@ public partial class Device
     public bool IsActive { get; set; }
 
     public virtual DeviceRegistry? DeviceRegistry { get; set; }
+
+    public virtual ICollection<TokenContext> TokenContexts { get; set; } = new List<TokenContext>();
 }

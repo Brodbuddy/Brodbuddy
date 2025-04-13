@@ -12,6 +12,7 @@ public static class Extensions
         services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddScoped<IRefreshTokenService, RefreshTokenService>();
         services.AddScoped<IDeviceRegistryService, DeviceRegistryService>();
+        services.AddScoped<IMultiDeviceIdentityService, MultiDeviceIdentityService>();
         return services;
     }
 }

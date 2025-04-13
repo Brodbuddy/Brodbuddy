@@ -20,4 +20,6 @@ public partial class RefreshToken
     public virtual ICollection<RefreshToken> InverseReplacedByToken { get; set; } = new List<RefreshToken>();
 
     public virtual RefreshToken? ReplacedByToken { get; set; }
+
+    public virtual TokenContext? TokenContext { get; set; }
 }

@@ -23,6 +23,7 @@ public static class Extensions
         services.AddScoped<IUserIdentityRepository, PostgresUserIdentityRepository>();
         services.AddScoped<IDeviceRepository, PostgresDeviceRepository>();
         services.AddScoped<IDeviceRegistryRepository, PostgresDeviceRegistryRepository>();
+        services.AddScoped<IMultiDeviceIdentityRepository, PostgresMultiDeviceIdentityRepository>();
         return services;
     }
 }

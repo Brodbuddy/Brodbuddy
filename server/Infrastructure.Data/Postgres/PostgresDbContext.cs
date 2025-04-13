@@ -20,6 +20,8 @@ public partial class PostgresDbContext : DbContext
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
 
+    public virtual DbSet<TokenContext> TokenContexts { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -122,6 +124,43 @@ public partial class PostgresDbContext : DbContext
             entity.HasOne(d => d.ReplacedByToken).WithMany(p => p.InverseReplacedByToken)
                 .HasForeignKey(d => d.ReplacedByTokenId)
                 .HasConstraintName("refresh_tokens_replaced_by_token_id_fkey");
+        });
+
+        modelBuilder.Entity<TokenContext>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("token_contexts_pkey");
+
+            entity.ToTable("token_contexts");
+
+            entity.HasIndex(e => e.RefreshTokenId, "token_contexts_refresh_token_id_key").IsUnique();
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DeviceId).HasColumnName("device_id");
+            entity.Property(e => e.IsRevoked)
+                .HasDefaultValue(false)
+                .HasColumnName("is_revoked");
+            entity.Property(e => e.RefreshTokenId).HasColumnName("refresh_token_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Device).WithMany(p => p.TokenContexts)
+                .HasForeignKey(d => d.DeviceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("token_contexts_device_id_fkey");
+
+            entity.HasOne(d => d.RefreshToken).WithOne(p => p.TokenContext)
+                .HasForeignKey<TokenContext>(d => d.RefreshTokenId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("token_contexts_refresh_token_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.TokenContexts)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("token_contexts_user_id_fkey");
         });
 
         modelBuilder.Entity<User>(entity =>
