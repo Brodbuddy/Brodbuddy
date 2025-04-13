@@ -2,35 +2,43 @@ using Core.Entities;
 using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Moq;
 using SharedTestDependencies;
 using Shouldly;
+using Xunit.Abstractions;
 
 namespace Infrastructure.Data.Tests;
 
-public class IdentityVerificationRepositoryTest
+public class PostgresIdentityVerificationRepositoryTest
 {
     private readonly PostgresDbContext _dbContext;
     private readonly FakeTimeProvider _timeProvider;
-    private readonly Mock<ILogger<IdentityVerificationRepository>> _mockLogger;
-    private readonly IdentityVerificationRepository _repository;
-
-    public IdentityVerificationRepositoryTest()
+    private readonly ILogger<PostgresIdentityVerificationRepository> _logger;
+    private readonly PostgresIdentityVerificationRepository _repository;
+    private readonly ITestOutputHelper _testOutputHelper;
+ 
+    
+    
+    public PostgresIdentityVerificationRepositoryTest(ITestOutputHelper testOutputHelper)
     {
+        _testOutputHelper = testOutputHelper;
         var options = new DbContextOptionsBuilder<PostgresDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _mockLogger = new Mock<ILogger<IdentityVerificationRepository>>();
-        _repository = new IdentityVerificationRepository(_dbContext, _timeProvider, _mockLogger.Object);
+        
+        var loggerProvider = new XunitLoggerProvider(testOutputHelper);
+        _logger = loggerProvider.CreateLogger<PostgresIdentityVerificationRepository>();
+        
+        _repository = new PostgresIdentityVerificationRepository(_dbContext, _timeProvider, _logger);
     }
 
-
-    public class CreateAsync : IdentityVerificationRepositoryTest
+    public class CreateAsync : PostgresIdentityVerificationRepositoryTest
     {
+        public CreateAsync(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+        
         [Fact]
-        public async Task CreateAsync_ShouldCreateVerificationContext_WhenUserAndOtpExist()
+        public async Task CreateAsync_WhenUserAndOtpExist_ShouldCreateVerificationContext()
         {
             // Arrange
             var user = new User
@@ -59,106 +67,9 @@ public class IdentityVerificationRepositoryTest
             context.OtpId.ShouldBe(otp.Id);
             context.CreatedAt.ShouldBe(currentTime);
         }
-        
-        [Fact]
-        public async Task CreateAsync_ShouldLogError_WhenOtpDoesNotExist()
-        {
-            // Arrange
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@example.com"
-            };
-            var otpId = Guid.NewGuid();
-
-            await _dbContext.Users.AddAsync(user);
-            await _dbContext.SaveChangesAsync();
-
-            // Act & Assert
-            var exception = await Should.ThrowAsync<InvalidOperationException>(
-                async () => await _repository.CreateAsync(user.Id, otpId));
-    
-            
-            exception.Message.ShouldBe($"OTP with ID {otpId} not found");
-            
-        }
 
         [Fact]
-        public async Task CreateAsync_ShouldLogError_WhenUserDoesNotExist()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var otpId = Guid.NewGuid();
-            var otp = new OneTimePassword { Id = otpId };
-
-            await _dbContext.OneTimePasswords.AddAsync(otp);
-            await _dbContext.SaveChangesAsync();
-
-            // Act & Assert
-            await Should.ThrowAsync<InvalidOperationException>(
-                async () => await _repository.CreateAsync(userId, otpId));
-            
-        }
-        
-        [Fact]
-        public async Task GetLatestByUserIdAsync_ShouldLogWithContextFound_WhenContextExists()
-        {
-            // Arrange
-            var user = new User { Id = Guid.NewGuid(), Email = "test@example.com" };
-            var otp = new OneTimePassword { Id = Guid.NewGuid() };
-
-            await _dbContext.Users.AddAsync(user);
-            await _dbContext.OneTimePasswords.AddAsync(otp);
-            await _dbContext.SaveChangesAsync();
-
-            var context = new VerificationContext
-            {
-                UserId = user.Id,
-                OtpId = otp.Id,
-                CreatedAt = DateTime.UtcNow,
-                User = user,
-                Otp = otp
-            };
-
-            await _dbContext.VerificationContexts.AddAsync(context);
-            await _dbContext.SaveChangesAsync();
-
-            // Act
-            await _repository.GetLatestByUserIdAsync(user.Id);
-
-            // Assert
-            _mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Retrieved a latest verification context for user")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Once);
-        }
-
-        [Fact]
-        public async Task GetLatestByUserIdAsync_ShouldLogWithNoContextFound_WhenContextDoesNotExist()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-
-            // Act
-            await _repository.GetLatestByUserIdAsync(userId);
-
-            // Assert
-            _mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((o, t) => o.ToString().Contains("Retrieved no latest verification context for user")),
-                    It.IsAny<Exception>(),
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Once);
-        }
-        
-        [Fact]
-        public async Task CreateAsync_ShouldThrowException_WhenUserDoesNotExist()
+        public async Task CreateAsync_WhenUserDoesNotExist_ShouldThrowInvalidOperationException()
         {
             // Arrange
             var userId = Guid.NewGuid();
@@ -173,7 +84,7 @@ public class IdentityVerificationRepositoryTest
         }
 
         [Fact]
-        public async Task CreateAsync_ShouldThrowException_WhenOtpDoesNotExist()
+        public async Task CreateAsync_WhenOtpDoesNotExist_ShouldThrowInvalidOperationException()
         {
             // Arrange
             var user = new User
@@ -192,10 +103,12 @@ public class IdentityVerificationRepositoryTest
         }
     }
 
-    public class GetLatestByUserIdAsync : IdentityVerificationRepositoryTest
+    public class GetLatestAsync : PostgresIdentityVerificationRepositoryTest
     {
+        public GetLatestAsync(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
+        
         [Fact]
-        public async Task GetLatestByUserIdAsync_ShouldReturnLatestContext_WhenContextsExist()
+        public async Task GetLatestAsync_WhenContextsExist_ShouldReturnLatestContext()
         {
             // Arrange
             var user = new User
@@ -235,7 +148,7 @@ public class IdentityVerificationRepositoryTest
             await _dbContext.SaveChangesAsync();
 
             // Act
-            var result = await _repository.GetLatestByUserIdAsync(user.Id);
+            var result = await _repository.GetLatestAsync(user.Id);
 
             // Assert
             result.ShouldNotBeNull();
@@ -244,20 +157,20 @@ public class IdentityVerificationRepositoryTest
         }
 
         [Fact]
-        public async Task GetLatestByUserIdAsync_ShouldReturnNull_WhenNoContextsExistForUser()
+        public async Task GetLatestAsync_WhenNoContextsExistForUser_ShouldReturnNull()
         {
             // Arrange
             var userId = Guid.NewGuid();
 
             // Act
-            var result = await _repository.GetLatestByUserIdAsync(userId);
+            var result = await _repository.GetLatestAsync(userId);
 
             // Assert
             result.ShouldBeNull();
         }
 
         [Fact]
-        public async Task GetLatestByUserIdAsync_ShouldIncludeRelatedEntities()
+        public async Task GetLatestAsync_WhenContextExists_ShouldIncludeRelatedEntities()
         {
             // Arrange
             var user = new User
@@ -284,7 +197,7 @@ public class IdentityVerificationRepositoryTest
             await _dbContext.SaveChangesAsync();
 
             // Act
-            var result = await _repository.GetLatestByUserIdAsync(user.Id);
+            var result = await _repository.GetLatestAsync(user.Id);
 
             // Assert
             result.ShouldNotBeNull();

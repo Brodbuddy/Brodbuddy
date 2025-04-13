@@ -18,10 +18,10 @@ public static class Extensions
             options.EnableSensitiveDataLogging();
         });
 
-        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        services.AddScoped<IRefreshTokenRepository, PostgresRefreshTokenRepository>();
         services.AddScoped<IOtpRepository, PostgresOtpRepository>();
         services.AddScoped<IUserIdentityRepository, PostgresUserIdentityRepository>();
-        services.AddScoped<IIdentityVerificationRepository, IdentityVerificationRepository>();
+        services.AddScoped<IIdentityVerificationRepository, PostgresIdentityVerificationRepository>();
         return services;
     }
 }

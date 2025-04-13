@@ -77,23 +77,5 @@ public class PostgresOtpRepository : IOtpRepository
         return true;
     }
 
-    public async Task<OneTimePassword?> GetLatestOtpAsync()
-    {
-        try
-        {
-            var latestOtp = await _dbContext.OneTimePasswords
-                .OrderByDescending(o => o.CreatedAt)
-                .FirstOrDefaultAsync();
-
-            _logger.LogInformation("Retrieved {Result} latest OTP",
-                latestOtp != null ? "a" : "no");
-
-            return latestOtp;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving latest OTP");
-            throw;
-        }
-    }
+  
 }

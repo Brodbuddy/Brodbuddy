@@ -1,15 +1,14 @@
 ﻿using System.Security.Cryptography;
 using Application.Interfaces;
-using Core.Entities;
 
 namespace Application.Services;
 
 public interface IOtpService
 {
-    Task<int> GenerateAsync();
+    Task<(Guid id, int code)> GenerateAsync();
     Task<bool> IsValidAsync(Guid id, int code);
     Task<bool> MarkAsUsedAsync(Guid id);
-    Task<OneTimePassword?> GetLatestAsync();
+
 }
 
 public class OtpService : IOtpService
@@ -22,14 +21,16 @@ public class OtpService : IOtpService
         _otpRepository = otpRepository;
     }
 
-    public async Task<int> GenerateAsync()
+   
+
+    public async Task<(Guid id, int code)> GenerateAsync()
     {
         //Benytter RandomNumberGenerator da det er kryptografisk sikker
         int code = RandomNumberGenerator.GetInt32(100000, 999999);
 
-        await _otpRepository.SaveAsync(code);
+        Guid id = await _otpRepository.SaveAsync(code);
 
-        return code;
+        return (id, code);
     }
 
     public async Task<bool> IsValidAsync(Guid id, int code)
@@ -47,8 +48,5 @@ public class OtpService : IOtpService
         return await _otpRepository.MarkAsUsedAsync(id);
     }
 
-    public async Task<OneTimePassword?> GetLatestAsync()
-    {
-        return await _otpRepository.GetLatestOtpAsync();
-    }
+ 
 }

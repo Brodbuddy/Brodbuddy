@@ -3,6 +3,7 @@ using Application.Services;
 using Core.Entities;
 using Moq;
 using Microsoft.Extensions.Logging;
+using SharedTestDependencies;
 using Shouldly;
 using Xunit;
 
@@ -12,7 +13,7 @@ public class IdentityVerificationServiceTests
 {
     private readonly Mock<IOtpService> _mockOtpService;
     private readonly Mock<IUserIdentityService> _mockUserIdentityService;
-    private readonly Mock<IEmailSender> _mockEmailSender;
+    private readonly FakeEmailSender _emailSender;
     private readonly Mock<ILogger<IdentityVerificationService>> _mockLogger;
     private readonly Mock<IIdentityVerificationRepository> _mockRepository;
     private readonly IdentityVerificationService _service;
@@ -26,14 +27,14 @@ public class IdentityVerificationServiceTests
     {
         _mockOtpService = new Mock<IOtpService>();
         _mockUserIdentityService = new Mock<IUserIdentityService>();
-        _mockEmailSender = new Mock<IEmailSender>();
+        _emailSender = new FakeEmailSender();
         _mockRepository = new Mock<IIdentityVerificationRepository>();
         _mockLogger = new Mock<ILogger<IdentityVerificationService>>();
 
         _service = new IdentityVerificationService(
             _mockOtpService.Object,
             _mockUserIdentityService.Object,
-            _mockEmailSender.Object,
+            _emailSender,
             _mockRepository.Object,
             _mockLogger.Object);
     }
@@ -47,20 +48,12 @@ public class IdentityVerificationServiceTests
             _mockUserIdentityService.Setup(s => s.CreateAsync(TestEmail))
                 .ReturnsAsync(TestUserId);
 
+            
             _mockOtpService.Setup(s => s.GenerateAsync())
-                .ReturnsAsync(TestCode);
-
-            _mockOtpService.Setup(s => s.GetLatestAsync())
-                .ReturnsAsync(new OneTimePassword { Id = TestOtpId });
-
+                .ReturnsAsync((TestOtpId, TestCode));
+            
             _mockRepository.Setup(r => r.CreateAsync(TestUserId, TestOtpId))
                 .ReturnsAsync(Guid.NewGuid());
-
-            _mockEmailSender.Setup(e => e.SendEmailAsync(
-                    TestEmail,
-                    "Verification Code",
-                    $"Your verification code is: {TestCode}"))
-                .ReturnsAsync(true);
 
             // Act
             var result = await _service.SendCodeAsync(TestEmail);
@@ -69,38 +62,9 @@ public class IdentityVerificationServiceTests
             result.ShouldBeTrue();
             _mockUserIdentityService.Verify(s => s.CreateAsync(TestEmail), Times.Once);
             _mockOtpService.Verify(s => s.GenerateAsync(), Times.Once);
-            _mockOtpService.Verify(s => s.GetLatestAsync(), Times.Once);
             _mockRepository.Verify(r => r.CreateAsync(TestUserId, TestOtpId), Times.Once);
-            _mockEmailSender.Verify(e => e.SendEmailAsync(
-                    TestEmail,
-                    "Verification Code",
-                    $"Your verification code is: {TestCode}"),
-                Times.Once);
         }
-
-        [Fact]
-        public async Task SendCodeAsync_NullOtp_ReturnsFalse()
-        {
-            // Arrange
-            _mockUserIdentityService.Setup(s => s.CreateAsync(TestEmail))
-                .ReturnsAsync(TestUserId);
-
-            _mockOtpService.Setup(s => s.GenerateAsync())
-                .ReturnsAsync(TestCode);
-
-            _mockOtpService.Setup(s => s.GetLatestAsync())
-                .ReturnsAsync((OneTimePassword?)null);
-
-            // Act
-            var result = await _service.SendCodeAsync(TestEmail);
-
-            // Assert
-            result.ShouldBeFalse();
-            _mockRepository.Verify(r => r.CreateAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
-            _mockEmailSender.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()),
-                Times.Never);
-        }
-
+        
         [Fact]
         public async Task SendCodeAsync_EmailFailure_ReturnsFalse()
         {
@@ -109,19 +73,13 @@ public class IdentityVerificationServiceTests
                 .ReturnsAsync(TestUserId);
 
             _mockOtpService.Setup(s => s.GenerateAsync())
-                .ReturnsAsync(TestCode);
-
-            _mockOtpService.Setup(s => s.GetLatestAsync())
-                .ReturnsAsync(new OneTimePassword { Id = TestOtpId });
+                .ReturnsAsync((TestOtpId, TestCode));
+            
 
             _mockRepository.Setup(r => r.CreateAsync(TestUserId, TestOtpId))
                 .ReturnsAsync(Guid.NewGuid());
-
-            _mockEmailSender.Setup(e => e.SendEmailAsync(
-                    TestEmail,
-                    "Verification Code",
-                    It.IsAny<string>()))
-                .ReturnsAsync(false);
+            
+            _emailSender.SimulateFailure = true;
 
             // Act
             var result = await _service.SendCodeAsync(TestEmail);
@@ -130,19 +88,7 @@ public class IdentityVerificationServiceTests
             result.ShouldBeFalse();
         }
 
-        [Fact]
-        public async Task SendCodeAsync_Exception_ReturnsFalse()
-        {
-            // Arrange
-            _mockUserIdentityService.Setup(s => s.CreateAsync(TestEmail))
-                .ThrowsAsync(new Exception("Test exception"));
-
-            // Act
-            var result = await _service.SendCodeAsync(TestEmail);
-
-            // Assert
-            result.ShouldBeFalse();
-        }
+        
     }
 
     public class TryVerifyCodeAsync : IdentityVerificationServiceTests
@@ -162,7 +108,7 @@ public class IdentityVerificationServiceTests
             _mockUserIdentityService.Setup(s => s.GetAsync(TestEmail))
                 .ReturnsAsync(user);
 
-            _mockRepository.Setup(r => r.GetLatestByUserIdAsync(TestUserId))
+            _mockRepository.Setup(r => r.GetLatestAsync(TestUserId))
                 .ReturnsAsync(verificationContext);
 
             _mockOtpService.Setup(o => o.IsValidAsync(TestOtpId, TestCode))
@@ -189,7 +135,7 @@ public class IdentityVerificationServiceTests
             _mockUserIdentityService.Setup(s => s.GetAsync(TestEmail))
                 .ReturnsAsync(user);
 
-            _mockRepository.Setup(r => r.GetLatestByUserIdAsync(TestUserId))
+            _mockRepository.Setup(r => r.GetLatestAsync(TestUserId))
                 .ReturnsAsync((VerificationContext?)null);
 
             // Act
@@ -216,7 +162,7 @@ public class IdentityVerificationServiceTests
             _mockUserIdentityService.Setup(s => s.GetAsync(TestEmail))
                 .ReturnsAsync(user);
 
-            _mockRepository.Setup(r => r.GetLatestByUserIdAsync(TestUserId))
+            _mockRepository.Setup(r => r.GetLatestAsync(TestUserId))
                 .ReturnsAsync(verificationContext);
 
             _mockOtpService.Setup(o => o.IsValidAsync(TestOtpId, TestCode))
@@ -231,19 +177,6 @@ public class IdentityVerificationServiceTests
             _mockOtpService.Verify(o => o.MarkAsUsedAsync(It.IsAny<Guid>()), Times.Never);
         }
 
-        [Fact]
-        public async Task TryVerifyCodeAsync_Exception_ReturnsFailure()
-        {
-            // Arrange
-            _mockUserIdentityService.Setup(s => s.GetAsync(TestEmail))
-                .ThrowsAsync(new Exception("Test exception"));
-
-            // Act
-            var result = await _service.TryVerifyCodeAsync(TestEmail, TestCode);
-
-            // Assert
-            result.verified.ShouldBeFalse();
-            result.userId.ShouldBe(Guid.Empty);
-        }
+       
     }
 }

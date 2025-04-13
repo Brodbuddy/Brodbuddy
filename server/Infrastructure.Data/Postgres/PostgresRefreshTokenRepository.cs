@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
 
-public class RefreshTokenRepository(PostgresDbContext dbcontext, TimeProvider timeProvider) : IRefreshTokenRepository
+public class PostgresRefreshTokenRepository(PostgresDbContext dbcontext, TimeProvider timeProvider) : IRefreshTokenRepository
 {
     public async Task<Guid> CreateAsync(string token, DateTime expiresAt)
     {
