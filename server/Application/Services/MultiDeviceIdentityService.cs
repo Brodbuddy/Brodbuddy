@@ -5,6 +5,7 @@ namespace Application.Services;
 public interface IMultiDeviceIdentityService
 {
     Task<(string accessToken, string refreshToken)> EstablishIdentityAsync(Guid userId, string browser, string os);
+    Task<(string accessToken, string refreshToken)> RefreshIdentityAsync(string refreshToken);
 }
 
 
@@ -49,4 +50,38 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
 
         return (accessToken, refreshToken);
     }
+
+    public async Task<(string accessToken, string refreshToken)> RefreshIdentityAsync(string refreshToken)
+    {
+        var validateResult = await _refreshTokenService.TryValidateAsync(refreshToken);
+
+        var tokenContext = await _repository.GetTokenContextByRefreshTokenIdAsync(validateResult.tokenId);
+        if (tokenContext == null)
+        {
+            throw new InvalidOperationException("Token context not found or revoked");
+        }
+
+        var newRefreshToken = await _refreshTokenService.RotateAsync(refreshToken);
+        
+        if (string.IsNullOrEmpty(newRefreshToken))
+        {
+            throw new InvalidOperationException("Failed to rotate refresh token");
+        }
+
+        var newValidateResult = await _refreshTokenService.TryValidateAsync(newRefreshToken);
+
+        await _repository.RevokeTokenContextAsync(validateResult.tokenId);
+
+        await _repository.SaveIdentityAsync(
+            tokenContext.UserId,
+            tokenContext.DeviceId,
+            newValidateResult.tokenId);
+
+        var accessToken = _jwtService.Generate(
+            tokenContext.UserId.ToString(),
+            tokenContext.User.Email,
+            "user");
+        
+        return (accessToken, newRefreshToken);
+    } 
 }

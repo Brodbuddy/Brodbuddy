@@ -76,7 +76,8 @@ public class RefreshTokenRepository(PostgresDbContext dbcontext, TimeProvider ti
         };
     
         await dbcontext.RefreshTokens.AddAsync(refreshToken);
-        
+        await dbcontext.SaveChangesAsync();
+
         oldToken.RevokedAt = now;
         oldToken.ReplacedByTokenId = refreshToken.Id;
     

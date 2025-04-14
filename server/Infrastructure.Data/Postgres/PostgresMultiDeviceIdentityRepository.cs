@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Core.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
 
@@ -30,4 +31,31 @@ public class PostgresMultiDeviceIdentityRepository : IMultiDeviceIdentityReposit
         await _dbContext.TokenContexts.AddAsync(tokenContext);
         await _dbContext.SaveChangesAsync();
     }
+
+    public async Task<bool> RevokeTokenContextAsync(Guid refreshTokenId)
+    {
+        var tokenContext = await _dbContext.TokenContexts
+            .FirstOrDefaultAsync(tc => tc.RefreshTokenId == refreshTokenId);
+
+        if (tokenContext == null)
+        {
+            return false;
+        }
+
+        tokenContext.IsRevoked = true;
+        await _dbContext.SaveChangesAsync();
+        return true;
+    }
+
+
+    public async Task<TokenContext?> GetTokenContextByRefreshTokenIdAsync(Guid refreshTokenId)
+    {
+        return await _dbContext.TokenContexts
+            .Include(tc => tc.User)
+            .Include(tc => tc.Device)
+            .Include(tc => tc.RefreshToken)
+            .FirstOrDefaultAsync(tc => tc.RefreshTokenId == refreshTokenId && !tc.IsRevoked);
+    }
+
+  
 }
