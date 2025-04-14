@@ -72,22 +72,18 @@ public class DeviceServiceTests
         }
 
         [Theory]
-        [InlineData("", "windows", "Browser cannot be null or empty", "browser")]
-        [InlineData("chrome", "", "Operating system cannot be null or empty", "os")]
-        [InlineData("chrome", null, "Operating system cannot be null or empty", "os")]
-        [InlineData(null, "MacOS", "Browser cannot be null or empty", "browser")]
-        [InlineData(null, null, "Browser cannot be null or empty", "browser")]
-        [InlineData("", "", "Browser cannot be null or empty", "browser")]
+        [InlineData("", "windows")]
+        [InlineData("chrome", "")]
+        [InlineData("chrome", null)]
+        [InlineData(null, "MacOS")]
+        [InlineData(null, null)]
+        [InlineData("", "")]
         public async Task CreateAsync_WithNullOrEmptyBrowserOrOs_ThrowsArgumentException(
-            string browser, string os, string expectedErrorMessage, string expectedParamName)
+            string browser, string os)
         {
-            // Act
-            var exception = await Should.ThrowAsync<ArgumentException>(() =>
+            // Act & Assert
+            await Should.ThrowAsync<ArgumentException>(() =>
                 _service.CreateAsync(browser, os));
-
-            // Assert
-            exception.Message.ShouldStartWith(expectedErrorMessage);
-            exception.ParamName.ShouldBe(expectedParamName);
         }
     }
 

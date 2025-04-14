@@ -26,14 +26,9 @@ public class DeviceService : IDeviceService
 
     public async Task<Guid> CreateAsync(string browser, string os)
     {
-        if (string.IsNullOrWhiteSpace(browser))
-        {
-            throw new ArgumentException("Browser cannot be null or empty", nameof(browser));
-        }
-        if (string.IsNullOrWhiteSpace(os))
-        {
-            throw new ArgumentException("Operating system cannot be null or empty", nameof(os));
-        }
+      
+        ArgumentException.ThrowIfNullOrWhiteSpace(browser, nameof(browser));
+        ArgumentException.ThrowIfNullOrWhiteSpace(os, nameof(os));
 
         
         browser = browser.Trim().ToLowerInvariant();
