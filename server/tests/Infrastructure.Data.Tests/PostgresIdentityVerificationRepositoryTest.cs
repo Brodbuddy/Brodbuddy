@@ -12,7 +12,6 @@ public class PostgresIdentityVerificationRepositoryTest
 {
     private readonly PostgresDbContext _dbContext;
     private readonly FakeTimeProvider _timeProvider;
-    private readonly ILogger<PostgresIdentityVerificationRepository> _logger;
     private readonly PostgresIdentityVerificationRepository _repository;
     private readonly ITestOutputHelper _testOutputHelper;
  
@@ -27,10 +26,7 @@ public class PostgresIdentityVerificationRepositoryTest
         _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         
-        var loggerProvider = new XunitLoggerProvider(testOutputHelper);
-        _logger = loggerProvider.CreateLogger<PostgresIdentityVerificationRepository>();
-        
-        _repository = new PostgresIdentityVerificationRepository(_dbContext, _timeProvider, _logger);
+        _repository = new PostgresIdentityVerificationRepository(_dbContext, _timeProvider);
     }
 
     public class CreateAsync : PostgresIdentityVerificationRepositoryTest
