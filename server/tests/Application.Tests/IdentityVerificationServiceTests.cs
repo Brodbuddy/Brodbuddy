@@ -2,7 +2,6 @@ using Application.Interfaces;
 using Application.Services;
 using Core.Entities;
 using Moq;
-using Microsoft.Extensions.Logging;
 using SharedTestDependencies;
 using Shouldly;
 using Xunit;
@@ -14,7 +13,7 @@ public class IdentityVerificationServiceTests
     private readonly Mock<IOtpService> _mockOtpService;
     private readonly Mock<IUserIdentityService> _mockUserIdentityService;
     private readonly FakeEmailSender _emailSender;
-    private readonly Mock<ILogger<IdentityVerificationService>> _mockLogger;
+
     private readonly Mock<IIdentityVerificationRepository> _mockRepository;
     private readonly IdentityVerificationService _service;
 
@@ -29,14 +28,13 @@ public class IdentityVerificationServiceTests
         _mockUserIdentityService = new Mock<IUserIdentityService>();
         _emailSender = new FakeEmailSender();
         _mockRepository = new Mock<IIdentityVerificationRepository>();
-        _mockLogger = new Mock<ILogger<IdentityVerificationService>>();
+        
 
         _service = new IdentityVerificationService(
             _mockOtpService.Object,
             _mockUserIdentityService.Object,
             _emailSender,
-            _mockRepository.Object,
-            _mockLogger.Object);
+            _mockRepository.Object);
     }
 
     public class SendCodeAsync : IdentityVerificationServiceTests
