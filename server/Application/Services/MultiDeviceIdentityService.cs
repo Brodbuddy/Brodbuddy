@@ -39,11 +39,7 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
         var refreshToken = await _refreshTokenService.GenerateAsync();
 
         var validationResult = await _refreshTokenService.TryValidateAsync(refreshToken);
-        if (!validationResult.isValid)
-        {
-            throw new InvalidOperationException("Failed to validate the newly generated refresh token");
-        }
-        
+       
         await _repository.SaveIdentityAsync(userId, deviceId, validationResult.tokenId);
 
         var accessToken = _jwtService.Generate(

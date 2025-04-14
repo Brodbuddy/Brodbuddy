@@ -51,9 +51,9 @@ public class DeviceRepositoryTests
             var savedDevice = await _dbContext.Devices.FindAsync(id);
 
             savedDevice.ShouldNotBeNull();
-            savedDevice.Name.ShouldBe("chrome_windows", savedDevice.Name);
-            savedDevice.Browser.ShouldBe("chrome", savedDevice.Browser);
-            savedDevice.Os.ShouldBe("windows", savedDevice.Os);
+            savedDevice.Name.ShouldBe("chrome_windows");
+            savedDevice.Browser.ShouldBe("chrome");
+            savedDevice.Os.ShouldBe("windows");
             savedDevice.CreatedAt.ShouldBe(expectedTime);
             savedDevice.LastSeenAt.ShouldBe(expectedTime);
             savedDevice.IsActive.ShouldBeTrue();

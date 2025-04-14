@@ -55,7 +55,7 @@ public class DeviceService : IDeviceService
     {
         if (id == Guid.Empty)
         {
-            throw new ArgumentException("User ID cannot be empty", nameof(id));
+            throw new ArgumentException("Device ID cannot be empty", nameof(id));
         }
 
         return await _repository.GetAsync(id);
@@ -65,7 +65,7 @@ public class DeviceService : IDeviceService
     {
         if (ids == null)
         {
-            throw new ArgumentException("User ID cannot be empty", nameof(ids));
+            throw new ArgumentException("Device IDs cannot be empty", nameof(ids));
         }
 
         var validIds = ids.Where(id => id != Guid.Empty).ToList();
@@ -91,7 +91,7 @@ public class DeviceService : IDeviceService
     { 
         if (id == Guid.Empty)
         {
-            throw new ArgumentException("User ID cannot be empty", nameof(id));
+            throw new ArgumentException("Device ID cannot be empty", nameof(id));
         }
         return await _repository.ExistsAsync(id);
     }

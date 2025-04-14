@@ -122,7 +122,7 @@ public class DeviceServiceTests
                 _service.GetByIdAsync(deviceId));
 
             // Assert
-            exception.Message.ShouldStartWith("User ID cannot be empty");
+            exception.Message.ShouldStartWith("Device ID cannot be empty");
             exception.ParamName.ShouldBe("id");
         }
 
@@ -178,7 +178,7 @@ public class DeviceServiceTests
                 _service.GetByIdsAsync(nullIds));
 
             // Assert
-            exception.Message.ShouldStartWith("User ID cannot be empty");
+            exception.Message.ShouldStartWith("Device IDs cannot be empty");
             exception.ParamName.ShouldBe("ids");
         }
     }
@@ -226,7 +226,7 @@ public class DeviceServiceTests
                 _service.ExistsAsync(deviceId));
 
             // Assert
-            exception.Message.ShouldStartWith("User ID cannot be empty");
+            exception.Message.ShouldStartWith("Device ID cannot be empty");
             exception.ParamName.ShouldBe("id");
             _repositoryMock.Verify(r => r.ExistsAsync(It.IsAny<Guid>()), Times.Never);
         }
