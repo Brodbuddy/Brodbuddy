@@ -21,12 +21,7 @@ public class PostgresIdentityVerificationRepository : IIdentityVerificationRepos
 
     public async Task<Guid> CreateAsync(Guid userId, Guid otpId)
     {
-        await _dbContext.Users.FindAsync(userId);
-
-
-        await _dbContext.OneTimePasswords.FindAsync(otpId);
-
-
+        
         var verificationContext = new VerificationContext
         {
             UserId = userId,

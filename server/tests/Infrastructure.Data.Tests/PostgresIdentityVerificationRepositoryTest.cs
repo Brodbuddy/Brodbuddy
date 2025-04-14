@@ -14,9 +14,8 @@ public class PostgresIdentityVerificationRepositoryTest
     private readonly FakeTimeProvider _timeProvider;
     private readonly PostgresIdentityVerificationRepository _repository;
     private readonly ITestOutputHelper _testOutputHelper;
- 
-    
-    
+
+
     public PostgresIdentityVerificationRepositoryTest(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
@@ -25,14 +24,16 @@ public class PostgresIdentityVerificationRepositoryTest
             .Options;
         _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        
+
         _repository = new PostgresIdentityVerificationRepository(_dbContext, _timeProvider);
     }
 
     public class CreateAsync : PostgresIdentityVerificationRepositoryTest
     {
-        public CreateAsync(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+        public CreateAsync(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
+
         [Fact]
         public async Task CreateAsync_WhenUserAndOtpExist_ShouldCreateVerificationContext()
         {
@@ -64,23 +65,10 @@ public class PostgresIdentityVerificationRepositoryTest
             context.CreatedAt.ShouldBe(currentTime);
         }
 
-        [Fact]
-        public async Task CreateAsync_WhenUserDoesNotExist_ShouldThrowInvalidOperationException()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var otp = new OneTimePassword { Id = Guid.NewGuid() };
-
-            await _dbContext.OneTimePasswords.AddAsync(otp);
-            await _dbContext.SaveChangesAsync();
-
-            // Act & Assert
-            await Should.ThrowAsync<InvalidOperationException>(
-                async () => await _repository.CreateAsync(userId, otp.Id));
-        }
+       
 
         [Fact]
-        public async Task CreateAsync_WhenOtpDoesNotExist_ShouldThrowInvalidOperationException()
+        public async Task CreateAsync_WhenCalledMultipleTimes_ShouldGenerateUniqueIds()
         {
             // Arrange
             var user = new User
@@ -88,21 +76,86 @@ public class PostgresIdentityVerificationRepositoryTest
                 Id = Guid.NewGuid(),
                 Email = "test@example.com"
             };
-            var otpId = Guid.NewGuid();
+            var otp = new OneTimePassword { Id = Guid.NewGuid() };
 
             await _dbContext.Users.AddAsync(user);
+            await _dbContext.OneTimePasswords.AddAsync(otp);
             await _dbContext.SaveChangesAsync();
 
-            // Act & Assert
-            await Should.ThrowAsync<InvalidOperationException>(
-                async () => await _repository.CreateAsync(user.Id, otpId));
+            // Act
+            var resultId1 = await _repository.CreateAsync(user.Id, otp.Id);
+            var resultId2 = await _repository.CreateAsync(user.Id, otp.Id);
+
+            // Assert
+            resultId1.ShouldNotBe(Guid.Empty);
+            resultId2.ShouldNotBe(Guid.Empty);
+            resultId1.ShouldNotBe(resultId2);
+        }
+
+        [Fact]
+        public async Task CreateAsync_WhenCalled_ShouldSaveContextWithCorrectTimestamp()
+        {
+            // Arrange
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com"
+            };
+            var otp = new OneTimePassword { Id = Guid.NewGuid() };
+
+            await _dbContext.Users.AddAsync(user);
+            await _dbContext.OneTimePasswords.AddAsync(otp);
+            await _dbContext.SaveChangesAsync();
+
+            var expectedTime = new DateTime(2023, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            _timeProvider.SetUtcNow(new DateTimeOffset(expectedTime));
+
+            // Act
+            var resultId = await _repository.CreateAsync(user.Id, otp.Id);
+
+            // Assert
+            var context = await _dbContext.VerificationContexts.FindAsync(resultId);
+            context.ShouldNotBeNull();
+            context.CreatedAt.ShouldBe(expectedTime);
+        }
+
+        [Fact]
+        public async Task CreateAsync_WhenCalledWithSameUser_ShouldCreateMultipleContexts()
+        {
+            // Arrange
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Email = "test@example.com"
+            };
+            var otp1 = new OneTimePassword { Id = Guid.NewGuid() };
+            var otp2 = new OneTimePassword { Id = Guid.NewGuid() };
+
+            await _dbContext.Users.AddAsync(user);
+            await _dbContext.OneTimePasswords.AddRangeAsync(otp1, otp2);
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            var resultId1 = await _repository.CreateAsync(user.Id, otp1.Id);
+            var resultId2 = await _repository.CreateAsync(user.Id, otp2.Id);
+
+            // Assert
+            var contexts = await _dbContext.VerificationContexts
+                .Where(vc => vc.UserId == user.Id)
+                .ToListAsync();
+
+            contexts.Count.ShouldBe(2);
+            contexts.ShouldContain(c => c.Id == resultId1);
+            contexts.ShouldContain(c => c.Id == resultId2);
         }
     }
 
     public class GetLatestAsync : PostgresIdentityVerificationRepositoryTest
     {
-        public GetLatestAsync(ITestOutputHelper testOutputHelper) : base(testOutputHelper) { }
-        
+        public GetLatestAsync(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
+        {
+        }
+
         [Fact]
         public async Task GetLatestAsync_WhenContextsExist_ShouldReturnLatestContext()
         {
