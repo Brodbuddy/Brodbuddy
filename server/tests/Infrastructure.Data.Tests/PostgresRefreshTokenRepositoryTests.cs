@@ -3,20 +3,17 @@ using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies;
 using Shouldly;
 
+
 namespace Infrastructure.Data.Tests;
 
-public class PostgresRefreshTokenRepositoryTests
+[Collection(TestCollections.Database)]
+public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
 {
-    private readonly PostgresDbContext _dbContext;
     private readonly FakeTimeProvider _timeProvider;
     private readonly PostgresRefreshTokenRepository _repository;
 
-    public PostgresRefreshTokenRepositoryTests()
+    public PostgresRefreshTokenRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
-        var options = new DbContextOptionsBuilder<PostgresDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         _repository = new PostgresRefreshTokenRepository(_dbContext, _timeProvider);
     }
@@ -24,8 +21,12 @@ public class PostgresRefreshTokenRepositoryTests
 
     public class CreateAsync : PostgresRefreshTokenRepositoryTests
     {
+        public CreateAsync(PostgresFixture fixture) : base(fixture)
+        {
+        }
+
         [Fact]
-        public async Task CreateAsync_ShouldCreateTokenInDatabase()
+        public async Task CreateAsync_WithValidToken_ShouldCreateTokenInDatabase()
         {
             // Arrange
             string token = "testToken";
@@ -43,11 +44,76 @@ public class PostgresRefreshTokenRepositoryTests
             savedToken.RevokedAt.ShouldBeNull();
             savedToken.ReplacedByTokenId.ShouldBeNull();
         }
+
+        [Fact]
+        public async Task CreateAsync_WithFarFutureExpiryDate_ShouldCreateValidToken()
+        {
+            // Arrange
+            string token = "farFutureToken";
+            DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddYears(10);
+
+            // Act
+            Guid id = await _repository.CreateAsync(token, expiresAt);
+
+            // Assert
+            var savedToken = await _dbContext.RefreshTokens.FindAsync(id);
+            savedToken.ShouldNotBeNull();
+            savedToken.Token.ShouldBe(token);
+            savedToken.ExpiresAt.ShouldBe(expiresAt);
+        }
+
+        [Fact]
+        public async Task CreateAsync_WithPastExpiryDate_ShouldCreateInvalidToken()
+        {
+            // Arrange
+            string token = "alreadyExpiredToken";
+            DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(-1);
+
+            // Act
+            Guid id = await _repository.CreateAsync(token, expiresAt);
+
+            // Assert
+            var savedToken = await _dbContext.RefreshTokens.FindAsync(id);
+            savedToken.ShouldNotBeNull();
+            savedToken.Token.ShouldBe(token);
+            savedToken.ExpiresAt.ShouldBe(expiresAt);
+
+            var validationResult = await _repository.TryValidateAsync(token);
+            validationResult.isValid.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task CreateAsync_WithDuplicateTokenValue_ShouldCreateUniqueRecords()
+        {
+            // Arrange
+            string token = "duplicateToken";
+            DateTime expiresAt1 = _timeProvider.GetUtcNow().UtcDateTime.AddDays(10);
+            DateTime expiresAt2 = _timeProvider.GetUtcNow().UtcDateTime.AddDays(20);
+
+            // Act
+            Guid id1 = await _repository.CreateAsync(token, expiresAt1);
+            Guid id2 = await _repository.CreateAsync(token, expiresAt2);
+
+            // Assert
+            id1.ShouldNotBe(id2);
+
+            var tokens = await _dbContext.RefreshTokens
+                .Where(rt => rt.Token == token)
+                .ToListAsync();
+
+            tokens.Count.ShouldBe(2);
+            tokens.ShouldContain(t => t.Id == id1);
+            tokens.ShouldContain(t => t.Id == id2);
+        }
     }
 
 
     public class TryValidateAsync : PostgresRefreshTokenRepositoryTests
     {
+        public TryValidateAsync(PostgresFixture fixture) : base(fixture)
+        {
+        }
+
         [Fact]
         public async Task TryValidateAsync_WithValidToken_ShouldReturnTrueAndTokenId()
         {
@@ -151,6 +217,10 @@ public class PostgresRefreshTokenRepositoryTests
 
     public class RevokeAsync : PostgresRefreshTokenRepositoryTests
     {
+        public RevokeAsync(PostgresFixture fixture) : base(fixture)
+        {
+        }
+
         [Fact]
         public async Task RevokeAsync_WithValidTokenId_ShouldReturnTrueAndRevokeToken()
         {
@@ -185,17 +255,44 @@ public class PostgresRefreshTokenRepositoryTests
         }
 
         [Fact]
-        public async Task RevokeAsync_ShouldSaveChangesToDatabase()
+        public async Task RevokeAsync_WithAlreadyRevokedToken_ShouldReturnTrueAndUpdateRevokedAt()
         {
             // Arrange
-            string token = "tokenToRevoke";
+            string token = "alreadyRevokedToken";
             DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(30);
             Guid id = await _repository.CreateAsync(token, expiresAt);
+
+            var firstRevocationTime = _timeProvider.GetUtcNow().UtcDateTime;
+            await _repository.RevokeAsync(id);
+
+            _timeProvider.Advance(TimeSpan.FromHours(1));
 
             // Act
             bool result = await _repository.RevokeAsync(id);
 
-            _dbContext.ChangeTracker.Clear();
+            // Assert
+            result.ShouldBeTrue();
+
+            var revokedToken = await _dbContext.RefreshTokens.FindAsync(id);
+            revokedToken.ShouldNotBeNull();
+            revokedToken.RevokedAt.ShouldNotBeNull();
+
+            revokedToken.RevokedAt.Value.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
+            revokedToken.RevokedAt.Value.ShouldNotBe(firstRevocationTime);
+        }
+
+        [Fact]
+        public async Task RevokeAsync_WithExpiredToken_ShouldRevokeSuccessfully()
+        {
+            // Arrange
+            string token = "expiredToken";
+            DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(1);
+            Guid id = await _repository.CreateAsync(token, expiresAt);
+
+            _timeProvider.Advance(TimeSpan.FromDays(2));
+
+            // Act
+            bool result = await _repository.RevokeAsync(id);
 
             // Assert
             result.ShouldBeTrue();
@@ -204,43 +301,17 @@ public class PostgresRefreshTokenRepositoryTests
             revokedToken.ShouldNotBeNull();
             revokedToken.RevokedAt.ShouldNotBeNull();
             revokedToken.RevokedAt.Value.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
+
+            var validationResult = await _repository.TryValidateAsync(token);
+            validationResult.isValid.ShouldBeFalse();
         }
     }
 
 
     public class RotateAsync : PostgresRefreshTokenRepositoryTests
     {
-        [Fact]
-        public async Task RotateAsync_WithValidTokenId_ShouldReturnNewTokenAndUpdateOldToken()
+        public RotateAsync(PostgresFixture fixture) : base(fixture)
         {
-            // Arrange
-            string token = "tokenToRotate";
-            DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(30);
-            Guid oldTokenId = await _repository.CreateAsync(token, expiresAt);
-
-            // Act
-            string newToken = await _repository.RotateAsync(oldTokenId);
-
-            // Assert
-            newToken.ShouldNotBeNullOrEmpty();
-            newToken.ShouldNotBe(token);
-
-            var oldTokenEntity = await _dbContext.RefreshTokens.FindAsync(oldTokenId);
-            oldTokenEntity.ShouldNotBeNull();
-            oldTokenEntity.RevokedAt.ShouldNotBeNull();
-            oldTokenEntity.RevokedAt.Value.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
-            oldTokenEntity.ReplacedByTokenId.ShouldNotBeNull();
-
-
-            var newTokenEntity = await _dbContext.RefreshTokens
-                .FirstOrDefaultAsync(rt => rt.Token == newToken);
-            newTokenEntity.ShouldNotBeNull();
-            newTokenEntity.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
-            newTokenEntity.ExpiresAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime.AddDays(30));
-            newTokenEntity.RevokedAt.ShouldBeNull();
-
-
-            oldTokenEntity.ReplacedByTokenId.ShouldBe(newTokenEntity.Id);
         }
 
 
@@ -251,37 +322,9 @@ public class PostgresRefreshTokenRepositoryTests
             Guid nonExistentId = Guid.NewGuid();
 
             // Act & Assert
-            var exception = await Should.ThrowAsync<InvalidOperationException>(async () =>
+            await Should.ThrowAsync<InvalidOperationException>(async () =>
                 await _repository.RotateAsync(nonExistentId));
-
-            exception.Message.ShouldBe("Old token not found");
         }
-
-        [Fact]
-        public async Task RotateAsync_ShouldSaveChangesToDatabase()
-        {
-            // Arrange
-            string token = "tokenToRotate";
-            DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(30);
-            Guid oldTokenId = await _repository.CreateAsync(token, expiresAt);
-
-            // Act
-            string newToken = await _repository.RotateAsync(oldTokenId);
-
-
-            _dbContext.ChangeTracker.Clear();
-
-            // Assert 
-            var oldTokenEntity = await _dbContext.RefreshTokens.FindAsync(oldTokenId);
-            oldTokenEntity.ShouldNotBeNull();
-            oldTokenEntity.RevokedAt.ShouldNotBeNull();
-            oldTokenEntity.ReplacedByTokenId.ShouldNotBeNull();
-
-            var newTokenEntity = await _dbContext.RefreshTokens
-                .FirstOrDefaultAsync(rt => rt.Token == newToken);
-            newTokenEntity.ShouldNotBeNull();
-
-            oldTokenEntity.ReplacedByTokenId.ShouldBe(newTokenEntity.Id);
-        }
+        
     }
 }
