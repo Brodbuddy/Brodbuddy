@@ -10,4 +10,6 @@ public partial class User
     public string Email { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
+
+    public virtual ICollection<VerificationContext> VerificationContexts { get; set; } = new List<VerificationContext>();
 }

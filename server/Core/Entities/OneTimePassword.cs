@@ -14,4 +14,6 @@ public partial class OneTimePassword
     public DateTime ExpiresAt { get; set; }
 
     public bool IsUsed { get; set; }
+
+    public virtual ICollection<VerificationContext> VerificationContexts { get; set; } = new List<VerificationContext>();
 }
