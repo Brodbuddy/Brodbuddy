@@ -11,7 +11,7 @@ public class IdentityVerificationRepositoryTest
 {
     private readonly PostgresDbContext _dbContext;
     private readonly FakeTimeProvider _timeProvider;
-    private readonly IdentityVerificationRepository _repository;
+    private readonly PostgresIdentityVerificationRepository _repository;
 
 
     public IdentityVerificationRepositoryTest(ITestOutputHelper testOutputHelper)
@@ -22,7 +22,7 @@ public class IdentityVerificationRepositoryTest
         
         _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new IdentityVerificationRepository(_dbContext, _timeProvider);
+        _repository = new PostgresIdentityVerificationRepository(_dbContext, _timeProvider);
     }
 
     public class CreateAsync(ITestOutputHelper testOutputHelper) : IdentityVerificationRepositoryTest(testOutputHelper)

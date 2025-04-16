@@ -5,13 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
 
-public class IdentityVerificationRepository : IIdentityVerificationRepository
+public class PostgresIdentityVerificationRepository : IIdentityVerificationRepository
 {
     private readonly PostgresDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
 
 
-    public IdentityVerificationRepository(PostgresDbContext dbContext, TimeProvider timeProvider)
+    public PostgresIdentityVerificationRepository(PostgresDbContext dbContext, TimeProvider timeProvider)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;

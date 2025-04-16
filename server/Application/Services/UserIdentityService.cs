@@ -31,13 +31,10 @@ public class UserIdentityService : IUserIdentityService
 
         email = email.Trim().ToLowerInvariant();
 
-        if (await ExistsAsync(email))
-        {
-            var existingUser = await _repository.GetAsync(email);
-            return existingUser!.Id;
-        }
-
-        return await _repository.SaveAsync(email);
+        if (!await ExistsAsync(email)) return await _repository.SaveAsync(email);
+        
+        var existingUser = await _repository.GetAsync(email);
+        return existingUser!.Id;
     }
 
     private bool IsValidEmail(string email)
@@ -56,11 +53,8 @@ public class UserIdentityService : IUserIdentityService
         var parts = email.Split('@');
         if (parts.Length != 2 || string.IsNullOrEmpty(parts[0]) || string.IsNullOrEmpty(parts[1]))
             return false;
-
-        if (!parts[1].Contains('.'))
-            return false;
-
-        return true;
+        
+        return parts[1].Contains('.');
     }
 
     public Task<bool> ExistsAsync(Guid id)

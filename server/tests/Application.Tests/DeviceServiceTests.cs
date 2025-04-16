@@ -36,7 +36,7 @@ public class DeviceServiceTests
         {
             // Arrange
             var expectedId = Guid.NewGuid();
-            Device capturedDevice = null;
+            Device capturedDevice = null!;
             _repositoryMock.Setup(r => r.SaveAsync(It.IsAny<Device>()))
                 .Callback<Device>(d => capturedDevice = d)
                 .ReturnsAsync(expectedId);

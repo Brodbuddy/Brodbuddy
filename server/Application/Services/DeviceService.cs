@@ -56,22 +56,11 @@ public class DeviceService : IDeviceService
 
     public async Task<IEnumerable<Device>> GetByIdsAsync(IEnumerable<Guid> ids)
     {
-        if (ids == null)
-        {
-            throw new ArgumentException("Device IDs cannot be null", nameof(ids));
-        }
+        ArgumentNullException.ThrowIfNull(ids);
 
         var validIds = ids.Where(id => id != Guid.Empty).ToList();
 
-        // Manuel check for om de er empty - var et krav for at Stryker ikke meldte mulig compileError..
-        bool hasValidIds = false;
-        foreach (var id in validIds)
-        {
-            hasValidIds = true;
-            break;
-        }
-
-        if (!hasValidIds) return [];
+        if (validIds.Count == 0) return [];
 
         return await _repository.GetByIdsAsync(validIds);
     }

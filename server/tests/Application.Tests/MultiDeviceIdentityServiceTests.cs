@@ -151,7 +151,7 @@ public class MultiDeviceIdentityServiceTests
             // Arrange
             var oldTokenId = Guid.NewGuid();
             var oldRefreshToken = "old";
-            TokenContext tokenContext = null;
+            TokenContext? tokenContext = null;
 
             _refreshTokenServiceMock
                 .Setup(x => x.TryValidateAsync(oldRefreshToken))

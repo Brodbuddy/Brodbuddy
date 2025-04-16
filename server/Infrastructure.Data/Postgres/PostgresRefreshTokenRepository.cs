@@ -78,14 +78,31 @@ public class PostgresRefreshTokenRepository : IRefreshTokenRepository
             ExpiresAt = expiresAt
         };
 
-        await _dbContext.RefreshTokens.AddAsync(refreshToken);
-        await _dbContext.SaveChangesAsync();
+        await using (var transaction = await _dbContext.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                await _dbContext.RefreshTokens.AddAsync(refreshToken);
+                await _dbContext.SaveChangesAsync();
 
-        oldToken.RevokedAt = now;
-        oldToken.ReplacedByTokenId = refreshToken.Id;
+                oldToken.RevokedAt = now;
+                oldToken.ReplacedByTokenId = refreshToken.Id;
 
-        await _dbContext.SaveChangesAsync();
-
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                await transaction.RollbackAsync();
+                throw new InvalidOperationException("Failed to rotate refresh token", ex);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new InvalidOperationException("Unexpected error while rotating refresh token", ex);
+            }
+        }
+        
         return (refreshToken.Token, refreshToken.Id);
     }
 }

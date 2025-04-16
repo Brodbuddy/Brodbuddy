@@ -55,6 +55,7 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
         if (!validateResult.isValid) throw new InvalidOperationException("Token context not found or revoked");
 
         var tokenContext = await _repository.GetAsync(validateResult.tokenId);
+        if (tokenContext == null) throw new InvalidOperationException("Failed to rotate refresh token");
 
         var (newRefreshToken, newTokenId) = await _refreshTokenService.RotateAsync(refreshToken);
 
