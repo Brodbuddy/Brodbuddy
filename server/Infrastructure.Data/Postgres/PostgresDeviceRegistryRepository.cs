@@ -16,13 +16,13 @@ public class PostgresDeviceRegistryRepository : IDeviceRegistryRepository
 
     public async Task<Guid> SaveAsync(Guid userId, Guid deviceId)
     {
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
-
+        
+        
         var deviceRegistry = new DeviceRegistry
         {
             DeviceId = deviceId,
             UserId = userId,
-            CreatedAt = now
+            CreatedAt = _timeProvider.Now()
         };
 
         await _dbContext.DeviceRegistries.AddAsync(deviceRegistry);
