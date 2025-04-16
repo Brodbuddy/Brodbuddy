@@ -63,6 +63,8 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
             throw new InvalidOperationException("Failed to rotate refresh token");
         }
 
+        await _refreshTokenService.RevokeAsync(refreshToken);
+        
         await _repository.RevokeTokenContextAsync(validateResult.tokenId);
 
         await _repository.SaveIdentityAsync(
