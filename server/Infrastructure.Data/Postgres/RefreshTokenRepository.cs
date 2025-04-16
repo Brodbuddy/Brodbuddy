@@ -7,20 +7,20 @@ namespace Infrastructure.Data.Postgres;
 
 public class RefreshTokenRepository(PostgresDbContext dbcontext, TimeProvider timeProvider) : IRefreshTokenRepository
 {
-    public async Task<Guid> CreateAsync(string token, DateTime expiresAt)
+    public async Task<(string token, Guid tokenId)> CreateAsync(string token, DateTime expiresAt)
     {
         
         var refreshToken = new RefreshToken
         {
             Token = token,
-            CreatedAt = timeProvider.GetUtcNow().UtcDateTime,
+            CreatedAt = timeProvider.Now(),
             ExpiresAt = expiresAt
         };
         
         await dbcontext.RefreshTokens.AddAsync(refreshToken);
         await dbcontext.SaveChangesAsync();
 
-        return refreshToken.Id;
+        return (refreshToken.Token, refreshToken.Id);
 
     }
 
@@ -54,7 +54,7 @@ public class RefreshTokenRepository(PostgresDbContext dbcontext, TimeProvider ti
         return true;
     }
 
-    public async Task<string> RotateAsync(Guid oldTokenId)
+    public async Task<(string token, Guid tokenId)> RotateAsync(Guid oldTokenId)
     {
         var oldToken = await dbcontext.RefreshTokens
             .FirstOrDefaultAsync(rt => rt.Id == oldTokenId);
@@ -64,7 +64,7 @@ public class RefreshTokenRepository(PostgresDbContext dbcontext, TimeProvider ti
     
        
         var newToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-        var now = timeProvider.GetUtcNow().UtcDateTime;
+        var now = timeProvider.Now();
         var expiresAt = now.AddDays(30); 
     
         
@@ -83,6 +83,6 @@ public class RefreshTokenRepository(PostgresDbContext dbcontext, TimeProvider ti
     
         await dbcontext.SaveChangesAsync();
     
-        return newToken;
+        return (refreshToken.Token, refreshToken.Id);
     }
 }

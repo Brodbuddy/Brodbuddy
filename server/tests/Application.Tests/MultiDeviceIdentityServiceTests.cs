@@ -119,7 +119,7 @@ public class MultiDeviceIdentityServiceTests
 
             _refreshTokenServiceMock
                 .Setup(x => x.RotateAsync(oldRefreshToken))
-                .ReturnsAsync(newRefreshToken);
+                .ReturnsAsync((newRefreshToken, newTokenId));
 
             _refreshTokenServiceMock
                 .Setup(x => x.TryValidateAsync(newRefreshToken))
@@ -197,7 +197,7 @@ public class MultiDeviceIdentityServiceTests
 
             _refreshTokenServiceMock
                 .Setup(x => x.RotateAsync(oldRefreshToken))
-                .ReturnsAsync(newRefreshToken);
+                .ReturnsAsync((newRefreshToken, Guid.Empty));
 
             // Act & Assert
             var exception = await Should.ThrowAsync<InvalidOperationException>(
@@ -247,7 +247,7 @@ public class MultiDeviceIdentityServiceTests
 
         _refreshTokenServiceMock
             .Setup(x => x.RotateAsync(oldRefreshToken))
-            .ReturnsAsync(newRefreshToken);
+            .ReturnsAsync((newRefreshToken, newTokenId));
 
         _refreshTokenServiceMock
             .Setup(x => x.TryValidateAsync(newRefreshToken))

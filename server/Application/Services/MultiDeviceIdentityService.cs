@@ -56,21 +56,19 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
        
         var tokenContext = await _repository.GetAsync(validateResult.tokenId);
 
-        var newRefreshToken = await _refreshTokenService.RotateAsync(refreshToken);
+        var (newRefreshToken, newTokenId) = await _refreshTokenService.RotateAsync(refreshToken);
         
         if (string.IsNullOrEmpty(newRefreshToken))
         {
             throw new InvalidOperationException("Failed to rotate refresh token");
         }
 
-        var newValidateResult = await _refreshTokenService.TryValidateAsync(newRefreshToken);
-
         await _repository.RevokeTokenContextAsync(validateResult.tokenId);
 
         await _repository.SaveIdentityAsync(
             tokenContext.UserId,
             tokenContext.DeviceId,
-            newValidateResult.tokenId);
+            newTokenId);
 
         var accessToken = _jwtService.Generate(
             tokenContext.UserId.ToString(),
