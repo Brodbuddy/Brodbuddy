@@ -62,7 +62,7 @@ public class MultiDeviceIdentityServiceTests
 
             _refreshTokenServiceMock
                 .Setup(x => x.GenerateAsync())
-                .ReturnsAsync(expectedRefreshToken);
+                .ReturnsAsync((expectedRefreshToken, tokenId));
 
             _refreshTokenServiceMock
                 .Setup(x => x.TryValidateAsync(expectedRefreshToken))

@@ -37,11 +37,9 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
 
         var userInfo = await _userIdentityService.GetAsync(userId);
 
-        var refreshToken = await _refreshTokenService.GenerateAsync();
-
-        var validationResult = await _refreshTokenService.TryValidateAsync(refreshToken);
-       
-        await _repository.SaveIdentityAsync(userId, deviceId, validationResult.tokenId);
+        var (refreshToken, tokenId) = await _refreshTokenService.GenerateAsync();
+        
+        await _repository.SaveIdentityAsync(userId, deviceId, tokenId);
 
         var accessToken = _jwtService.Generate(
             userId.ToString(),

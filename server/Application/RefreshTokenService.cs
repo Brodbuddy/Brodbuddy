@@ -8,7 +8,7 @@ namespace Application;
 
 public interface IRefreshTokenService
 {
-    Task<string> GenerateAsync();
+    Task<(string token, Guid tokenId)> GenerateAsync();
     Task<(bool isValid, Guid tokenId)> TryValidateAsync(string token);
     Task<bool> RevokeAsync(string token);
     Task<string> RotateAsync(string token);
@@ -34,12 +34,12 @@ public class RefreshTokenService : IRefreshTokenService
 
     private readonly TimeSpan _tokenValidity = TimeSpan.FromDays(30);
 
-    public async Task<string> GenerateAsync()
+    public async Task<(string token, Guid tokenId)> GenerateAsync()
     {
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         var expiresAt = _timeProvider.GetUtcNow().UtcDateTime.Add(_tokenValidity);
-        await _repository.CreateAsync(token, expiresAt);
-        return token;
+        var tokenId = await _repository.CreateAsync(token, expiresAt);
+        return (token, tokenId);
     }
 
     public async Task<(bool isValid, Guid tokenId)> TryValidateAsync(string token)

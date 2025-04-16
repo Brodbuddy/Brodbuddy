@@ -28,15 +28,21 @@ public class RefreshTokenServiceTests
         {
             // Arrange
             var utcNow = DateTime.UtcNow;
+            var expectedTokenId = Guid.NewGuid();
             
             var timeProvider = new FakeTimeProvider(new DateTimeOffset(utcNow));
             var service = new RefreshTokenService(_repositoryMock.Object, timeProvider, _loggerMock.Object);
-        
+            
+            _repositoryMock
+                .Setup(r => r.CreateAsync(It.IsAny<string>(), utcNow.AddDays(30)))
+                .ReturnsAsync(expectedTokenId);
+            
             // Act
-            var token = await service.GenerateAsync();
+            var result = await service.GenerateAsync();
         
             // Assert
-            token.ShouldNotBeNullOrEmpty();
+            result.token.ShouldNotBeNullOrEmpty();
+            result.tokenId.ShouldBe(expectedTokenId);
             _repositoryMock.Verify(r => r.CreateAsync(It.IsAny<string>(), utcNow.AddDays(30)), Times.Once);
         }
     }
