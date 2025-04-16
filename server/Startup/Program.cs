@@ -10,13 +10,12 @@ namespace Startup;
 
 public class Program
 {
-
     private static void ConfigureServices(IServiceCollection services)
     {
         services.AddOptions<AppOptions>()
-                .BindConfiguration(nameof(AppOptions))
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
+            .BindConfiguration(nameof(AppOptions))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
         services.AddHttpApi();

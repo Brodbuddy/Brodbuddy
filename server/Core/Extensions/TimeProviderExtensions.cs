@@ -1,4 +1,4 @@
-﻿namespace Infrastructure.Data;
+﻿namespace Core.Extensions;
 
 public static class TimeProviderExtensions
 {

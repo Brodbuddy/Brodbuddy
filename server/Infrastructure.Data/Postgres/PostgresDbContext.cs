@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using Core.Entities;
-
 using Core.Entities;
 using Microsoft.EntityFrameworkCore;
 

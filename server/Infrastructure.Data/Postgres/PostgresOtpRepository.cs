@@ -11,8 +11,7 @@ public class PostgresOtpRepository : IOtpRepository
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<PostgresOtpRepository> _logger;
 
-    public PostgresOtpRepository(PostgresDbContext dbContext, TimeProvider timeProvider,
-        ILogger<PostgresOtpRepository> logger)
+    public PostgresOtpRepository(PostgresDbContext dbContext, TimeProvider timeProvider, ILogger<PostgresOtpRepository> logger)
     {
         _logger = logger;
         _dbContext = dbContext;
@@ -76,6 +75,4 @@ public class PostgresOtpRepository : IOtpRepository
         await _dbContext.SaveChangesAsync();
         return true;
     }
-
-
 }

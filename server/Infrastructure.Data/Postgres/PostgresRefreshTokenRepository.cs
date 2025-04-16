@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Application.Interfaces;
 using Core.Entities;
+using Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
@@ -9,7 +10,6 @@ public class PostgresRefreshTokenRepository(PostgresDbContext dbcontext, TimePro
 {
     public async Task<(string token, Guid tokenId)> CreateAsync(string token, DateTime expiresAt)
     {
-
         var refreshToken = new RefreshToken
         {
             Token = token,
@@ -21,7 +21,6 @@ public class PostgresRefreshTokenRepository(PostgresDbContext dbcontext, TimePro
         await dbcontext.SaveChangesAsync();
 
         return (refreshToken.Token, refreshToken.Id);
-
     }
 
     public async Task<(bool isValid, Guid tokenId)> TryValidateAsync(string token)

@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Core.Entities;
+using Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
@@ -32,7 +33,6 @@ public class PostgresDeviceRepository : IDeviceRepository
 
         await _dbContext.SaveChangesAsync();
         return device.Id;
-
     }
 
     public async Task<Device> GetAsync(Guid id)
@@ -59,7 +59,7 @@ public class PostgresDeviceRepository : IDeviceRepository
         var rowsAffected = await _dbContext.Devices
             .Where(d => d.Id == id)
             .ExecuteUpdateAsync(setters => setters
-            .SetProperty(d => d.LastSeenAt, lastSeenTime));
+                .SetProperty(d => d.LastSeenAt, lastSeenTime));
 
         return rowsAffected > 0;
     }
@@ -69,7 +69,7 @@ public class PostgresDeviceRepository : IDeviceRepository
         var rowsAffected = await _dbContext.Devices
             .Where(d => d.Id == id)
             .ExecuteUpdateAsync(setters => setters
-            .SetProperty(d => d.IsActive, false));
+                .SetProperty(d => d.IsActive, false));
 
         return rowsAffected > 0;
     }

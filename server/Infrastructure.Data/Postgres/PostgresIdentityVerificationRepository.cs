@@ -11,9 +11,7 @@ public class PostgresIdentityVerificationRepository : IIdentityVerificationRepos
     private readonly TimeProvider _timeProvider;
 
 
-    public PostgresIdentityVerificationRepository(
-        PostgresDbContext dbContext,
-        TimeProvider timeProvider)
+    public PostgresIdentityVerificationRepository(PostgresDbContext dbContext, TimeProvider timeProvider)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;
@@ -21,7 +19,6 @@ public class PostgresIdentityVerificationRepository : IIdentityVerificationRepos
 
     public async Task<Guid> CreateAsync(Guid userId, Guid otpId)
     {
-
         var verificationContext = new VerificationContext
         {
             UserId = userId,
