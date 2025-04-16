@@ -1,5 +1,6 @@
 using Application.Interfaces;
 using Core.Entities;
+using Core.Extensions;
 
 namespace Application.Services;
 
@@ -28,8 +29,7 @@ public class DeviceService : IDeviceService
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(browser, nameof(browser));
         ArgumentException.ThrowIfNullOrWhiteSpace(os, nameof(os));
-
-
+        
         browser = browser.Trim().ToLowerInvariant();
         os = os.Trim().ToLowerInvariant();
 
@@ -58,7 +58,7 @@ public class DeviceService : IDeviceService
     {
         if (ids == null)
         {
-            throw new ArgumentException("Device IDs cannot be empty", nameof(ids));
+            throw new ArgumentException("Device IDs cannot be null", nameof(ids));
         }
 
         var validIds = ids.Where(id => id != Guid.Empty).ToList();
@@ -71,41 +71,29 @@ public class DeviceService : IDeviceService
             break;
         }
 
-        if (!hasValidIds)
-        {
-            return Enumerable.Empty<Device>();
-        }
+        if (!hasValidIds) return [];
 
         return await _repository.GetByIdsAsync(validIds);
     }
 
     public async Task<bool> ExistsAsync(Guid id)
     {
-        if (id == Guid.Empty)
-        {
-            throw new ArgumentException("Device ID cannot be empty", nameof(id));
-        }
+        if (id == Guid.Empty) throw new ArgumentException("Device ID cannot be empty", nameof(id));
 
         return await _repository.ExistsAsync(id);
     }
 
     public async Task<bool> UpdateLastSeenAsync(Guid id)
     {
-        if (id == Guid.Empty)
-        {
-            throw new ArgumentException("Device ID cannot be empty", nameof(id));
-        }
+        if (id == Guid.Empty) throw new ArgumentException("Device ID cannot be empty", nameof(id));
 
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var now = _timeProvider.Now();
         return await _repository.UpdateLastSeenAsync(id, now);
     }
 
     public async Task<bool> DisableAsync(Guid id)
     {
-        if (id == Guid.Empty)
-        {
-            throw new ArgumentException("Device ID cannot be empty", nameof(id));
-        }
+        if (id == Guid.Empty) throw new ArgumentException("Device ID cannot be empty", nameof(id));
 
         return await _repository.DisableAsync(id);
     }

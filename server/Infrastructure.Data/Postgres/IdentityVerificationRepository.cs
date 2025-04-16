@@ -1,17 +1,17 @@
 using Application.Interfaces;
 using Core.Entities;
+using Core.Extensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Data.Postgres;
 
-public class PostgresIdentityVerificationRepository : IIdentityVerificationRepository
+public class IdentityVerificationRepository : IIdentityVerificationRepository
 {
     private readonly PostgresDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
 
 
-    public PostgresIdentityVerificationRepository(PostgresDbContext dbContext, TimeProvider timeProvider)
+    public IdentityVerificationRepository(PostgresDbContext dbContext, TimeProvider timeProvider)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;
@@ -23,7 +23,7 @@ public class PostgresIdentityVerificationRepository : IIdentityVerificationRepos
         {
             UserId = userId,
             OtpId = otpId,
-            CreatedAt = _timeProvider.GetUtcNow().UtcDateTime
+            CreatedAt = _timeProvider.Now()
         };
 
         await _dbContext.VerificationContexts.AddAsync(verificationContext);

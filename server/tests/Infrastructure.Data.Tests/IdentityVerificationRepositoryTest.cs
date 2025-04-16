@@ -1,39 +1,32 @@
 using Core.Entities;
 using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using SharedTestDependencies;
 using Shouldly;
 using Xunit.Abstractions;
 
 namespace Infrastructure.Data.Tests;
 
-public class PostgresIdentityVerificationRepositoryTest
+public class IdentityVerificationRepositoryTest
 {
     private readonly PostgresDbContext _dbContext;
     private readonly FakeTimeProvider _timeProvider;
-    private readonly PostgresIdentityVerificationRepository _repository;
-    private readonly ITestOutputHelper _testOutputHelper;
+    private readonly IdentityVerificationRepository _repository;
 
 
-    public PostgresIdentityVerificationRepositoryTest(ITestOutputHelper testOutputHelper)
+    public IdentityVerificationRepositoryTest(ITestOutputHelper testOutputHelper)
     {
-        _testOutputHelper = testOutputHelper;
         var options = new DbContextOptionsBuilder<PostgresDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
+        
         _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-
-        _repository = new PostgresIdentityVerificationRepository(_dbContext, _timeProvider);
+        _repository = new IdentityVerificationRepository(_dbContext, _timeProvider);
     }
 
-    public class CreateAsync : PostgresIdentityVerificationRepositoryTest
+    public class CreateAsync(ITestOutputHelper testOutputHelper) : IdentityVerificationRepositoryTest(testOutputHelper)
     {
-        public CreateAsync(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
-        {
-        }
-
         [Fact]
         public async Task CreateAsync_WhenUserAndOtpExist_ShouldCreateVerificationContext()
         {
@@ -150,12 +143,8 @@ public class PostgresIdentityVerificationRepositoryTest
         }
     }
 
-    public class GetLatestAsync : PostgresIdentityVerificationRepositoryTest
+    public class GetLatestAsync(ITestOutputHelper testOutputHelper) : IdentityVerificationRepositoryTest(testOutputHelper)
     {
-        public GetLatestAsync(ITestOutputHelper testOutputHelper) : base(testOutputHelper)
-        {
-        }
-
         [Fact]
         public async Task GetLatestAsync_WhenContextsExist_ShouldReturnLatestContext()
         {

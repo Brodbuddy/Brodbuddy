@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Core.Entities;
+using Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
@@ -17,15 +18,12 @@ public class PostgresMultiDeviceIdentityRepository : IMultiDeviceIdentityReposit
 
     public async Task<Guid> SaveIdentityAsync(Guid userId, Guid deviceId, Guid refreshTokenId)
     {
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
-
         var tokenContext = new TokenContext
         {
-            Id = Guid.NewGuid(),
             UserId = userId,
             DeviceId = deviceId,
             RefreshTokenId = refreshTokenId,
-            CreatedAt = now,
+            CreatedAt = _timeProvider.Now(),
             IsRevoked = false
         };
 

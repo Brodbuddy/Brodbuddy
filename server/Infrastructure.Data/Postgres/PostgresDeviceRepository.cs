@@ -22,31 +22,24 @@ public class PostgresDeviceRepository : IDeviceRepository
 
         if (device.Id != Guid.Empty) throw new ArgumentException();
 
-        if (device.Id == Guid.Empty)
-        {
-            device.CreatedAt = _timeProvider.Now();
-            device.LastSeenAt = _timeProvider.Now();
-            device.IsActive = true;
+        var now = _timeProvider.Now();
+        device.CreatedAt = now;
+        device.LastSeenAt = now;
+        device.IsActive = true;
 
-            await _dbContext.Devices.AddAsync(device);
-        }
-
+        await _dbContext.Devices.AddAsync(device);
         await _dbContext.SaveChangesAsync();
         return device.Id;
     }
 
     public async Task<Device> GetAsync(Guid id)
     {
-        return await _dbContext.Devices
-                   .FirstOrDefaultAsync(r => r.Id == id)
-               ?? throw new ArgumentException($"Device with ID {id} not found");
+        return await _dbContext.Devices.FirstOrDefaultAsync(r => r.Id == id) ?? throw new ArgumentException($"Device with ID {id} not found");
     }
 
     public async Task<IEnumerable<Device>> GetByIdsAsync(IEnumerable<Guid> ids)
     {
-        return await _dbContext.Devices
-            .Where(d => ids.Contains(d.Id))
-            .ToListAsync();
+        return await _dbContext.Devices.Where(d => ids.Contains(d.Id)).ToListAsync();
     }
 
     public async Task<bool> ExistsAsync(Guid id)

@@ -3,7 +3,6 @@ using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies;
 using Shouldly;
-using Moq;
 
 namespace Infrastructure.Data.Tests;
 
@@ -135,11 +134,13 @@ public class DeviceRepositoryTests
             var results = await _repository.GetByIdsAsync(ids);
 
             // Assert
-            results.ShouldNotBeNull();
-            results.Count().ShouldBe(2);
-            results.ShouldContain(d => d.Id == device1.Id);
-            results.ShouldContain(d => d.Id == device3.Id);
-            results.ShouldNotContain(d => d.Id == device2.Id);
+            var enumerable = results as Device[] ?? results.ToArray();
+            
+            enumerable.ShouldNotBeNull();
+            enumerable.Length.ShouldBe(2);
+            enumerable.ShouldContain(d => d.Id == device1.Id);
+            enumerable.ShouldContain(d => d.Id == device3.Id);
+            enumerable.ShouldNotContain(d => d.Id == device2.Id);
         }
 
         [Fact]
@@ -158,8 +159,10 @@ public class DeviceRepositoryTests
             var results = await _repository.GetByIdsAsync(emptyIds);
 
             // Assert
-            results.ShouldNotBeNull();
-            results.ShouldBeEmpty();
+            var enumerable = results as Device[] ?? results.ToArray();
+            
+            enumerable.ShouldNotBeNull();
+            enumerable.ShouldBeEmpty();
         }
 
         [Fact]
@@ -172,8 +175,10 @@ public class DeviceRepositoryTests
             var results = await _repository.GetByIdsAsync(nonExistingIds);
 
             // Assert
-            results.ShouldNotBeNull();
-            results.ShouldBeEmpty();
+            var enumerable = results as Device[] ?? results.ToArray();
+            
+            enumerable.ShouldNotBeNull();
+            enumerable.ShouldBeEmpty();
         }
     }
 
@@ -234,7 +239,7 @@ public class DeviceRepositoryTests
 
             // Act
             var foundDevice = await _dbContext.Devices.FindAsync(id);
-            foundDevice.LastSeenAt = newLastSeen;
+            if (foundDevice != null) foundDevice.LastSeenAt = newLastSeen;
             await _dbContext.SaveChangesAsync();
 
             _dbContext.ChangeTracker.Clear();
@@ -266,7 +271,7 @@ public class DeviceRepositoryTests
 
             // Act
             var foundDevice = await _dbContext.Devices.FindAsync(id);
-            foundDevice.IsActive = false;
+            if (foundDevice != null) foundDevice.IsActive = false;
             await _dbContext.SaveChangesAsync();
 
             _dbContext.ChangeTracker.Clear();

@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Core.Entities;
+using Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
@@ -17,7 +18,7 @@ public class PostgresUserIdentityRepository : IUserIdentityRepository
 
     public async Task<Guid> SaveAsync(string email)
     {
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var now = _timeProvider.Now();
         var user = new User
         {
             Email = email,
@@ -41,13 +42,11 @@ public class PostgresUserIdentityRepository : IUserIdentityRepository
 
     public async Task<User?> GetAsync(Guid id)
     {
-        return await _dbContext.Users
-            .FirstOrDefaultAsync(u => u.Id == id);
+        return await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
     }
 
     public async Task<User?> GetAsync(string email)
     {
-        return await _dbContext.Users
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == email.Trim().ToLowerInvariant());
+        return await _dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.Trim().ToLowerInvariant());
     }
 }

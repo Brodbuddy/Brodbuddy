@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Application.Interfaces;
+using Core.Extensions;
 using Microsoft.Extensions.Logging;
 
 
@@ -34,7 +35,7 @@ public class RefreshTokenService : IRefreshTokenService
     public async Task<(string token, Guid tokenId)> GenerateAsync()
     {
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
-        var expiresAt = _timeProvider.GetUtcNow().UtcDateTime.Add(_tokenValidity);
+        var expiresAt = _timeProvider.Now().Add(_tokenValidity);
         var result = await _repository.CreateAsync(token, expiresAt);
         return result;
     }

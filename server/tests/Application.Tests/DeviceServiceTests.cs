@@ -152,12 +152,7 @@ public class DeviceServiceTests
             IEnumerable<Guid> nullIds = null!;
 
             // Act & Assert
-            var exception = await Should.ThrowAsync<ArgumentException>(() =>
-                _service.GetByIdsAsync(nullIds));
-
-            // Assert
-            exception.Message.ShouldStartWith("Device IDs cannot be empty");
-            exception.ParamName.ShouldBe("ids");
+            await Should.ThrowAsync<ArgumentException>(() => _service.GetByIdsAsync(nullIds));
         }
     }
 

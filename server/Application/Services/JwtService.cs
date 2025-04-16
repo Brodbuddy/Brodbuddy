@@ -94,8 +94,7 @@ public class JwtService(
 
     private class TimeProviderAdapter(TimeProvider timeProvider) : IDateTimeProvider
     {
-        private readonly TimeProvider _timeProvider =
-            timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        private readonly TimeProvider _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
 
         public DateTimeOffset GetNow() => _timeProvider.GetUtcNow();
     }

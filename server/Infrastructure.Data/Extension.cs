@@ -14,8 +14,7 @@ public static class Extensions
         services.AddDbContext<PostgresDbContext>((service, options) =>
         {
             var provider = services.BuildServiceProvider();
-            options.UseNpgsql(provider.GetRequiredService<IOptionsMonitor<AppOptions>>().CurrentValue.Postgres
-                .ConnectionString);
+            options.UseNpgsql(provider.GetRequiredService<IOptionsMonitor<AppOptions>>().CurrentValue.Postgres.ConnectionString);
             options.EnableSensitiveDataLogging();
         });
 
@@ -25,7 +24,7 @@ public static class Extensions
         services.AddScoped<IDeviceRepository, PostgresDeviceRepository>();
         services.AddScoped<IDeviceRegistryRepository, PostgresDeviceRegistryRepository>();
         services.AddScoped<IMultiDeviceIdentityRepository, PostgresMultiDeviceIdentityRepository>();
-        services.AddScoped<IIdentityVerificationRepository, PostgresIdentityVerificationRepository>();
+        services.AddScoped<IIdentityVerificationRepository, IdentityVerificationRepository>();
         return services;
     }
 }
