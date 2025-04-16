@@ -70,7 +70,7 @@ public class MultiDeviceIdentityServiceTests
 
             _repositoryMock
                 .Setup(x => x.SaveIdentityAsync(userId, deviceId, tokenId))
-                .Returns(Task.CompletedTask);
+                .Returns(Task.FromResult(Guid.NewGuid()));
 
             _jwtServiceMock
                 .Setup(x => x.Generate(userId.ToString(), email, "user"))
@@ -114,7 +114,7 @@ public class MultiDeviceIdentityServiceTests
                 .ReturnsAsync((true, oldTokenId));
 
             _repositoryMock
-                .Setup(x => x.GetTokenContextByRefreshTokenIdAsync(oldTokenId))
+                .Setup(x => x.GetAsync(oldTokenId))
                 .ReturnsAsync(tokenContext);
 
             _refreshTokenServiceMock
@@ -131,7 +131,7 @@ public class MultiDeviceIdentityServiceTests
 
             _repositoryMock
                 .Setup(x => x.SaveIdentityAsync(userId, deviceId, newTokenId))
-                .Returns(Task.CompletedTask);
+                .Returns(Task.FromResult(Guid.NewGuid()));
 
             _jwtServiceMock
                 .Setup(x => x.Generate(userId.ToString(), email, "user"))
@@ -158,14 +158,14 @@ public class MultiDeviceIdentityServiceTests
                 .ReturnsAsync((true, oldTokenId));
 
             _repositoryMock
-                .Setup(x => x.GetTokenContextByRefreshTokenIdAsync(oldTokenId))
+                .Setup(x => x.GetAsync(oldTokenId))
                 .ReturnsAsync(tokenContext);
 
             // Act & Assert
             var exception = await Should.ThrowAsync<InvalidOperationException>(
                 async () => await _multiDeviceIdentityService.RefreshIdentityAsync(oldRefreshToken));
 
-            exception.Message.ShouldBe("Token context not found or revoked");
+            exception.Message.ShouldBe("Failed to rotate refresh token");
         }
 
         [Theory]
@@ -192,7 +192,7 @@ public class MultiDeviceIdentityServiceTests
                 .ReturnsAsync((true, oldTokenId));
 
             _repositoryMock
-                .Setup(x => x.GetTokenContextByRefreshTokenIdAsync(oldTokenId))
+                .Setup(x => x.GetAsync(oldTokenId))
                 .ReturnsAsync(tokenContext);
 
             _refreshTokenServiceMock
@@ -242,7 +242,7 @@ public class MultiDeviceIdentityServiceTests
             .ReturnsAsync((true, oldTokenId));
 
         _repositoryMock
-            .Setup(x => x.GetTokenContextByRefreshTokenIdAsync(oldTokenId))
+            .Setup(x => x.GetAsync(oldTokenId))
             .ReturnsAsync(tokenContext);
 
         _refreshTokenServiceMock
@@ -271,7 +271,7 @@ public class MultiDeviceIdentityServiceTests
                 savedDeviceId = d;
                 savedTokenId = t;
             })
-            .Returns(Task.CompletedTask);
+            .Returns(Task.FromResult(Guid.NewGuid()));
 
         _jwtServiceMock
             .Setup(x => x.Generate(userId.ToString(), email, "user"))

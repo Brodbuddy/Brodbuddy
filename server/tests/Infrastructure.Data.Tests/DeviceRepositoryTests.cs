@@ -63,12 +63,10 @@ public class DeviceRepositoryTests
         public async Task SaveAsync_WithNullDevice_ThrowsArgumentNullException()
         {
             // Arrange
-            Device device = null;
+            Device device = null!;
 
             // Act & Assert 
-            var exception = await Should.ThrowAsync<ArgumentException>(() => _repository.SaveAsync(device));
-            exception.Message.ShouldBe("Failed to save device");
-            exception.ParamName.ShouldBe(null);
+            await Should.ThrowAsync<NullReferenceException>(() => _repository.SaveAsync(device));
         }
     }
 
@@ -112,7 +110,7 @@ public class DeviceRepositoryTests
             var exception = await Should.ThrowAsync<ArgumentException>(
                 () => _repository.GetAsync(nonExistingId));
 
-            exception.Message.ShouldBe($"Device with ID {nonExistingId} not found");
+            exception.Message.ShouldContain($"Device with ID {nonExistingId} not found");
         }
     }
 

@@ -15,12 +15,13 @@ public class PostgresMultiDeviceIdentityRepository : IMultiDeviceIdentityReposit
         _timeProvider = timeProvider;
     }
 
-    public async Task SaveIdentityAsync(Guid userId, Guid deviceId, Guid refreshTokenId)
+    public async Task<Guid> SaveIdentityAsync(Guid userId, Guid deviceId, Guid refreshTokenId)
     {
         var now = _timeProvider.GetUtcNow().UtcDateTime;
 
         var tokenContext = new TokenContext
         {
+            Id = Guid.NewGuid(),
             UserId = userId,
             DeviceId = deviceId,
             RefreshTokenId = refreshTokenId,
@@ -30,25 +31,22 @@ public class PostgresMultiDeviceIdentityRepository : IMultiDeviceIdentityReposit
 
         await _dbContext.TokenContexts.AddAsync(tokenContext);
         await _dbContext.SaveChangesAsync();
+
+        return tokenContext.Id;
     }
 
     public async Task<bool> RevokeTokenContextAsync(Guid refreshTokenId)
     {
-        var tokenContext = await _dbContext.TokenContexts
-            .FirstOrDefaultAsync(tc => tc.RefreshTokenId == refreshTokenId);
+        int rowsAffected = await _dbContext.TokenContexts
+            .Where(tc => tc.RefreshTokenId == refreshTokenId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(tc => tc.IsRevoked, true));
 
-        if (tokenContext == null)
-        {
-            return false;
-        }
-
-        tokenContext.IsRevoked = true;
-        await _dbContext.SaveChangesAsync();
-        return true;
+        return rowsAffected > 0;
     }
 
 
-    public async Task<TokenContext?> GetTokenContextByRefreshTokenIdAsync(Guid refreshTokenId)
+    public async Task<TokenContext?> GetAsync(Guid refreshTokenId)
     {
         return await _dbContext.TokenContexts
             .Include(tc => tc.User)
@@ -56,6 +54,4 @@ public class PostgresMultiDeviceIdentityRepository : IMultiDeviceIdentityReposit
             .Include(tc => tc.RefreshToken)
             .FirstOrDefaultAsync(tc => tc.RefreshTokenId == refreshTokenId && !tc.IsRevoked);
     }
-
-  
 }

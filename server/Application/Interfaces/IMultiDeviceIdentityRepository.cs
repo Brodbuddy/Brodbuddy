@@ -4,7 +4,7 @@ namespace Application.Interfaces;
 
 public interface IMultiDeviceIdentityRepository
 {
-    Task SaveIdentityAsync(Guid userId, Guid deviceId, Guid refreshToken);
+    Task<Guid> SaveIdentityAsync(Guid userId, Guid deviceId, Guid refreshToken);
     Task<bool> RevokeTokenContextAsync(Guid refreshTokenId);
-    Task<TokenContext?> GetTokenContextByRefreshTokenIdAsync(Guid refreshTokenId);
+    Task<TokenContext?> GetAsync(Guid refreshTokenId);
 }

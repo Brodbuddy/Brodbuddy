@@ -41,23 +41,4 @@ public class DeviceRegistryRepositoryTests
         savedRegistry.DeviceId.ShouldBe(deviceId);
         savedRegistry.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
     }
-
-    [Fact]
-    public async Task SaveAsync_WithValidInput_ShouldSaveChangesToDatabase()
-    {
-        // Arrange
-        var userId = Guid.NewGuid();
-        var deviceId = Guid.NewGuid();
-
-        // Act
-        await _repository.SaveAsync(userId, deviceId);
-
-        // Assert
-        var registry = await _dbContext.DeviceRegistries
-            .FirstOrDefaultAsync(r => r.UserId == userId && r.DeviceId == deviceId);
-
-        registry.ShouldNotBeNull();
-        registry.UserId.ShouldBe(userId);
-        registry.DeviceId.ShouldBe(deviceId);
-    }
 }

@@ -17,26 +17,22 @@ public class PostgresDeviceRepository : IDeviceRepository
 
     public async Task<Guid> SaveAsync(Device device)
     {
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
-       
-        try
-        {
-            if (device.Id == Guid.Empty)
-            {
-                device.CreatedAt = now;
-                device.LastSeenAt = now;
-                device.IsActive = true;
+        if (device == null) throw new NullReferenceException("Device cannot be null");
 
-                await _dbContext.Devices.AddAsync(device);
-            }
-
-            await _dbContext.SaveChangesAsync();
-            return device.Id;
-        }
-        catch (Exception ex)
+        if (device.Id != Guid.Empty) throw new ArgumentException();
+        
+        if (device.Id == Guid.Empty)
         {
-            throw new ArgumentException("Failed to save device", ex);
+            device.CreatedAt = _timeProvider.Now();
+            device.LastSeenAt = _timeProvider.Now();
+            device.IsActive = true;
+
+            await _dbContext.Devices.AddAsync(device);
         }
+
+        await _dbContext.SaveChangesAsync();
+        return device.Id;
+     
     }
 
     public async Task<Device> GetAsync(Guid id)
@@ -62,8 +58,8 @@ public class PostgresDeviceRepository : IDeviceRepository
     {
         var rowsAffected = await _dbContext.Devices
             .Where(d => d.Id == id)
-            .ExecuteUpdateAsync(setters =>
-                setters.SetProperty(d => d.LastSeenAt, lastSeenTime));
+            .ExecuteUpdateAsync(setters => setters
+            .SetProperty(d => d.LastSeenAt, lastSeenTime));
         
         return rowsAffected > 0;
     }
@@ -72,8 +68,8 @@ public class PostgresDeviceRepository : IDeviceRepository
     {
         var rowsAffected = await _dbContext.Devices
             .Where(d => d.Id == id)
-            .ExecuteUpdateAsync(setters =>
-                setters.SetProperty(d => d.IsActive, false));
+            .ExecuteUpdateAsync(setters => setters
+            .SetProperty(d => d.IsActive, false));
 
         return rowsAffected > 0;
     }

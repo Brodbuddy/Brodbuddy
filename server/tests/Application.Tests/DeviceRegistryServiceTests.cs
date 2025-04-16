@@ -55,9 +55,10 @@ public class DeviceRegistryServiceTests
         _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(false);
 
         // Act & Assert
-        await Should.ThrowAsync<ArgumentException>(
-            async () => await _service.AssociateDeviceAsync(userId, "chrome", "windows")
+        await Should.ThrowAsync<ArgumentException>(() =>
+            _service.AssociateDeviceAsync(userId, "chrome", "windows")
         );
+        
 
         _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);

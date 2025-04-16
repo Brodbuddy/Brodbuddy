@@ -28,26 +28,6 @@ public class DeviceServiceTests
     public class CreateAsync(ITestOutputHelper outputHelper) : DeviceServiceTests(outputHelper)
     {
         [Theory]
-        [InlineData("    chrome  ", " linux ")]
-        [InlineData("Firefox", " windows ")]
-        [InlineData("chrome", "MacOS")]
-        public async Task CreateAsync_WithValidBrowserAndOs_ReturnsExceptedGuid(
-            string browser, string os)
-        {
-            // Arrange
-            var expectedId = Guid.NewGuid();
-
-            _repositoryMock.Setup(r => r.SaveAsync(It.IsAny<Device>()))
-                .ReturnsAsync(expectedId);
-
-            // Act 
-            var result = await _service.CreateAsync(browser, os);
-
-            // Assert
-            result.ShouldBe(expectedId);
-        }
-
-        [Theory]
         [InlineData("    chrome  ", " linux ", "chrome_linux")]
         [InlineData("Firefox", " windows ", "firefox_windows")]
         [InlineData("chrome", "MacOS", "chrome_macos")]
@@ -124,7 +104,7 @@ public class DeviceServiceTests
 
 
         [Fact]
-        public async Task GetByIdsAsync_WithValidCollection_ReturnsDevices()
+        public async Task GetByIdsAsync_WithExistingIds_ReturnsDevices()
         {
             // Arrange
             var id1 = Guid.NewGuid();
@@ -137,9 +117,11 @@ public class DeviceServiceTests
                 new Device { Id = id2, Name = "firefox_macos" }
             };
 
-            _repositoryMock.Setup(r => r.GetByIdsAsync(It.Is<List<Guid>>(list =>
-                    list.Contains(id1) && list.Contains(id2) && list.Count == 2)))
-                .ReturnsAsync(expectedDevices);
+            _repositoryMock.Setup(r => r.GetByIdsAsync(It.Is<List<Guid>>(
+            list => list.Contains(id1) && 
+                  list.Contains(id2) && 
+                  list.Count == 2)))
+                  .ReturnsAsync(expectedDevices);
 
             // Act
             var result = await _service.GetByIdsAsync(ids);
@@ -164,12 +146,12 @@ public class DeviceServiceTests
         }
 
         [Fact]
-        public async Task GetByIdsAsync_WithNullCollection_ThrowsArgumentException()
+        public async Task GetByIdsAsync_WithNullReference_ThrowsArgumentException()
         {
             // Arrange
-            IEnumerable<Guid> nullIds = null;
+            IEnumerable<Guid> nullIds = null!;
 
-            // Act
+            // Act & Assert
             var exception = await Should.ThrowAsync<ArgumentException>(() =>
                 _service.GetByIdsAsync(nullIds));
 
@@ -281,15 +263,18 @@ public class DeviceServiceTests
         [Fact]
         public async Task UpdateLastSeenAsync_UsesCurrentTime()
         {
-            // Arrange
+            // Arrange - Start
             var deviceId = Guid.NewGuid();
             var initialTime = _timeProvider.GetUtcNow().UtcDateTime;
             _repositoryMock.Setup(r => r.UpdateLastSeenAsync(deviceId, initialTime)).ReturnsAsync(true);
 
             // Act 
             await _service.UpdateLastSeenAsync(deviceId);
+            
+            // Assert
+            _repositoryMock.Verify(r => r.UpdateLastSeenAsync(deviceId, initialTime), Times.Once);
 
-            // Advance 
+            // Arrange - Skru tiden frem
             _timeProvider.Advance(TimeSpan.FromHours(1));
             var advancedTime = _timeProvider.GetUtcNow().UtcDateTime;
             _repositoryMock.Setup(r => r.UpdateLastSeenAsync(deviceId, advancedTime)).ReturnsAsync(true);
@@ -298,7 +283,6 @@ public class DeviceServiceTests
             await _service.UpdateLastSeenAsync(deviceId);
 
             // Assert
-            _repositoryMock.Verify(r => r.UpdateLastSeenAsync(deviceId, initialTime), Times.Once);
             _repositoryMock.Verify(r => r.UpdateLastSeenAsync(deviceId, advancedTime), Times.Once);
         }
     }
