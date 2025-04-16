@@ -9,7 +9,7 @@
         <IsTestProject>true</IsTestProject>
         <RootNamespace>Application.Tests</RootNamespace>
     </PropertyGroup>
-    
+
     <PropertyGroup>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
@@ -24,7 +24,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Application\Application.csproj" />
-      <ProjectReference Include="..\SharedTestDependencies\SharedTestDependencies.csproj" />
+        <ProjectReference Include="..\..\Application\Application.csproj"/>
+        <ProjectReference Include="..\SharedTestDependencies\SharedTestDependencies.csproj"/>
     </ItemGroup>
 </Project>

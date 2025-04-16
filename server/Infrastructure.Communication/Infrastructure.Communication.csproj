@@ -1,20 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\Application\Application.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Application\Application.csproj"/>
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FluentEmail.MailKit" Version="3.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.3" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="FluentEmail.MailKit" Version="3.0.2"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.3"/>
+        <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.3"/>
+    </ItemGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <RootNamespace>Infrastructure.Communication</RootNamespace>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Infrastructure.Communication</RootNamespace>
+    </PropertyGroup>
 
 </Project>

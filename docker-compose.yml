@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
-    
+  
   flyway:
     image: flyway/flyway:latest
     depends_on:
@@ -25,15 +25,13 @@ services:
     volumes:
       - ./db/migrations:/flyway/sql
     command: migrate
-      
-      
+  
   mailhog:
     image: mailhog/mailhog
     ports:
       - '1025:1025'
       - '8025:8025'
     restart: always
-    
-    
+
 volumes:
   postgres_data:

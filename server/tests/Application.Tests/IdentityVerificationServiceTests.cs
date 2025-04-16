@@ -28,7 +28,7 @@ public class IdentityVerificationServiceTests
         _mockUserIdentityService = new Mock<IUserIdentityService>();
         _emailSender = new FakeEmailSender();
         _mockRepository = new Mock<IIdentityVerificationRepository>();
-        
+
 
         _service = new IdentityVerificationService(
             _mockOtpService.Object,
@@ -46,10 +46,10 @@ public class IdentityVerificationServiceTests
             _mockUserIdentityService.Setup(s => s.CreateAsync(TestEmail))
                 .ReturnsAsync(TestUserId);
 
-            
+
             _mockOtpService.Setup(s => s.GenerateAsync())
                 .ReturnsAsync((TestOtpId, TestCode));
-            
+
             _mockRepository.Setup(r => r.CreateAsync(TestUserId, TestOtpId))
                 .ReturnsAsync(Guid.NewGuid());
 
@@ -62,7 +62,7 @@ public class IdentityVerificationServiceTests
             _mockOtpService.Verify(s => s.GenerateAsync(), Times.Once);
             _mockRepository.Verify(r => r.CreateAsync(TestUserId, TestOtpId), Times.Once);
         }
-        
+
         [Fact]
         public async Task SendCodeAsync_EmailFailure_ReturnsFalse()
         {
@@ -72,11 +72,11 @@ public class IdentityVerificationServiceTests
 
             _mockOtpService.Setup(s => s.GenerateAsync())
                 .ReturnsAsync((TestOtpId, TestCode));
-            
+
 
             _mockRepository.Setup(r => r.CreateAsync(TestUserId, TestOtpId))
                 .ReturnsAsync(Guid.NewGuid());
-            
+
             _emailSender.SimulateFailure = true;
 
             // Act
@@ -86,7 +86,7 @@ public class IdentityVerificationServiceTests
             result.ShouldBeFalse();
         }
 
-        
+
     }
 
     public class TryVerifyCodeAsync : IdentityVerificationServiceTests
@@ -175,6 +175,6 @@ public class IdentityVerificationServiceTests
             _mockOtpService.Verify(o => o.MarkAsUsedAsync(It.IsAny<Guid>()), Times.Never);
         }
 
-       
+
     }
 }

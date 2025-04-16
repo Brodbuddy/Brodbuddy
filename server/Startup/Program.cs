@@ -10,13 +10,12 @@ namespace Startup;
 
 public class Program
 {
-
     private static void ConfigureServices(IServiceCollection services)
     {
         services.AddOptions<AppOptions>()
-                .BindConfiguration(nameof(AppOptions))
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
+            .BindConfiguration(nameof(AppOptions))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
         services.AddHttpApi();
@@ -28,7 +27,7 @@ public class Program
         var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
         app.ConfigureHttpApi(appOptions.HttpPort);
     }
-    
+
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);

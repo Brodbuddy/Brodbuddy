@@ -14,8 +14,7 @@ public class IdentityVerificationService : IIdentityVerificationService
     private readonly IUserIdentityService _userIdentityService;
     private readonly IEmailSender _emailService;
     private readonly IIdentityVerificationRepository _identityVerificationRepository;
-   
-
+    
     public IdentityVerificationService(
         IOtpService otpService,
         IUserIdentityService userIdentityService,
@@ -27,8 +26,7 @@ public class IdentityVerificationService : IIdentityVerificationService
         _identityVerificationRepository = identityVerificationRepository;
         _emailService = emailService;
     }
-
-
+    
     public async Task<bool> SendCodeAsync(string email)
     {
         var userId = await _userIdentityService.CreateAsync(email);
