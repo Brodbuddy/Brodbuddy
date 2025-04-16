@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using Core.Entities;
+
+using Core.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
@@ -15,19 +17,21 @@ public partial class PostgresDbContext : DbContext
     public virtual DbSet<Device> Devices { get; set; }
 
     public virtual DbSet<DeviceRegistry> DeviceRegistries { get; set; }
-
+    
     public virtual DbSet<OneTimePassword> OneTimePasswords { get; set; }
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
-
+    
     public virtual DbSet<TokenContext> TokenContexts { get; set; }
-
+    
     public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<VerificationContext> VerificationContexts { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("uuid-ossp");
-
+        
         modelBuilder.Entity<Device>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("devices_pkey");
@@ -86,7 +90,7 @@ public partial class PostgresDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("device_registry_user_id_fkey");
         });
-
+        
         modelBuilder.Entity<OneTimePassword>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("one_time_passwords_pkey");
@@ -125,7 +129,7 @@ public partial class PostgresDbContext : DbContext
                 .HasForeignKey(d => d.ReplacedByTokenId)
                 .HasConstraintName("refresh_tokens_replaced_by_token_id_fkey");
         });
-
+        
         modelBuilder.Entity<TokenContext>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("token_contexts_pkey");
@@ -162,7 +166,7 @@ public partial class PostgresDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("token_contexts_user_id_fkey");
         });
-
+        
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("users_pkey");
@@ -176,6 +180,36 @@ public partial class PostgresDbContext : DbContext
             entity.Property(e => e.Email)
                 .HasMaxLength(255)
                 .HasColumnName("email");
+        });
+
+        modelBuilder.Entity<VerificationContext>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("verification_contexts_pkey");
+
+            entity.ToTable("verification_contexts");
+
+            entity.HasIndex(e => e.UserId, "idx_verification_contexts_user_id");
+
+            entity.HasIndex(e => new { e.UserId, e.OtpId }, "verification_contexts_user_id_otp_id_key").IsUnique();
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.OtpId).HasColumnName("otp_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Otp).WithMany(p => p.VerificationContexts)
+                .HasForeignKey(d => d.OtpId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("verification_contexts_otp_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.VerificationContexts)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("verification_contexts_user_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

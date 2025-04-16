@@ -2,6 +2,8 @@ using Infrastructure.Data.Postgres;
 using SharedTestDependencies;
 using Shouldly;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Infrastructure.Data.Tests;
 
@@ -9,8 +11,9 @@ public class OtpRepositoryTests
 {
     private readonly PostgresDbContext _dbContext;
     private readonly FakeTimeProvider _timeProvider;
+    private readonly Mock<ILogger<PostgresOtpRepository>> _mockLogger;
     private readonly PostgresOtpRepository _repository;
-
+    
     public OtpRepositoryTests()
     {
 
@@ -19,7 +22,8 @@ public class OtpRepositoryTests
             .Options;
         _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresOtpRepository(_dbContext, _timeProvider);
+        _mockLogger = new Mock<ILogger<PostgresOtpRepository>>();
+        _repository = new PostgresOtpRepository(_dbContext, _timeProvider, _mockLogger.Object);
     }
 
     [Fact]
