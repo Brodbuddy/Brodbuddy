@@ -20,7 +20,7 @@ public class PostgresDeviceRepository : IDeviceRepository
         if (device == null) throw new NullReferenceException("Device cannot be null");
 
         if (device.Id != Guid.Empty) throw new ArgumentException();
-        
+
         if (device.Id == Guid.Empty)
         {
             device.CreatedAt = _timeProvider.Now();
@@ -32,7 +32,7 @@ public class PostgresDeviceRepository : IDeviceRepository
 
         await _dbContext.SaveChangesAsync();
         return device.Id;
-     
+
     }
 
     public async Task<Device> GetAsync(Guid id)
@@ -60,7 +60,7 @@ public class PostgresDeviceRepository : IDeviceRepository
             .Where(d => d.Id == id)
             .ExecuteUpdateAsync(setters => setters
             .SetProperty(d => d.LastSeenAt, lastSeenTime));
-        
+
         return rowsAffected > 0;
     }
 

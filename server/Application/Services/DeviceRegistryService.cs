@@ -7,14 +7,14 @@ public interface IDeviceRegistryService
     Task<Guid> AssociateDeviceAsync(Guid userId, string browser, string os);
 }
 
-
 public class DeviceRegistryService : IDeviceRegistryService
 {
     private readonly IDeviceRegistryRepository _repository;
     private readonly IDeviceService _deviceService;
     private readonly IUserIdentityService _userIdentityService;
 
-    public DeviceRegistryService(IDeviceRegistryRepository repository, IDeviceService deviceService, IUserIdentityService userIdentityService)
+    public DeviceRegistryService(IDeviceRegistryRepository repository, IDeviceService deviceService,
+        IUserIdentityService userIdentityService)
     {
         _repository = repository;
         _deviceService = deviceService;

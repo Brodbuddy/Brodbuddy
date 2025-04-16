@@ -118,8 +118,8 @@ public class DeviceServiceTests
             };
 
             _repositoryMock.Setup(r => r.GetByIdsAsync(It.Is<List<Guid>>(
-            list => list.Contains(id1) && 
-                  list.Contains(id2) && 
+            list => list.Contains(id1) &&
+                  list.Contains(id2) &&
                   list.Count == 2)))
                   .ReturnsAsync(expectedDevices);
 
@@ -270,7 +270,7 @@ public class DeviceServiceTests
 
             // Act 
             await _service.UpdateLastSeenAsync(deviceId);
-            
+
             // Assert
             _repositoryMock.Verify(r => r.UpdateLastSeenAsync(deviceId, initialTime), Times.Once);
 

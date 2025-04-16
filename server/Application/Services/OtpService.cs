@@ -8,21 +8,17 @@ public interface IOtpService
     Task<(Guid id, int code)> GenerateAsync();
     Task<bool> IsValidAsync(Guid id, int code);
     Task<bool> MarkAsUsedAsync(Guid id);
-
 }
 
 public class OtpService : IOtpService
 {
     private readonly IOtpRepository _otpRepository;
-
-
+    
     public OtpService(IOtpRepository otpRepository)
     {
         _otpRepository = otpRepository;
     }
-
-   
-
+    
     public async Task<(Guid id, int code)> GenerateAsync()
     {
         //Benytter RandomNumberGenerator da det er kryptografisk sikker
@@ -47,6 +43,4 @@ public class OtpService : IOtpService
     {
         return await _otpRepository.MarkAsUsedAsync(id);
     }
-
- 
 }

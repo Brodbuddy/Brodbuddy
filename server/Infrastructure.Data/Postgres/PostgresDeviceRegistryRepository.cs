@@ -16,8 +16,8 @@ public class PostgresDeviceRegistryRepository : IDeviceRegistryRepository
 
     public async Task<Guid> SaveAsync(Guid userId, Guid deviceId)
     {
-        
-        
+
+
         var deviceRegistry = new DeviceRegistry
         {
             DeviceId = deviceId,

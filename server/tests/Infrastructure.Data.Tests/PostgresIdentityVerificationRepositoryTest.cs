@@ -65,7 +65,7 @@ public class PostgresIdentityVerificationRepositoryTest
             context.CreatedAt.ShouldBe(currentTime);
         }
 
-       
+
 
         [Fact]
         public async Task CreateAsync_WhenCalledMultipleTimes_ShouldGenerateUniqueIds()

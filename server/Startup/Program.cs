@@ -28,7 +28,7 @@ public class Program
         var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
         app.ConfigureHttpApi(appOptions.HttpPort);
     }
-    
+
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);

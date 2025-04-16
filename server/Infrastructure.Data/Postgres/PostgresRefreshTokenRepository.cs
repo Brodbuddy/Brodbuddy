@@ -9,14 +9,14 @@ public class PostgresRefreshTokenRepository(PostgresDbContext dbcontext, TimePro
 {
     public async Task<(string token, Guid tokenId)> CreateAsync(string token, DateTime expiresAt)
     {
-        
+
         var refreshToken = new RefreshToken
         {
             Token = token,
             CreatedAt = timeProvider.Now(),
             ExpiresAt = expiresAt
         };
-        
+
         await dbcontext.RefreshTokens.AddAsync(refreshToken);
         await dbcontext.SaveChangesAsync();
 
@@ -27,16 +27,16 @@ public class PostgresRefreshTokenRepository(PostgresDbContext dbcontext, TimePro
     public async Task<(bool isValid, Guid tokenId)> TryValidateAsync(string token)
     {
         var now = timeProvider.GetUtcNow().UtcDateTime;
-        
+
         var refreshToken = await dbcontext.RefreshTokens
             .FirstOrDefaultAsync(rt => rt.Token == token);
-        
+
         if (refreshToken == null)
             return (false, Guid.Empty);
-        
+
         if (refreshToken.RevokedAt != null)
             return (false, Guid.Empty);
-        
+
         return refreshToken.ExpiresAt < now ? (false, Guid.Empty) : (true, refreshToken.Id);
     }
 
@@ -44,12 +44,12 @@ public class PostgresRefreshTokenRepository(PostgresDbContext dbcontext, TimePro
     {
         var refreshToken = await dbcontext.RefreshTokens
             .FirstOrDefaultAsync(rt => rt.Id == tokenId);
-    
+
         if (refreshToken == null)
             return false;
-        
+
         refreshToken.RevokedAt = timeProvider.GetUtcNow().UtcDateTime;
-    
+
         await dbcontext.SaveChangesAsync();
         return true;
     }
@@ -58,31 +58,31 @@ public class PostgresRefreshTokenRepository(PostgresDbContext dbcontext, TimePro
     {
         var oldToken = await dbcontext.RefreshTokens
             .FirstOrDefaultAsync(rt => rt.Id == oldTokenId);
-    
+
         if (oldToken == null)
             throw new InvalidOperationException("Old token not found");
-    
-       
+
+
         var newToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         var now = timeProvider.Now();
-        var expiresAt = now.AddDays(30); 
-    
-        
+        var expiresAt = now.AddDays(30);
+
+
         var refreshToken = new RefreshToken
         {
             Token = newToken,
             CreatedAt = now,
             ExpiresAt = expiresAt
         };
-    
+
         await dbcontext.RefreshTokens.AddAsync(refreshToken);
         await dbcontext.SaveChangesAsync();
 
         oldToken.RevokedAt = now;
         oldToken.ReplacedByTokenId = refreshToken.Id;
-    
+
         await dbcontext.SaveChangesAsync();
-    
+
         return (refreshToken.Token, refreshToken.Id);
     }
 }

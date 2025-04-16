@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Application;
 
-
 public interface IRefreshTokenService
 {
     Task<(string token, Guid tokenId)> GenerateAsync();
@@ -13,8 +12,6 @@ public interface IRefreshTokenService
     Task<bool> RevokeAsync(string token);
     Task<(string token, Guid tokenId)> RotateAsync(string token);
 }
-
-
 
 public class RefreshTokenService : IRefreshTokenService
 {
@@ -46,7 +43,7 @@ public class RefreshTokenService : IRefreshTokenService
     {
         if (string.IsNullOrEmpty(token))
             return (false, Guid.Empty);
-        
+
         return await _repository.TryValidateAsync(token);
     }
 
@@ -70,7 +67,7 @@ public class RefreshTokenService : IRefreshTokenService
         var validationResult = await TryValidateAsync(token);
         if (!validationResult.isValid)
             return (string.Empty, Guid.Empty);
-            
+
         try
         {
             var result = await _repository.RotateAsync(validationResult.tokenId);

@@ -26,14 +26,13 @@ public class DeviceService : IDeviceService
 
     public async Task<Guid> CreateAsync(string browser, string os)
     {
-      
         ArgumentException.ThrowIfNullOrWhiteSpace(browser, nameof(browser));
         ArgumentException.ThrowIfNullOrWhiteSpace(os, nameof(os));
 
-        
+
         browser = browser.Trim().ToLowerInvariant();
         os = os.Trim().ToLowerInvariant();
-        
+
         string name = $"{browser}_{os}";
         var device = new Device
         {
@@ -43,7 +42,6 @@ public class DeviceService : IDeviceService
         };
 
         return await _repository.SaveAsync(device);
-
     }
 
     public async Task<Device> GetByIdAsync(Guid id)
@@ -64,7 +62,7 @@ public class DeviceService : IDeviceService
         }
 
         var validIds = ids.Where(id => id != Guid.Empty).ToList();
-        
+
         // Manuel check for om de er empty - var et krav for at Stryker ikke meldte mulig compileError..
         bool hasValidIds = false;
         foreach (var id in validIds)
@@ -79,22 +77,22 @@ public class DeviceService : IDeviceService
         }
 
         return await _repository.GetByIdsAsync(validIds);
-
     }
 
     public async Task<bool> ExistsAsync(Guid id)
-    { 
+    {
         if (id == Guid.Empty)
         {
             throw new ArgumentException("Device ID cannot be empty", nameof(id));
         }
+
         return await _repository.ExistsAsync(id);
     }
 
     public async Task<bool> UpdateLastSeenAsync(Guid id)
     {
         if (id == Guid.Empty)
-        { 
+        {
             throw new ArgumentException("Device ID cannot be empty", nameof(id));
         }
 
@@ -105,7 +103,7 @@ public class DeviceService : IDeviceService
     public async Task<bool> DisableAsync(Guid id)
     {
         if (id == Guid.Empty)
-        { 
+        {
             throw new ArgumentException("Device ID cannot be empty", nameof(id));
         }
 

@@ -13,7 +13,7 @@ public class OtpRepositoryTests
     private readonly FakeTimeProvider _timeProvider;
     private readonly Mock<ILogger<PostgresOtpRepository>> _mockLogger;
     private readonly PostgresOtpRepository _repository;
-    
+
     public OtpRepositoryTests()
     {
 
@@ -43,14 +43,14 @@ public class OtpRepositoryTests
         savedOtp.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
         savedOtp.ExpiresAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime.AddMinutes(15));
     }
-    
+
     [Fact]
     public async Task IsValidAsync_WithValidOtp_ReturnsTrue()
     {
         // Arrange
         int code = 333333;
         Guid id = await _repository.SaveAsync(code);
-        
+
         // Act
         bool isValid = await _repository.IsValidAsync(id, code);
 
@@ -78,13 +78,13 @@ public class OtpRepositoryTests
         // Arrange
         int code = 444444;
         Guid id = await _repository.SaveAsync(code);
-        
+
         // sætter tiden 16 min frem - alt over 15 minutter skal få den til at returne false
         _timeProvider.Advance(TimeSpan.FromMinutes(16));
-        
+
         // Act
         bool isValid = await _repository.IsValidAsync(id, code);
-        
+
         // Assert
         isValid.ShouldBeFalse();
     }
@@ -112,7 +112,7 @@ public class OtpRepositoryTests
         // Arrange
         int code = 555555;
         Guid id = await _repository.SaveAsync(code);
-        
+
         // Act
         bool result = await _repository.MarkAsUsedAsync(id);
 

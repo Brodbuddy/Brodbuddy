@@ -8,7 +8,7 @@ public class FakeTimeProvider(DateTimeOffset startDateTime) : TimeProvider
     {
         _currentTime = newTime;
     }
-    
+
     public void Advance(TimeSpan timeSpan)
     {
         _currentTime = _currentTime.Add(timeSpan);

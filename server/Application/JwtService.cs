@@ -10,23 +10,22 @@ using Microsoft.Extensions.Options;
 
 namespace Application;
 
-
-public interface  IJwtService
+public interface IJwtService
 {
     string Generate(string subject, string email, string role);
     bool TryValidate(string jwt, out JwtClaims validatedClaims);
 }
 
-
-public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider timeProvider, ILogger<JwtService> logger) : IJwtService
+public class JwtService(
+    IOptionsMonitor<AppOptions> optionsMonitor,
+    TimeProvider timeProvider,
+    ILogger<JwtService> logger) : IJwtService
 {
-    
-    
     public string Generate(string subject, string email, string role)
     {
         var jwtOptions = optionsMonitor.CurrentValue.Jwt;
         var now = timeProvider.GetUtcNow();
-        
+
         var tokenBuilder = new JwtBuilder()
             .WithAlgorithm(new HMACSHA512Algorithm())
             .WithSecret(jwtOptions.Secret)
@@ -41,19 +40,19 @@ public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider
             .AddClaim("email", email)
             .AddClaim("role", role)
             .AddHeader(HeaderName.Type, "JWT");
-        
+
         return tokenBuilder.Encode();
     }
 
     public bool TryValidate(string jwt, out JwtClaims validatedClaims)
     {
         validatedClaims = null!;
-        
+
         try
         {
             var jwtOptions = optionsMonitor.CurrentValue.Jwt;
             var timeAdapter = new TimeProviderAdapter(timeProvider);
-            
+
             var decoded = new JwtBuilder()
                 .WithAlgorithm(new HMACSHA512Algorithm())
                 .WithSecret(optionsMonitor.CurrentValue.Jwt.Secret)
@@ -72,7 +71,7 @@ public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider
             {
                 return false;
             }
-            
+
             validatedClaims = decoded;
             return true;
         }
@@ -92,13 +91,12 @@ public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider
             return false;
         }
     }
-    
+
     private class TimeProviderAdapter(TimeProvider timeProvider) : IDateTimeProvider
     {
-        private readonly TimeProvider _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        private readonly TimeProvider _timeProvider =
+            timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
 
         public DateTimeOffset GetNow() => _timeProvider.GetUtcNow();
     }
-
-   
 }

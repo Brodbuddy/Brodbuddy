@@ -14,7 +14,7 @@ public class DeviceRegistryServiceTests
     private readonly Mock<IUserIdentityService> _userIdentityServiceMock;
     private readonly Mock<IDeviceService> _deviceServiceMock;
     private readonly DeviceRegistryService _service;
-    
+
     public DeviceRegistryServiceTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
@@ -58,7 +58,7 @@ public class DeviceRegistryServiceTests
         await Should.ThrowAsync<ArgumentException>(() =>
             _service.AssociateDeviceAsync(userId, "chrome", "windows")
         );
-        
+
 
         _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);

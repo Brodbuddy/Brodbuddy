@@ -14,7 +14,8 @@ public static class Extensions
         services.AddDbContext<PostgresDbContext>((service, options) =>
         {
             var provider = services.BuildServiceProvider();
-            options.UseNpgsql(provider.GetRequiredService<IOptionsMonitor<AppOptions>>().CurrentValue.Postgres.ConnectionString);
+            options.UseNpgsql(provider.GetRequiredService<IOptionsMonitor<AppOptions>>().CurrentValue.Postgres
+                .ConnectionString);
             options.EnableSensitiveDataLogging();
         });
 
@@ -28,4 +29,3 @@ public static class Extensions
         return services;
     }
 }
-

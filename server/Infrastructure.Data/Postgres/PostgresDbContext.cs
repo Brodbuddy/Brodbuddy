@@ -17,13 +17,13 @@ public partial class PostgresDbContext : DbContext
     public virtual DbSet<Device> Devices { get; set; }
 
     public virtual DbSet<DeviceRegistry> DeviceRegistries { get; set; }
-    
+
     public virtual DbSet<OneTimePassword> OneTimePasswords { get; set; }
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
-    
+
     public virtual DbSet<TokenContext> TokenContexts { get; set; }
-    
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<VerificationContext> VerificationContexts { get; set; }
@@ -31,7 +31,7 @@ public partial class PostgresDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("uuid-ossp");
-        
+
         modelBuilder.Entity<Device>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("devices_pkey");
@@ -90,7 +90,7 @@ public partial class PostgresDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("device_registry_user_id_fkey");
         });
-        
+
         modelBuilder.Entity<OneTimePassword>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("one_time_passwords_pkey");
@@ -129,7 +129,7 @@ public partial class PostgresDbContext : DbContext
                 .HasForeignKey(d => d.ReplacedByTokenId)
                 .HasConstraintName("refresh_tokens_replaced_by_token_id_fkey");
         });
-        
+
         modelBuilder.Entity<TokenContext>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("token_contexts_pkey");
@@ -166,7 +166,7 @@ public partial class PostgresDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("token_contexts_user_id_fkey");
         });
-        
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("users_pkey");

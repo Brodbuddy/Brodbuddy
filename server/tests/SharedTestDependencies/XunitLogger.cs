@@ -38,11 +38,11 @@ public class LoggerAdapter<T> : ILogger<T>
 public class XunitLoggerProvider(ITestOutputHelper output) : ILoggerProvider
 {
     public ILogger CreateLogger(string categoryName) => new XunitLogger(output, categoryName);
-    
+
     public ILogger<T> CreateLogger<T>() => new LoggerAdapter<T>(CreateLogger(typeof(T).Name));
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this); 
+        GC.SuppressFinalize(this);
     }
 }

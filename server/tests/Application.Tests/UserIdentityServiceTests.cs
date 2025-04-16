@@ -66,7 +66,7 @@ public class UserIdentityServiceTests
             await Should.ThrowAsync<ArgumentException>(() =>
                 _service.CreateAsync(email));
 
-            
+
         }
 
         [Fact]
@@ -188,7 +188,7 @@ public class UserIdentityServiceTests
             // Act & Assert
             await Should.ThrowAsync<ArgumentException>(() =>
                 _service.GetAsync(emptyId));
-            
+
             _repositoryMock.Verify(r => r.GetAsync(It.IsAny<Guid>()), Times.Never);
         }
 
@@ -218,7 +218,7 @@ public class UserIdentityServiceTests
             // Act & Assert
             await Should.ThrowAsync<ArgumentException>(() =>
                 _service.GetAsync(email));
-            
+
             _repositoryMock.Verify(r => r.GetAsync(It.IsAny<string>()), Times.Never);
         }
     }

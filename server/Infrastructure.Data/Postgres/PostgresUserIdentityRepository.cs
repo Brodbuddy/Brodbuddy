@@ -6,7 +6,6 @@ namespace Infrastructure.Data.Postgres;
 
 public class PostgresUserIdentityRepository : IUserIdentityRepository
 {
-
     private readonly PostgresDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
 

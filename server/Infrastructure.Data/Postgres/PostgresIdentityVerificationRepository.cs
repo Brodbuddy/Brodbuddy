@@ -21,7 +21,7 @@ public class PostgresIdentityVerificationRepository : IIdentityVerificationRepos
 
     public async Task<Guid> CreateAsync(Guid userId, Guid otpId)
     {
-        
+
         var verificationContext = new VerificationContext
         {
             UserId = userId,
