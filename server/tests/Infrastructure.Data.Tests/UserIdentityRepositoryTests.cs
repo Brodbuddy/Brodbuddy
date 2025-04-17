@@ -1,27 +1,21 @@
 ﻿using Infrastructure.Data.Postgres;
-using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies;
 using Shouldly;
 
 namespace Infrastructure.Data.Tests;
 
-public class UserIdentityRepositoryTests
+[Collection(TestCollections.Database)]
+public class UserIdentityRepositoryTests : RepositoryTestBase
 {
-    private PostgresDbContext _dbContext;
     private FakeTimeProvider _timeProvider;
     private PostgresUserIdentityRepository _repository;
 
-    public UserIdentityRepositoryTests()
+    public UserIdentityRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
-        var options = new DbContextOptionsBuilder<PostgresDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         _repository = new PostgresUserIdentityRepository(_dbContext, _timeProvider);
     }
-
-
+    
     [Fact]
     public async Task SaveAsync_WithValidEmail_SavesUserAndReturnsId()
     {
@@ -38,7 +32,7 @@ public class UserIdentityRepositoryTests
         savedUser.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
     }
 
-    public class ExistsAsync : UserIdentityRepositoryTests
+    public class ExistsAsync(PostgresFixture fixture) : UserIdentityRepositoryTests(fixture)
     {
         [Fact]
         public async Task ExistsAsync_WithExistingUserId_ReturnsTrue()
@@ -95,7 +89,7 @@ public class UserIdentityRepositoryTests
         }
     }
 
-    public class GetAsync : UserIdentityRepositoryTests
+    public class GetAsync(PostgresFixture fixture) : UserIdentityRepositoryTests(fixture)
     {
         [Fact]
         public async Task GetAsync_WithExistingUserId_ReturnsUser()

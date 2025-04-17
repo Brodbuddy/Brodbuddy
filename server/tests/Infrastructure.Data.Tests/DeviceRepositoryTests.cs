@@ -1,28 +1,23 @@
 ﻿using Core.Entities;
 using Infrastructure.Data.Postgres;
-using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies;
 using Shouldly;
 
 namespace Infrastructure.Data.Tests;
 
-public class DeviceRepositoryTests
+[Collection(TestCollections.Database)]
+public class DeviceRepositoryTests : RepositoryTestBase
 {
-    private PostgresDbContext _dbContext;
     private FakeTimeProvider _timeProvider;
     private PostgresDeviceRepository _repository;
 
-    public DeviceRepositoryTests()
+    public DeviceRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
-        var options = new DbContextOptionsBuilder<PostgresDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         _repository = new PostgresDeviceRepository(_dbContext, _timeProvider);
     }
 
-    public class SaveAsync : DeviceRepositoryTests
+    public class SaveAsync(PostgresFixture fixture) : DeviceRepositoryTests(fixture)
     {
         [Fact]
         public async Task SaveAsync_WithNewDevice_SetsPropertiesAndReturnsId()
@@ -53,8 +48,8 @@ public class DeviceRepositoryTests
             savedDevice.Name.ShouldBe("chrome_windows");
             savedDevice.Browser.ShouldBe("chrome");
             savedDevice.Os.ShouldBe("windows");
-            savedDevice.CreatedAt.ShouldBe(expectedTime);
-            savedDevice.LastSeenAt.ShouldBe(expectedTime);
+            (savedDevice.CreatedAt - expectedTime).TotalMilliseconds.ShouldBeLessThan(1);
+            (savedDevice.LastSeenAt - expectedTime).TotalMilliseconds.ShouldBeLessThan(1);
             savedDevice.IsActive.ShouldBeTrue();
         }
 
@@ -69,7 +64,7 @@ public class DeviceRepositoryTests
         }
     }
 
-    public class GetAsync : DeviceRepositoryTests
+    public class GetAsync(PostgresFixture fixture) : DeviceRepositoryTests(fixture)
     {
         [Fact]
         public async Task GetAsync_WithExistingId_ReturnsDevice()
@@ -113,7 +108,7 @@ public class DeviceRepositoryTests
         }
     }
 
-    public class GetByIdsAsync : DeviceRepositoryTests
+    public class GetByIdsAsync(PostgresFixture fixture) : DeviceRepositoryTests(fixture)
     {
         [Fact]
         public async Task GetByIdsAsync_WithExistingIds_ReturnsMatchingDevices()
@@ -182,7 +177,7 @@ public class DeviceRepositoryTests
         }
     }
 
-    public class ExistsAsync : DeviceRepositoryTests
+    public class ExistsAsync(PostgresFixture fixture) : DeviceRepositoryTests(fixture)
     {
         [Fact]
         public async Task ExistsAsync_WithExistingId_ReturnsTrue()
@@ -218,7 +213,7 @@ public class DeviceRepositoryTests
     }
 
 
-    public class UpdateLastSeenAsync : DeviceRepositoryTests
+    public class UpdateLastSeenAsync(PostgresFixture fixture) : DeviceRepositoryTests(fixture)
     {
         [Fact]
         public async Task UpdateLastSeenAsync_WithExistingId_ReturnsTrue()
@@ -238,20 +233,17 @@ public class DeviceRepositoryTests
             var newLastSeen = DateTime.UtcNow.AddDays(1);
 
             // Act
-            var foundDevice = await _dbContext.Devices.FindAsync(id);
-            if (foundDevice != null) foundDevice.LastSeenAt = newLastSeen;
-            await _dbContext.SaveChangesAsync();
-
+            await _repository.UpdateLastSeenAsync(id, newLastSeen);
             _dbContext.ChangeTracker.Clear();
 
             // Assert
             var updatedDevice = await _dbContext.Devices.FindAsync(id);
             updatedDevice.ShouldNotBeNull();
-            updatedDevice.LastSeenAt.ShouldBe(newLastSeen);
+            (updatedDevice.LastSeenAt - newLastSeen).TotalMilliseconds.ShouldBeLessThan(1);
         }
     }
 
-    public class DisableAsync : DeviceRepositoryTests
+    public class DisableAsync(PostgresFixture fixture) : DeviceRepositoryTests(fixture)
     {
         [Fact]
         public async Task DisableAsync_WithExistingId_ReturnsTrue()
@@ -270,10 +262,8 @@ public class DeviceRepositoryTests
             var id = device.Id;
 
             // Act
-            var foundDevice = await _dbContext.Devices.FindAsync(id);
-            if (foundDevice != null) foundDevice.IsActive = false;
-            await _dbContext.SaveChangesAsync();
-
+            await _repository.DisableAsync(id);
+            // Vi skal clear changetreacker for at tvinge EF Core til at læse fra db igen
             _dbContext.ChangeTracker.Clear();
 
             // Assert

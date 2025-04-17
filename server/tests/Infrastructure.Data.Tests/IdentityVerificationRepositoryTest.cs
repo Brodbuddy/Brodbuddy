@@ -3,29 +3,22 @@ using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies;
 using Shouldly;
-using Xunit.Abstractions;
 
 namespace Infrastructure.Data.Tests;
 
-public class IdentityVerificationRepositoryTest
+[Collection(TestCollections.Database)]
+public class IdentityVerificationRepositoryTest : RepositoryTestBase
 {
-    private readonly PostgresDbContext _dbContext;
     private readonly FakeTimeProvider _timeProvider;
     private readonly PostgresIdentityVerificationRepository _repository;
-
-
-    public IdentityVerificationRepositoryTest(ITestOutputHelper testOutputHelper)
+    
+    public IdentityVerificationRepositoryTest(PostgresFixture fixture) :  base(fixture)
     {
-        var options = new DbContextOptionsBuilder<PostgresDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        
-        _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         _repository = new PostgresIdentityVerificationRepository(_dbContext, _timeProvider);
     }
 
-    public class CreateAsync(ITestOutputHelper testOutputHelper) : IdentityVerificationRepositoryTest(testOutputHelper)
+    public class CreateAsync(PostgresFixture fixture) : IdentityVerificationRepositoryTest(fixture)
     {
         [Fact]
         public async Task CreateAsync_WhenUserAndOtpExist_ShouldCreateVerificationContext()
@@ -58,26 +51,20 @@ public class IdentityVerificationRepositoryTest
             context.CreatedAt.ShouldBe(currentTime);
         }
 
-
-
+        
         [Fact]
         public async Task CreateAsync_WhenCalledMultipleTimes_ShouldGenerateUniqueIds()
         {
             // Arrange
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@example.com"
-            };
-            var otp = new OneTimePassword { Id = Guid.NewGuid() };
-
-            await _dbContext.Users.AddAsync(user);
-            await _dbContext.OneTimePasswords.AddAsync(otp);
-            await _dbContext.SaveChangesAsync();
-
+            var user1 = await _dbContext.SeedUserAsync(_timeProvider);
+            var otp1 = await _dbContext.SeedOtpAsync(_timeProvider);
+            
+            var user2 = await _dbContext.SeedUserAsync(_timeProvider);
+            var otp2 = await _dbContext.SeedOtpAsync(_timeProvider);
+            
             // Act
-            var resultId1 = await _repository.CreateAsync(user.Id, otp.Id);
-            var resultId2 = await _repository.CreateAsync(user.Id, otp.Id);
+            var resultId1 = await _repository.CreateAsync(user1.Id, otp1.Id);
+            var resultId2 = await _repository.CreateAsync(user2.Id, otp2.Id);
 
             // Assert
             resultId1.ShouldNotBe(Guid.Empty);
@@ -143,7 +130,7 @@ public class IdentityVerificationRepositoryTest
         }
     }
 
-    public class GetLatestAsync(ITestOutputHelper testOutputHelper) : IdentityVerificationRepositoryTest(testOutputHelper)
+    public class GetLatestAsync(PostgresFixture fixture) : IdentityVerificationRepositoryTest(fixture)
     {
         [Fact]
         public async Task GetLatestAsync_WhenContextsExist_ShouldReturnLatestContext()

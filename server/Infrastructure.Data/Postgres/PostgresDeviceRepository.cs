@@ -64,6 +64,7 @@ public class PostgresDeviceRepository : IDeviceRepository
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(d => d.IsActive, false));
 
+        await _dbContext.SaveChangesAsync();
         return rowsAffected > 0;
     }
 }

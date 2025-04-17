@@ -1,23 +1,18 @@
-﻿using Infrastructure.Data.Postgres;
-using Microsoft.EntityFrameworkCore;
+﻿using Core.Extensions;
+using Infrastructure.Data.Postgres;
 using Shouldly;
 using SharedTestDependencies;
 
 namespace Infrastructure.Data.Tests;
 
-public class DeviceRegistryRepositoryTests
+[Collection(TestCollections.Database)]
+public class DeviceRegistryRepositoryTests : RepositoryTestBase
 {
-    private readonly PostgresDbContext _dbContext;
     private readonly FakeTimeProvider _timeProvider;
     private readonly PostgresDeviceRegistryRepository _repository;
 
-    public DeviceRegistryRepositoryTests()
+    public DeviceRegistryRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
-        var options = new DbContextOptionsBuilder<PostgresDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-
-        _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         _repository = new PostgresDeviceRegistryRepository(_dbContext, _timeProvider);
     }
@@ -26,19 +21,19 @@ public class DeviceRegistryRepositoryTests
     public async Task SaveAsync_ShouldCreateDeviceRegistry_AndReturnId()
     {
         // Arrange
-        var userId = Guid.NewGuid();
-        var deviceId = Guid.NewGuid();
+        var user = await _dbContext.SeedUserAsync(_timeProvider);
+        var device = await _dbContext.SeedDeviceAsync(_timeProvider);
 
         // Act
-        var registryId = await _repository.SaveAsync(userId, deviceId);
+        var registryId = await _repository.SaveAsync(user.Id, device.Id);
 
         // Assert
         registryId.ShouldNotBe(Guid.Empty);
 
         var savedRegistry = await _dbContext.DeviceRegistries.FindAsync(registryId);
         savedRegistry.ShouldNotBeNull();
-        savedRegistry.UserId.ShouldBe(userId);
-        savedRegistry.DeviceId.ShouldBe(deviceId);
-        savedRegistry.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
+        savedRegistry.UserId.ShouldBe(user.Id);
+        savedRegistry.DeviceId.ShouldBe(device.Id);
+        (savedRegistry.CreatedAt - _timeProvider.Now()).TotalMilliseconds.ShouldBeLessThan(1);
     }
 }

@@ -1,23 +1,17 @@
 using Infrastructure.Data.Postgres;
 using SharedTestDependencies;
 using Shouldly;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Tests;
 
-public class OtpRepositoryTests
+[Collection(TestCollections.Database)]
+public class OtpRepositoryTests : RepositoryTestBase
 {
-    private readonly PostgresDbContext _dbContext;
     private readonly FakeTimeProvider _timeProvider;
     private readonly PostgresOtpRepository _repository;
 
-    public OtpRepositoryTests()
+    public OtpRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
-
-        var options = new DbContextOptionsBuilder<PostgresDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-            .Options;
-        _dbContext = new PostgresDbContext(options);
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         _repository = new PostgresOtpRepository(_dbContext, _timeProvider);
     }

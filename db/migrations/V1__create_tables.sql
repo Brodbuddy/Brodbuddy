@@ -9,12 +9,6 @@ CREATE TABLE refresh_tokens (
     replaced_by_token_id UUID REFERENCES refresh_tokens (id)
 );
 
-CREATE TABLE users (
-    id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    email      VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL
-);
-
 CREATE TABLE one_time_passwords (
     id         UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
     code       INTEGER     NOT NULL,
