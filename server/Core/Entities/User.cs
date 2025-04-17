@@ -10,4 +10,10 @@ public partial class User
     public string Email { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
+
+    public virtual ICollection<DeviceRegistry> DeviceRegistries { get; set; } = new List<DeviceRegistry>();
+
+    public virtual ICollection<TokenContext> TokenContexts { get; set; } = new List<TokenContext>();
+
+    public virtual ICollection<VerificationContext> VerificationContexts { get; set; } = new List<VerificationContext>();
 }

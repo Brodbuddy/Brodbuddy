@@ -1,5 +1,4 @@
-﻿using Application;
-using Application.Interfaces;
+﻿using Application.Interfaces;
 using FluentEmail.Core;
 using FluentEmail.Core.Models;
 

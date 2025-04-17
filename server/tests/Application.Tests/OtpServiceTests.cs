@@ -25,7 +25,7 @@ public class OtpServiceTests
             .ReturnsAsync(Guid.NewGuid());
 
         // Act
-        int code = await _service.GenerateAsync();
+        var (id, code) = await _service.GenerateAsync();
 
         // Assert
         code.ShouldBeInRange(100000, 999999);

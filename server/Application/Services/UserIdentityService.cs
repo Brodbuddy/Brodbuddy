@@ -16,8 +16,7 @@ public interface IUserIdentityService
 public class UserIdentityService : IUserIdentityService
 {
     private readonly IUserIdentityRepository _repository;
-    
-    
+
     public UserIdentityService(IUserIdentityRepository repository)
     {
         _repository = repository;
@@ -29,39 +28,33 @@ public class UserIdentityService : IUserIdentityService
         {
             throw new ArgumentException("Invalid email format", nameof(email));
         }
-        
+
         email = email.Trim().ToLowerInvariant();
 
-        if (await ExistsAsync(email))
-        {
-            var existingUser = await _repository.GetAsync(email);
-            return existingUser!.Id;
-        }
+        if (!await ExistsAsync(email)) return await _repository.SaveAsync(email);
         
-        return await _repository.SaveAsync(email);
+        var existingUser = await _repository.GetAsync(email);
+        return existingUser!.Id;
     }
 
     private bool IsValidEmail(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
-        { 
-            throw new ArgumentException("Email cannot be null or empty", nameof(email)); 
+        {
+            throw new ArgumentException("Email cannot be null or empty", nameof(email));
         }
-        
+
         if (!MailAddress.TryCreate(email, out var _))
             return false;
-        
+
         if (!email.Contains('@') || !email.Contains('.'))
             return false;
-        
+
         var parts = email.Split('@');
         if (parts.Length != 2 || string.IsNullOrEmpty(parts[0]) || string.IsNullOrEmpty(parts[1]))
             return false;
         
-        if (!parts[1].Contains('.'))
-            return false;
-        
-        return true;
+        return parts[1].Contains('.');
     }
 
     public Task<bool> ExistsAsync(Guid id)
@@ -98,12 +91,13 @@ public class UserIdentityService : IUserIdentityService
         }
 
         email = email.Trim().ToLowerInvariant();
-        
+
         var user = await _repository.GetAsync(email);
         if (user == null)
         {
             throw new ArgumentException($"User with email {email} not found");
         }
+
         return user;
     }
 }
