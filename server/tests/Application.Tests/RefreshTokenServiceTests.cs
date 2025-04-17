@@ -44,7 +44,7 @@ public class RefreshTokenServiceTests
     public class TryValidateAsync : RefreshTokenServiceTests
     {
         [Fact]
-        public async Task TryValidateAsync_ShouldReturnResultFromRepository()
+        public async Task TryValidateAsync_ShouldReturnValidationResult()
         {
             // Arrange
             var token = "testToken";
