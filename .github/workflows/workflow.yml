@@ -1,0 +1,147 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  continuous-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install .NET tools
+        run: |
+          dotnet tool install -g dotnet-sonarscanner
+          dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Initialize SonarQube analysis
+        # Kan ikke køre SonarQube ordentlig på flere branches hvis man har Community Edition og Developer koster 500$ om året
+        if: (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
+        env:
+          SONARQUBE_PROJECT_KEY: ${{ vars.SONARQUBE_PROJECT_KEY }}
+          SONARQUBE_SERVER: ${{ vars.SONARQUBE_SERVER }}
+          SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number || '' }}
+          GITHUB_HEAD_REF: ${{ github.head_ref }}
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          chmod +x .github/scripts/sonarqube_config.py
+          python .github/scripts/sonarqube_config.py
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+        
+      - name: Run .NET tests
+        run: |
+          chmod +x .github/scripts/run_dotnet_tests.py
+          python .github/scripts/run_dotnet_tests.py
+
+      - name: Generate test summary
+        if: always()
+        run: |
+          chmod +x .github/scripts/generate_test_summary.py
+          python .github/scripts/generate_test_summary.py
+
+      - name: Generate code coverage report
+        if: always()
+        run: |
+          chmod +x .github/scripts/generate_coverage_report.py
+          python .github/scripts/generate_coverage_report.py
+
+      - name: Complete SonarQube analysis
+        if: always() && (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
+        run: |
+          dotnet sonarscanner end \
+          /d:sonar.token="${{ secrets.SONARQUBE_TOKEN }}"
+
+      - name: Install Python dependencies # Skal bruges i 'Generate SonarQube Summary' for at hente data fra SonarQube server
+        if: always() && (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
+        run: pip install requests
+
+      - name: Generate SonarQube Summary
+        if: always() && (github.ref == 'refs/heads/master' || github.event_name == 'pull_request')
+        env:
+          SONARQUBE_SERVER: ${{ vars.SONARQUBE_SERVER }}
+          SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+          SONARQUBE_PROJECT_KEY: ${{ vars.SONARQUBE_PROJECT_KEY }}
+        run: |
+          chmod +x .github/scripts/generate_sonarqube_summary.py
+          python .github/scripts/generate_sonarqube_summary.py
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report
+          path: '**/TestResults/*.html'
+          retention-days: 7
+
+      - name: Upload code coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-report
+          retention-days: 7
+
+  mutation-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install .NET tools
+        # Har ikke threshold med her for at kunne få summary
+        # Men se sidste trin i dette som tjekker for om vi rammer 80%
+        run: |
+          dotnet tool install -g dotnet-stryker 
+
+      - name: Build
+        run: dotnet build
+
+      - name: Run Stryker mutation tests
+        run: |
+          dotnet stryker --output StrykerOutput --reporter "json" --reporter "html" | tee stryker-output.log
+
+      - name: Generate mutation summary
+        if: always()
+        run: |
+          chmod +x .github/scripts/generate_mutation_summary.py
+          python .github/scripts/generate_mutation_summary.py
+
+      - name: Upload Stryker report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stryker-report
+          path: |
+            **/StrykerOutput/**/*
+          retention-days: 7
+
+      - name: Check against mutation threshold (80%)
+        if: always()
+        run: |
+          MUTATION_SCORE=$(echo $MUTATION_SCORE | tr -d '%')
+          echo "Mutation score: $MUTATION_SCORE%"
+          
+          if [[ $MUTATION_SCORE -lt 80 ]]; then
+            echo "::error::Mutation score ($MUTATION_SCORE%) is below threshold (80%)"
+            exit 1
+          else
+            echo "Mutation score meets threshold requirement"
+          fi
