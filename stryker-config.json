@@ -1,0 +1,20 @@
+{
+  "stryker-config": {
+    "solution": "Brodbuddy.sln",
+    "ignore-methods": [
+      "Log*", 
+      "Console.Write*",
+      "*Exception.ctor"
+    ],
+    "mutate": [
+      "/**/*.cs",
+      "!/**/*.g.cs",
+      "!/**/*.generated.cs",
+      "!/**/PostgresDbContext.cs",
+      "!/**/tests/**/*",
+      "!/**/Extension.cs",
+      "!/**/AppOptions.cs"
+    ],
+    "reporters": ["html", "progress"]
+  }
+}

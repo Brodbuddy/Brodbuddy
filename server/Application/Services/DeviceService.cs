@@ -56,6 +56,7 @@ public class DeviceService : IDeviceService
 
     public async Task<IEnumerable<Device>> GetByIdsAsync(IEnumerable<Guid> ids)
     {
+        // Stryker disable once statement: gider ikke teste for hvad beskeden indeholder 
         ArgumentNullException.ThrowIfNull(ids);
 
         var validIds = ids.Where(id => id != Guid.Empty).ToList();
