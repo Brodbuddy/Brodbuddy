@@ -114,8 +114,6 @@ jobs:
           fetch-depth: 0
 
       - name: Install .NET tools
-        # Har ikke threshold med her for at kunne få summary
-        # Men se sidste trin i dette som tjekker for om vi rammer 80%
         run: |
           dotnet tool install -g dotnet-stryker 
 
@@ -123,8 +121,11 @@ jobs:
         run: dotnet build
 
       - name: Run Stryker mutation tests
+        # Har ikke threshold med her for at kunne få summary
+        # Men se sidste trin i dette som tjekker for om vi rammer 80%
         run: |
-          dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput" --reporter "json" --reporter "html" | tee "stryker-output-${{ matrix.project }}.log"
+          SAFE_NAME=$(echo "${{ matrix.project }}" | tr '/' '_')
+          dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput" --reporter "json" --reporter "html" | tee "stryker-output-${SAFE_NAME}.log"
 
       - name: Generate mutation summary
         if: always()
@@ -136,11 +137,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stryker-report-${{ matrix.project }}
+          name: stryker-report-${{ github.job }}-${{ strategy.job-index }}
           path: |
             **/StrykerOutput/**/*
           retention-days: 7
-
+        
       - name: Check against mutation threshold (80%)
         if: always()
         run: |
