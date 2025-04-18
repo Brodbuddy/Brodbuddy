@@ -7,13 +7,13 @@ namespace Infrastructure.Data.Tests;
 [Collection(TestCollections.Database)]
 public class UserIdentityRepositoryTests : RepositoryTestBase
 {
-    private FakeTimeProvider _timeProvider;
-    private PostgresUserIdentityRepository _repository;
+    private readonly FakeTimeProvider _timeProvider;
+    private readonly PostgresUserIdentityRepository _repository;
 
-    public UserIdentityRepositoryTests(PostgresFixture fixture) : base(fixture)
+    private UserIdentityRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresUserIdentityRepository(_dbContext, _timeProvider);
+        _repository = new PostgresUserIdentityRepository(DbContext, _timeProvider);
     }
 
     public class SaveAsync(PostgresFixture fixture) : UserIdentityRepositoryTests(fixture)
@@ -28,7 +28,7 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
             Guid userId = await _repository.SaveAsync(email);
 
             //Assert
-            var savedUser = await _dbContext.Users.FindAsync(userId);
+            var savedUser = await DbContext.Users.FindAsync(userId);
             savedUser.ShouldNotBeNull();
             savedUser.Email.ShouldBe(email);
             savedUser.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);

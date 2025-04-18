@@ -1,7 +1,5 @@
 using Api.Http;
 using Application;
-using Application.Interfaces;
-using Infrastructure.Communication.Mail;
 using Infrastructure.Communication;
 using Infrastructure.Data;
 using Microsoft.Extensions.Options;

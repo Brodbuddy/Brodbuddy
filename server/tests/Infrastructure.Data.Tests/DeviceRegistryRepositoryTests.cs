@@ -11,10 +11,10 @@ public class DeviceRegistryRepositoryTests : RepositoryTestBase
     private readonly FakeTimeProvider _timeProvider;
     private readonly PostgresDeviceRegistryRepository _repository;
 
-    public DeviceRegistryRepositoryTests(PostgresFixture fixture) : base(fixture)
+    private DeviceRegistryRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresDeviceRegistryRepository(_dbContext, _timeProvider);
+        _repository = new PostgresDeviceRegistryRepository(DbContext, _timeProvider);
     }
 
     public class SaveAsync(PostgresFixture fixture) : DeviceRegistryRepositoryTests(fixture)
@@ -23,8 +23,8 @@ public class DeviceRegistryRepositoryTests : RepositoryTestBase
         public async Task SaveAsync_ShouldCreateDeviceRegistry_AndReturnId()
         {
             // Arrange
-            var user = await _dbContext.SeedUserAsync(_timeProvider);
-            var device = await _dbContext.SeedDeviceAsync(_timeProvider);
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var device = await DbContext.SeedDeviceAsync(_timeProvider);
             var expectedTime = _timeProvider.Now();
 
             // Act
@@ -33,7 +33,7 @@ public class DeviceRegistryRepositoryTests : RepositoryTestBase
             // Assert
             registryId.ShouldNotBe(Guid.Empty);
 
-            var savedRegistry = await _dbContext.DeviceRegistries.FindAsync(registryId);
+            var savedRegistry = await DbContext.DeviceRegistries.FindAsync(registryId);
             savedRegistry.ShouldNotBeNull();
             savedRegistry.UserId.ShouldBe(user.Id);
             savedRegistry.DeviceId.ShouldBe(device.Id);

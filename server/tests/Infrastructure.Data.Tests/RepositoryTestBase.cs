@@ -6,15 +6,15 @@ namespace Infrastructure.Data.Tests;
 
 public abstract class RepositoryTestBase : IAsyncLifetime
 {
-    protected readonly PostgresFixture _fixture;
-    protected PostgresDbContext _dbContext;
+    private readonly PostgresFixture _fixture;
+    protected readonly PostgresDbContext DbContext;
     
     protected RepositoryTestBase(PostgresFixture fixture)
     {
         _fixture = fixture;
         
         var options = new DbContextOptionsBuilder<PostgresDbContext>().UseNpgsql(_fixture.ConnectionString).Options;
-        _dbContext = new PostgresDbContext(options);
+        DbContext = new PostgresDbContext(options);
     }
     
     public async Task InitializeAsync()
@@ -24,7 +24,7 @@ public abstract class RepositoryTestBase : IAsyncLifetime
 
     public Task DisposeAsync()
     {
-        _dbContext.Dispose();
+        DbContext.Dispose();
         return Task.CompletedTask;
     }
 }

@@ -11,11 +11,11 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
 {
     private readonly FakeTimeProvider _timeProvider;
     private readonly PostgresIdentityVerificationRepository _repository;
-    
-    public IdentityVerificationRepositoryTest(PostgresFixture fixture) :  base(fixture)
+
+    private IdentityVerificationRepositoryTest(PostgresFixture fixture) :  base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresIdentityVerificationRepository(_dbContext, _timeProvider);
+        _repository = new PostgresIdentityVerificationRepository(DbContext, _timeProvider);
     }
 
     public class CreateAsync(PostgresFixture fixture) : IdentityVerificationRepositoryTest(fixture)
@@ -31,9 +31,9 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
             };
             var otp = new OneTimePassword { Id = Guid.NewGuid() };
 
-            await _dbContext.Users.AddAsync(user);
-            await _dbContext.OneTimePasswords.AddAsync(otp);
-            await _dbContext.SaveChangesAsync();
+            await DbContext.Users.AddAsync(user);
+            await DbContext.OneTimePasswords.AddAsync(otp);
+            await DbContext.SaveChangesAsync();
 
             var currentTime = DateTime.UtcNow;
             _timeProvider.SetUtcNow(new DateTimeOffset(currentTime));
@@ -44,7 +44,7 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
             // Assert
             resultId.ShouldNotBe(Guid.Empty);
 
-            var context = await _dbContext.VerificationContexts.FindAsync(resultId);
+            var context = await DbContext.VerificationContexts.FindAsync(resultId);
             context.ShouldNotBeNull();
             context.UserId.ShouldBe(user.Id);
             context.OtpId.ShouldBe(otp.Id);
@@ -56,11 +56,11 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
         public async Task CreateAsync_WhenCalledMultipleTimes_ShouldGenerateUniqueIds()
         {
             // Arrange
-            var user1 = await _dbContext.SeedUserAsync(_timeProvider);
-            var otp1 = await _dbContext.SeedOtpAsync(_timeProvider);
+            var user1 = await DbContext.SeedUserAsync(_timeProvider);
+            var otp1 = await DbContext.SeedOtpAsync(_timeProvider);
             
-            var user2 = await _dbContext.SeedUserAsync(_timeProvider);
-            var otp2 = await _dbContext.SeedOtpAsync(_timeProvider);
+            var user2 = await DbContext.SeedUserAsync(_timeProvider);
+            var otp2 = await DbContext.SeedOtpAsync(_timeProvider);
             
             // Act
             var resultId1 = await _repository.CreateAsync(user1.Id, otp1.Id);
@@ -83,9 +83,9 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
             };
             var otp = new OneTimePassword { Id = Guid.NewGuid() };
 
-            await _dbContext.Users.AddAsync(user);
-            await _dbContext.OneTimePasswords.AddAsync(otp);
-            await _dbContext.SaveChangesAsync();
+            await DbContext.Users.AddAsync(user);
+            await DbContext.OneTimePasswords.AddAsync(otp);
+            await DbContext.SaveChangesAsync();
 
             var expectedTime = new DateTime(2023, 1, 1, 12, 0, 0, DateTimeKind.Utc);
             _timeProvider.SetUtcNow(new DateTimeOffset(expectedTime));
@@ -94,7 +94,7 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
             var resultId = await _repository.CreateAsync(user.Id, otp.Id);
 
             // Assert
-            var context = await _dbContext.VerificationContexts.FindAsync(resultId);
+            var context = await DbContext.VerificationContexts.FindAsync(resultId);
             context.ShouldNotBeNull();
             context.CreatedAt.ShouldBe(expectedTime);
         }
@@ -111,16 +111,16 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
             var otp1 = new OneTimePassword { Id = Guid.NewGuid() };
             var otp2 = new OneTimePassword { Id = Guid.NewGuid() };
 
-            await _dbContext.Users.AddAsync(user);
-            await _dbContext.OneTimePasswords.AddRangeAsync(otp1, otp2);
-            await _dbContext.SaveChangesAsync();
+            await DbContext.Users.AddAsync(user);
+            await DbContext.OneTimePasswords.AddRangeAsync(otp1, otp2);
+            await DbContext.SaveChangesAsync();
 
             // Act
             var resultId1 = await _repository.CreateAsync(user.Id, otp1.Id);
             var resultId2 = await _repository.CreateAsync(user.Id, otp2.Id);
 
             // Assert
-            var contexts = await _dbContext.VerificationContexts
+            var contexts = await DbContext.VerificationContexts
                 .Where(vc => vc.UserId == user.Id)
                 .ToListAsync();
 
@@ -144,9 +144,9 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
             var otp1 = new OneTimePassword { Id = Guid.NewGuid() };
             var otp2 = new OneTimePassword { Id = Guid.NewGuid() };
 
-            await _dbContext.Users.AddAsync(user);
-            await _dbContext.OneTimePasswords.AddRangeAsync(otp1, otp2);
-            await _dbContext.SaveChangesAsync();
+            await DbContext.Users.AddAsync(user);
+            await DbContext.OneTimePasswords.AddRangeAsync(otp1, otp2);
+            await DbContext.SaveChangesAsync();
 
             var olderDate = DateTime.UtcNow.AddDays(-2);
             var newerDate = DateTime.UtcNow.AddDays(-1);
@@ -169,8 +169,8 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
                 Otp = otp2
             };
 
-            await _dbContext.VerificationContexts.AddRangeAsync(context1, context2);
-            await _dbContext.SaveChangesAsync();
+            await DbContext.VerificationContexts.AddRangeAsync(context1, context2);
+            await DbContext.SaveChangesAsync();
 
             // Act
             var result = await _repository.GetLatestAsync(user.Id);
@@ -205,9 +205,9 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
             };
             var otp = new OneTimePassword { Id = Guid.NewGuid() };
 
-            await _dbContext.Users.AddAsync(user);
-            await _dbContext.OneTimePasswords.AddAsync(otp);
-            await _dbContext.SaveChangesAsync();
+            await DbContext.Users.AddAsync(user);
+            await DbContext.OneTimePasswords.AddAsync(otp);
+            await DbContext.SaveChangesAsync();
 
             var context = new VerificationContext
             {
@@ -218,8 +218,8 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
                 Otp = otp
             };
 
-            await _dbContext.VerificationContexts.AddAsync(context);
-            await _dbContext.SaveChangesAsync();
+            await DbContext.VerificationContexts.AddAsync(context);
+            await DbContext.SaveChangesAsync();
 
             // Act
             var result = await _repository.GetLatestAsync(user.Id);

@@ -4,7 +4,7 @@ namespace SharedTestDependencies;
 
 public class FakeEmailSender : IEmailSender
 {
-    public bool SimulateFailure { get; set; } = false;
+    public bool SimulateFailure { get; set; }
 
     public Task<bool> SendEmailAsync(string to, string topic, string content)
     {

@@ -1,4 +1,3 @@
-using Core.Extensions;
 using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies;
@@ -12,10 +11,10 @@ public class OtpRepositoryTests : RepositoryTestBase
     private readonly FakeTimeProvider _timeProvider;
     private readonly PostgresOtpRepository _repository;
 
-    public OtpRepositoryTests(PostgresFixture fixture) : base(fixture)
+    private OtpRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresOtpRepository(_dbContext, _timeProvider);
+        _repository = new PostgresOtpRepository(DbContext, _timeProvider);
     }
 
     public class SaveAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
@@ -30,7 +29,7 @@ public class OtpRepositoryTests : RepositoryTestBase
             Guid id = await _repository.SaveAsync(code);
 
             // Assert
-            var savedOtp = await _dbContext.OneTimePasswords.FindAsync(id);
+            var savedOtp = await DbContext.OneTimePasswords.FindAsync(id);
             savedOtp.ShouldNotBeNull();
             savedOtp.Code.ShouldBe(code);
             savedOtp.IsUsed.ShouldBeFalse();
@@ -95,7 +94,7 @@ public class IsValidAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
 
             // Ændrer id'et til brugt.
             await _repository.MarkAsUsedAsync(id);
-            _dbContext.ChangeTracker.Clear(); // Tving IsValidAsync til at læse frisk fra DB
+            DbContext.ChangeTracker.Clear(); // Tving IsValidAsync til at læse frisk fra DB
 
             // Act
             bool isValid = await _repository.IsValidAsync(id, code);
@@ -111,7 +110,7 @@ public class IsValidAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
             var code = 666666;
             var expiryDuration = TimeSpan.FromMinutes(15); 
 
-            var otp = await _dbContext.SeedOtpAsync(_timeProvider, (int) expiryDuration.TotalMinutes, code);
+            var otp = await DbContext.SeedOtpAsync(_timeProvider, (int) expiryDuration.TotalMinutes, code);
             
             // Sæt TimeProvider's nuværende tid til at være PRÆCIS udløbstiden
             _timeProvider.SetUtcNow(new DateTimeOffset(otp.ExpiresAt, TimeSpan.Zero));
@@ -130,7 +129,7 @@ public class IsValidAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
         public async Task MarkAsUsedAsync_WithValidOtp_ReturnsTrue()
         {
             // Arrange
-            var otpToMark = await _dbContext.SeedOtpAsync(_timeProvider, code: 555555, isUsed: false);
+            var otpToMark = await DbContext.SeedOtpAsync(_timeProvider, code: 555555, isUsed: false);
             
             // Pre-assert
             otpToMark.IsUsed.ShouldBeFalse();
@@ -142,7 +141,7 @@ public class IsValidAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
             result.ShouldBeTrue();
 
             // verificer i databasen at Otp er ændret til brugt
-            var updatedOtp = await _dbContext.OneTimePasswords
+            var updatedOtp = await DbContext.OneTimePasswords
                 .AsNoTracking() 
                 .FirstOrDefaultAsync(otp => otp.Id == otpToMark.Id);
             updatedOtp.ShouldNotBeNull();
@@ -154,7 +153,7 @@ public class IsValidAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
         {
             // Arrange
             var nonExistingId = Guid.NewGuid();
-            await _dbContext.SeedOtpAsync(_timeProvider); 
+            await DbContext.SeedOtpAsync(_timeProvider); 
 
             // Act
             bool result = await _repository.MarkAsUsedAsync(nonExistingId);

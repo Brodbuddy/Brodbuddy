@@ -14,7 +14,7 @@ public class RefreshTokenServiceTests
     private readonly Mock<ILogger<RefreshTokenService>> _loggerMock;
     private readonly RefreshTokenService _service;
 
-    public RefreshTokenServiceTests()
+    protected RefreshTokenServiceTests()
     {
         _repositoryMock = new Mock<IRefreshTokenRepository>();
         var timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);

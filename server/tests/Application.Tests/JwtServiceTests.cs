@@ -13,7 +13,7 @@ public class JwtServiceTests
     private readonly FakeTimeProvider _timeProvider;
     private readonly AppOptions _options;
 
-    public JwtServiceTests()
+    protected JwtServiceTests()
     {
         var jwtOptions = new JwtOptions
         {

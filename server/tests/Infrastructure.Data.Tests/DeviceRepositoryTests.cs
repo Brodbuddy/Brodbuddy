@@ -9,13 +9,13 @@ namespace Infrastructure.Data.Tests;
 [Collection(TestCollections.Database)]
 public class DeviceRepositoryTests : RepositoryTestBase
 {
-    private FakeTimeProvider _timeProvider;
-    private PostgresDeviceRepository _repository;
+    private readonly FakeTimeProvider _timeProvider;
+    private readonly PostgresDeviceRepository _repository;
 
-    public DeviceRepositoryTests(PostgresFixture fixture) : base(fixture)
+    private DeviceRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresDeviceRepository(_dbContext, _timeProvider);
+        _repository = new PostgresDeviceRepository(DbContext, _timeProvider);
     }
 
     public class SaveAsync(PostgresFixture fixture) : DeviceRepositoryTests(fixture)
@@ -37,9 +37,9 @@ public class DeviceRepositoryTests : RepositoryTestBase
             var id = await _repository.SaveAsync(device);
 
             // Assert
-            _dbContext.ChangeTracker.Clear();
+            DbContext.ChangeTracker.Clear();
             id.ShouldNotBe(Guid.Empty);
-            var savedDevice = await _dbContext.Devices.FindAsync(id);
+            var savedDevice = await DbContext.Devices.FindAsync(id);
 
             savedDevice.ShouldNotBeNull();
             savedDevice.Id.ShouldBe(id); 
@@ -86,7 +86,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
         public async Task GetAsync_WithExistingId_ReturnsDevice()
         {
             // Arrange
-            var device = await _dbContext.SeedDeviceAsync(_timeProvider, "macos", "chrome");
+            var device = await DbContext.SeedDeviceAsync(_timeProvider, "macos", "chrome");
             
             // Act
             var result = await _repository.GetAsync(device.Id);
@@ -128,9 +128,9 @@ public class DeviceRepositoryTests : RepositoryTestBase
         public async Task GetByIdsAsync_WithExistingIds_ReturnsMatchingDevices()
         {
             // Arrange
-            var device1 = await _dbContext.SeedDeviceAsync(_timeProvider, "windows", "chrome");
-            var device2 = await _dbContext.SeedDeviceAsync(_timeProvider, "macos", "chrome"); 
-            var device3 = await _dbContext.SeedDeviceAsync(_timeProvider, "linux", "firefox");
+            var device1 = await DbContext.SeedDeviceAsync(_timeProvider, "windows", "chrome");
+            var device2 = await DbContext.SeedDeviceAsync(_timeProvider, "macos", "chrome"); 
+            var device3 = await DbContext.SeedDeviceAsync(_timeProvider, "ubuntu", "librewolf");
             var nonExistingId = Guid.NewGuid();
             
             var ids = new[] { device1.Id, device3.Id, nonExistingId };
@@ -154,7 +154,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
         public async Task GetByIdsAsync_WithEmptyIdsList_ReturnsEmptyCollection()
         {
             // Arrange
-            await _dbContext.SeedDeviceAsync(_timeProvider); // Ensure DB isn't empty
+            await DbContext.SeedDeviceAsync(_timeProvider); // Ensure DB isn't empty
             var emptyIds = Array.Empty<Guid>();
 
             // Act
@@ -169,7 +169,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
         {
             // Arrange
             var nonExistingIds = new[] { Guid.NewGuid(), Guid.NewGuid() };
-            await _dbContext.SeedDeviceAsync(_timeProvider);
+            await DbContext.SeedDeviceAsync(_timeProvider);
 
             // Act
             var results = await _repository.GetByIdsAsync(nonExistingIds);
@@ -195,7 +195,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
         public async Task ExistsAsync_WithExistingId_ReturnsTrue()
         {
             // Arrange
-            var device = await _dbContext.SeedDeviceAsync(_timeProvider);
+            var device = await DbContext.SeedDeviceAsync(_timeProvider);
 
             // Act
             var exists = await _repository.ExistsAsync(device.Id);
@@ -209,7 +209,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
         {
             // Arrange
             var nonExistingId = Guid.NewGuid();
-            await _dbContext.SeedDeviceAsync(_timeProvider);
+            await DbContext.SeedDeviceAsync(_timeProvider);
 
             // Act
             var exists = await _repository.ExistsAsync(nonExistingId);
@@ -223,7 +223,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
         {
             // Arrange
             var emptyId = Guid.Empty;
-            await _dbContext.SeedDeviceAsync(_timeProvider);
+            await DbContext.SeedDeviceAsync(_timeProvider);
 
             // Act
             var exists = await _repository.ExistsAsync(emptyId);
@@ -240,14 +240,14 @@ public class DeviceRepositoryTests : RepositoryTestBase
         public async Task UpdateLastSeenAsync_WithExistingId_UpdatesTimeAndReturnsTrue()
         {
             // Arrange 
-            var device = await _dbContext.SeedDeviceAsync(_timeProvider);
+            var device = await DbContext.SeedDeviceAsync(_timeProvider);
             var newLastSeen = _timeProvider.Tomorrow();
 
             // Act
             await _repository.UpdateLastSeenAsync(device.Id, newLastSeen);
 
             // Assert
-            var updatedDevice = await _dbContext.Devices.FindAsync(device.Id);
+            var updatedDevice = await DbContext.Devices.FindAsync(device.Id);
             updatedDevice.ShouldNotBeNull();
             updatedDevice.LastSeenAt.ShouldBeWithinTolerance(newLastSeen);
         }
@@ -260,7 +260,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
             var now = _timeProvider.Now();
             
             // Pre-assert
-            (await _dbContext.Devices.FindAsync(nonExistingId)).ShouldBeNull();
+            (await DbContext.Devices.FindAsync(nonExistingId)).ShouldBeNull();
             
             // Act
             var result = await _repository.UpdateLastSeenAsync(nonExistingId, now);
@@ -276,8 +276,8 @@ public class DeviceRepositoryTests : RepositoryTestBase
             var initialTargetTime = _timeProvider.Now().AddHours(-2);
             var initialOtherTime = _timeProvider.Now().AddHours(-1);
             
-            var targetDevice = await _dbContext.SeedDeviceAsync(_timeProvider, "windows", "chrome", lastSeenAt: initialTargetTime);
-            var otherDevice = await _dbContext.SeedDeviceAsync(_timeProvider, "macos", "safari", lastSeenAt: initialOtherTime);
+            var targetDevice = await DbContext.SeedDeviceAsync(_timeProvider, "windows", "chrome", lastSeenAt: initialTargetTime);
+            var otherDevice = await DbContext.SeedDeviceAsync(_timeProvider, "macos", "safari", lastSeenAt: initialOtherTime);
             
             var targetId = targetDevice.Id;
             var otherId = otherDevice.Id;
@@ -291,12 +291,12 @@ public class DeviceRepositoryTests : RepositoryTestBase
             result.ShouldBeTrue();
 
             // Tjek at target device ER opdateret
-            var reloadedTargetDevice = await _dbContext.Devices.FindAsync(targetId);
+            var reloadedTargetDevice = await DbContext.Devices.FindAsync(targetId);
             reloadedTargetDevice.ShouldNotBeNull();
             reloadedTargetDevice.LastSeenAt.ShouldBeWithinTolerance(newLastSeenTime);
             
             // Tjek at det andet device IKKE er opdateret
-            var reloadedOtherDevice = await _dbContext.Devices.FindAsync(otherId);
+            var reloadedOtherDevice = await DbContext.Devices.FindAsync(otherId);
             reloadedOtherDevice.ShouldNotBeNull();
             reloadedOtherDevice.LastSeenAt.ShouldBeWithinTolerance(initialOtherTime);
         }
@@ -308,7 +308,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
         public async Task DisableAsync_WithExistingActiveId_ReturnsTrueAndDisablesDevice()
         {
             // Arrange 
-            var device = await _dbContext.SeedDeviceAsync(_timeProvider, isActive: true);
+            var device = await DbContext.SeedDeviceAsync(_timeProvider, isActive: true);
 
             // Act
             var result = await _repository.DisableAsync(device.Id);
@@ -316,7 +316,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
             // Assert
             result.ShouldBeTrue();
 
-            var updatedDevice = await _dbContext.Devices.FindAsync(device.Id);
+            var updatedDevice = await DbContext.Devices.FindAsync(device.Id);
             updatedDevice.ShouldNotBeNull();
             updatedDevice.IsActive.ShouldBeFalse();
         }
@@ -328,7 +328,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
             var nonExistingId = Guid.NewGuid();
 
             // Pre-assert
-            (await _dbContext.Devices.FindAsync(nonExistingId)).ShouldBeNull();
+            (await DbContext.Devices.FindAsync(nonExistingId)).ShouldBeNull();
 
             // Act
             var result = await _repository.DisableAsync(nonExistingId); 
@@ -341,7 +341,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
         public async Task DisableAsync_WithExistingInactiveId_ReturnsTrueAndDeviceRemainsInactive()
         {
             // Arrange
-            var device = await _dbContext.SeedDeviceAsync(_timeProvider, isActive: false); 
+            var device = await DbContext.SeedDeviceAsync(_timeProvider, isActive: false); 
 
             // Act
             var result = await _repository.DisableAsync(device.Id); 
@@ -349,7 +349,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
             // Assert
             result.ShouldBeTrue(); 
 
-            var updatedDevice = await _dbContext.Devices.FindAsync(device.Id);
+            var updatedDevice = await DbContext.Devices.FindAsync(device.Id);
             updatedDevice.ShouldNotBeNull();
             updatedDevice.IsActive.ShouldBeFalse(); 
         }

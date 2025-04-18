@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using Application.Interfaces;
+﻿using Application.Interfaces;
 using Application.Services;
 using Core.Entities;
 using Moq;
@@ -17,7 +16,7 @@ public class DeviceServiceTests
     private readonly DeviceService _service;
     private readonly FakeTimeProvider _timeProvider;
 
-    public DeviceServiceTests(ITestOutputHelper testOutputHelper)
+    private DeviceServiceTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
         _repositoryMock = new Mock<IDeviceRepository>();
@@ -51,19 +50,25 @@ public class DeviceServiceTests
             capturedDevice.Name.ShouldBe(expectedName);
         }
 
+        public static IEnumerable<object?[]> InvalidBrowserOsData()
+        {
+            yield return ["", "windows"]; 
+            yield return ["   ", "windows"];
+            yield return ["chrome", ""];
+            yield return ["chrome", "   "];
+            yield return ["chrome", null];
+            yield return [null, "MacOS"];
+            yield return [null, null];
+            yield return ["", ""];
+            yield return ["   ", "   "];
+        }
+
         [Theory]
-        [InlineData("", "windows")]
-        [InlineData("chrome", "")]
-        [InlineData("chrome", null)]
-        [InlineData(null, "MacOS")]
-        [InlineData(null, null)]
-        [InlineData("", "")]
-        public async Task CreateAsync_WithNullOrEmptyBrowserOrOs_ThrowsArgumentException(
-            string browser, string os)
+        [MemberData(nameof(InvalidBrowserOsData))]
+        public async Task CreateAsync_WithNullOrEmptyOrWhitespaceBrowserOrOs_ThrowsArgumentException(string browser, string os) 
         {
             // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() =>
-                _service.CreateAsync(browser, os));
+            await Should.ThrowAsync<ArgumentException>(() => _service.CreateAsync(browser, os));
         }
     }
 
@@ -113,8 +118,8 @@ public class DeviceServiceTests
 
             var expectedDevices = new List<Device>
             {
-                new Device { Id = id1, Name = "chrome_windows" },
-                new Device { Id = id2, Name = "firefox_macos" }
+                new() { Id = id1, Name = "chrome_windows" },
+                new() { Id = id2, Name = "firefox_macos" }
             };
 
             _repositoryMock.Setup(r => r.GetByIdsAsync(It.Is<List<Guid>>(
@@ -135,11 +140,8 @@ public class DeviceServiceTests
         [Fact]
         public async Task GetByIdsAsync_WithEmptyCollection_ReturnsEmptyEnumerable()
         {
-            // Arrange
-            var emptyIds = new List<Guid>();
-
             // Act
-            var result = await _service.GetByIdsAsync(emptyIds);
+            var result = await _service.GetByIdsAsync(new List<Guid>());
 
             // Assert
             result.ShouldBeEmpty();

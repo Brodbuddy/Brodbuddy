@@ -11,7 +11,7 @@ public static class Extensions
 {
     public static IServiceCollection AddDataInfrastructure(this IServiceCollection services)
     {
-        services.AddDbContext<PostgresDbContext>((service, options) =>
+        services.AddDbContext<PostgresDbContext>((_, options) =>
         {
             var provider = services.BuildServiceProvider();
             options.UseNpgsql(provider.GetRequiredService<IOptionsMonitor<AppOptions>>().CurrentValue.Postgres.ConnectionString);

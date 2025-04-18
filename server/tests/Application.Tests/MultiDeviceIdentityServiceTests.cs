@@ -19,7 +19,7 @@ public class MultiDeviceIdentityServiceTests
     private readonly IMultiDeviceIdentityService _multiDeviceIdentityService;
 
 
-    public MultiDeviceIdentityServiceTests(ITestOutputHelper outputHelper)
+    private MultiDeviceIdentityServiceTests(ITestOutputHelper outputHelper)
     {
         _outputHelper = outputHelper;
         _repositoryMock = new Mock<IMultiDeviceIdentityRepository>();
@@ -168,11 +168,15 @@ public class MultiDeviceIdentityServiceTests
             exception.Message.ShouldBe("Failed to rotate refresh token");
         }
 
+        public static IEnumerable<object?[]> NullOrEmptyTokenData()
+        {
+            yield return [""];    
+            yield return [null];
+        }
+
         [Theory]
-        [InlineData("")]
-        [InlineData(null)]
-        public async Task RefreshIdentityAsync_IfNewRefreshTokenIsNullOrEmpty_ThrowsInvalidOperationException(
-            string newRefreshToken)
+        [MemberData(nameof(NullOrEmptyTokenData))]
+        public async Task RefreshIdentityAsync_IfNewRefreshTokenIsNullOrEmpty_ThrowsInvalidOperationException(string newRefreshToken)
         {
             // Arrange
             var oldTokenId = Guid.NewGuid();

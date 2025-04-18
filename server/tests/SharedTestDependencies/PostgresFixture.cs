@@ -40,7 +40,7 @@ public class PostgresFixture :  DbContainerFixture<PostgreSqlBuilder, PostgreSql
     {
         Log("Starting PostgreSQL container...");
         await base.InitializeAsync();
-        Log("PostgreSQL container started. Connection string: " + ConnectionString);
+        Log($"PostgreSQL container started. Connection string: {ConnectionString}");
         
         await ApplyDatabaseSchemaAsync();
     

@@ -22,7 +22,7 @@ public class IdentityVerificationServiceTests
     private static Guid TestOtpId { get; } = Guid.NewGuid();
     private static Guid TestUserId { get; } = Guid.NewGuid();
 
-    public IdentityVerificationServiceTests()
+    protected IdentityVerificationServiceTests()
     {
         _mockOtpService = new Mock<IOtpService>();
         _mockUserIdentityService = new Mock<IUserIdentityService>();
@@ -85,8 +85,6 @@ public class IdentityVerificationServiceTests
             // Assert
             result.ShouldBeFalse();
         }
-
-
     }
 
     public class TryVerifyCodeAsync : IdentityVerificationServiceTests
@@ -174,7 +172,5 @@ public class IdentityVerificationServiceTests
             result.userId.ShouldBe(Guid.Empty);
             _mockOtpService.Verify(o => o.MarkAsUsedAsync(It.IsAny<Guid>()), Times.Never);
         }
-
-
     }
 }

@@ -1,7 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Application.Interfaces;
-
-namespace Application;
+﻿namespace Application;
 
 public class AppOptions
 {

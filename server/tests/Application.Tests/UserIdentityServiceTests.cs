@@ -14,13 +14,20 @@ public class UserIdentityServiceTests
     private readonly Mock<IUserIdentityRepository> _repositoryMock;
     private readonly UserIdentityService _service;
 
-    public UserIdentityServiceTests(ITestOutputHelper testOutputHelper)
+    private UserIdentityServiceTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
         _repositoryMock = new Mock<IUserIdentityRepository>();
         _service = new UserIdentityService(_repositoryMock.Object);
     }
 
+    public static IEnumerable<object?[]> NullOrEmptyOrWhitespaceEmailData()
+    {
+        yield return [null];     
+        yield return [""];    
+        yield return ["      "]; 
+    }
+    
     public class CreateAsync(ITestOutputHelper outputHelper) : UserIdentityServiceTests(outputHelper)
     {
         [Theory]
@@ -42,11 +49,9 @@ public class UserIdentityServiceTests
             result.ShouldBe(expectedId);
             _repositoryMock.Verify(r => r.SaveAsync(normalizedEmail), Times.Once);
         }
-
+        
         [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData("      ")]
+        [MemberData(nameof(NullOrEmptyOrWhitespaceEmailData))]
         public async Task CreateAsync_WithNullOrEmptyEmail_ThrowsArgumentException(string email)
         {
             // Act & Assert
@@ -210,9 +215,7 @@ public class UserIdentityServiceTests
         }
 
         [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData("   ")]
+        [MemberData(nameof(NullOrEmptyOrWhitespaceEmailData))]
         public async Task GetAsync_WithNullOrEmptyEmail_ThrowsArgumentException(string email)
         {
             // Act & Assert
