@@ -1,5 +1,6 @@
 namespace SharedTestDependencies;
 
+
 public class FakeTimeProvider(DateTimeOffset startDateTime) : TimeProvider
 {
     private DateTimeOffset _currentTime = startDateTime;
@@ -13,6 +14,12 @@ public class FakeTimeProvider(DateTimeOffset startDateTime) : TimeProvider
     {
         _currentTime = _currentTime.Add(timeSpan);
     }
+    
+    public void SetUtcNow(DateTime utcNow)
+    {
+        _currentTime = new DateTimeOffset(utcNow);
+    }
 
     public override DateTimeOffset GetUtcNow() => _currentTime;
 }
+
