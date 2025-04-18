@@ -125,32 +125,56 @@ jobs:
         # Men se sidste trin i dette som tjekker for om vi rammer 80%
         run: |
           SAFE_NAME=$(echo "${{ matrix.project }}" | tr '/' '_')
-          dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput" --reporter "json" --reporter "html" | tee "stryker-output-${SAFE_NAME}.log"
+          dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput_${SAFE_NAME}" --reporter "json" --reporter "html" | tee "stryker-output-${SAFE_NAME}.log"
 
-      - name: Generate mutation summary
-        if: always()
-        run: |
-          chmod +x .github/scripts/generate_mutation_summary.py
-          python .github/scripts/generate_mutation_summary.py
-
-      - name: Upload Stryker report
+      - name: Upload Stryker JSON report for ${{ matrix.project }}
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stryker-report-${{ github.job }}-${{ strategy.job-index }}
-          path: |
-            **/StrykerOutput/**/*
-          retention-days: 7
-        
-      - name: Check against mutation threshold (80%)
+          name: mutation-json-reports
+          path: StrykerOutput_*/reports/mutation-report.json
+          retention-days: 1 # Skal kun bruges til næste job
+
+      - name: Upload Stryker HTML report for ${{ matrix.project }}
         if: always()
-        run: |
-          MUTATION_SCORE=$(echo $MUTATION_SCORE | tr -d '%')
-          echo "Mutation score: $MUTATION_SCORE%"
+        uses: actions/upload-artifact@v4
+        with:
+          name: stryker-html-report-${{ strategy.job-index }}
+          path: StrykerOutput_*/reports/mutation-report.html
+          retention-days: 7
           
-          if [[ $MUTATION_SCORE -lt 80 ]]; then
-            echo "::error::Mutation score ($MUTATION_SCORE%) is below threshold (80%)"
+  aggregate-mutation-results:
+    runs-on: ubuntu-latest
+    needs: mutation-tests
+    if: always() # For at få overordnet summary tabel selvom en fejler
+    steps:
+      - name: Download all JSON reports
+        uses: actions/download-artifact@v4
+        with:
+          name: mutation-json-reports
+          path: all-mutation-reports
+
+      - name: List downloaded files 
+        run: ls -R all-mutation-reports
+
+      - name: Aggregate reports and generate final summary
+        id: aggregate 
+        run: |
+          chmod +x .github/scripts/aggregate_mutation_summary.py 
+          python .github/scripts/aggregate_mutation_summary.py ./all-mutation-reports 
+
+      - name: Check final mutation threshold (80%)
+        env:
+          FINAL_MUTATION_SCORE: ${{ env.MUTATION_SCORE }}
+        run: |
+          echo "Final Overall Mutation Score: $FINAL_MUTATION_SCORE%"
+          if [[ -z "$FINAL_MUTATION_SCORE" ]]; then
+            echo "::error::Could not determine final mutation score."
+            exit 1
+          fi
+          if [[ $FINAL_MUTATION_SCORE -lt 80 ]]; then
+            echo "::error::Overall Mutation score ($FINAL_MUTATION_SCORE%) is below threshold (80%)"
             exit 1
           else
-            echo "Mutation score meets threshold requirement"
+            echo "Overall Mutation score meets threshold requirement"
           fi
