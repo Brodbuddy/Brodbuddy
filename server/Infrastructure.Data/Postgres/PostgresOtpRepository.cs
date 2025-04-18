@@ -41,7 +41,7 @@ public class PostgresOtpRepository : IOtpRepository
 
         if (otp == null)
         {
-            return false; 
+            return false;
         }
 
         if (otp.IsUsed)
@@ -51,25 +51,19 @@ public class PostgresOtpRepository : IOtpRepository
 
         if (otp.ExpiresAt < now)
         {
-            return false; 
+            return false;
         }
 
-        await _dbContext.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> MarkAsUsedAsync(Guid id)
     {
-        var otp = await _dbContext.OneTimePasswords.FirstOrDefaultAsync(otp => otp.Id == id);
+        int rowsAffected = await _dbContext.OneTimePasswords
+            .Where(otp => otp.Id == id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(otp => otp.IsUsed, true));
 
-        if (otp == null)
-        {
-            return false;
-        }
-
-        otp.IsUsed = true;
-        
-        await _dbContext.SaveChangesAsync();
-        return true;
+        return rowsAffected > 0;
     }
 }

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 
-namespace Application;
+namespace Application.Services;
 
 public interface IJwtService
 {

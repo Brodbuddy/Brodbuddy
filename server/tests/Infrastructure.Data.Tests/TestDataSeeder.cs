@@ -59,19 +59,24 @@ public static class TestDataSeeder
     }
 
     public static async Task<OneTimePassword> SeedOtpAsync(this PostgresDbContext context, TimeProvider timeProvider,
-        int expiresMinutes = 15, int code = 123456)
+        int expiresMinutes = 15, int code = 123456, bool isUsed = false)
     {
         var now = timeProvider.Now();
         var otp = new OneTimePassword
         {
             Code = code,
             CreatedAt = now,
-            ExpiresAt = now.AddMinutes(expiresMinutes)
+            ExpiresAt = now.AddMinutes(expiresMinutes),
+            IsUsed = isUsed
         };
         await context.OneTimePasswords.AddAsync(otp);
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
-        return otp;
+        
+        var createdOtp = await context.OneTimePasswords
+            .AsNoTracking()
+            .FirstAsync(o => o.Code == code && o.CreatedAt == now);
+        return createdOtp;
     }
 
     public static async Task<TokenContext> SeedTokenContextAsync(

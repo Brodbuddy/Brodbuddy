@@ -1,4 +1,6 @@
+using Core.Extensions;
 using Infrastructure.Data.Postgres;
+using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies;
 using Shouldly;
 
@@ -16,102 +18,149 @@ public class OtpRepositoryTests : RepositoryTestBase
         _repository = new PostgresOtpRepository(_dbContext, _timeProvider);
     }
 
-    [Fact]
-    public async Task SaveAsync_WithValidOtp_SavesInDatabase()
+    public class SaveAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
     {
-        // Arrange
-        int code = 123123;
+        [Fact]
+        public async Task SaveAsync_WithValidOtp_SavesInDatabase()
+        {
+            // Arrange
+            int code = 123123;
 
-        // Act
-        Guid id = await _repository.SaveAsync(code);
+            // Act
+            Guid id = await _repository.SaveAsync(code);
 
-        // Assert
-        var savedOtp = await _dbContext.OneTimePasswords.FindAsync(id);
-        savedOtp.ShouldNotBeNull();
-        savedOtp.Code.ShouldBe(code);
-        savedOtp.IsUsed.ShouldBeFalse();
-        savedOtp.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
-        savedOtp.ExpiresAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime.AddMinutes(15));
+            // Assert
+            var savedOtp = await _dbContext.OneTimePasswords.FindAsync(id);
+            savedOtp.ShouldNotBeNull();
+            savedOtp.Code.ShouldBe(code);
+            savedOtp.IsUsed.ShouldBeFalse();
+            savedOtp.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
+            savedOtp.ExpiresAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime.AddMinutes(15));
+        }
     }
 
-    [Fact]
-    public async Task IsValidAsync_WithValidOtp_ReturnsTrue()
+public class IsValidAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
     {
-        // Arrange
-        int code = 333333;
-        Guid id = await _repository.SaveAsync(code);
+        [Fact]
+        public async Task IsValidAsync_WithValidOtp_ReturnsTrue()
+        {
+            // Arrange
+            int code = 333333;
+            Guid id = await _repository.SaveAsync(code);
 
-        // Act
-        bool isValid = await _repository.IsValidAsync(id, code);
+            // Act
+            bool isValid = await _repository.IsValidAsync(id, code);
 
-        // Assert
-        isValid.ShouldBeTrue();
+            // Assert
+            isValid.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task IsValidAsync_WithIncorrectCode_ReturnsFalse()
+        {
+            // Arrange
+            int code = 333333;
+            Guid id = await _repository.SaveAsync(code);
+
+            // Act
+            bool isValid = await _repository.IsValidAsync(id, 444444);
+
+            // Assert
+            isValid.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task IsValidAsync_WithExpiredOtp_ReturnsFalse()
+        {
+            // Arrange
+            int code = 444444;
+            Guid id = await _repository.SaveAsync(code);
+
+            // sætter tiden 16 min frem - alt over 15 minutter skal få den til at returne false
+            _timeProvider.Advance(TimeSpan.FromMinutes(16));
+
+            // Act
+            bool isValid = await _repository.IsValidAsync(id, code);
+
+            // Assert
+            isValid.ShouldBeFalse();
+        }
+        
+        [Fact]
+        public async Task IsValidAsync_WithUsedOtp_ReturnsFalse()
+        {
+            // Arrange
+            int code = 444444;
+            Guid id = await _repository.SaveAsync(code);
+
+            // Ændrer id'et til brugt.
+            await _repository.MarkAsUsedAsync(id);
+            _dbContext.ChangeTracker.Clear(); // Tving IsValidAsync til at læse frisk fra DB
+
+            // Act
+            bool isValid = await _repository.IsValidAsync(id, code);
+
+            // Assert
+            isValid.ShouldBeFalse();
+        }
+        
+        [Fact]
+        public async Task IsValidAsync_WhenExpiryIsExactlyNow_ReturnsTrue() 
+        {
+            // Arrange
+            var code = 666666;
+            var expiryDuration = TimeSpan.FromMinutes(15); 
+
+            var otp = await _dbContext.SeedOtpAsync(_timeProvider, (int) expiryDuration.TotalMinutes, code);
+            
+            // Sæt TimeProvider's nuværende tid til at være PRÆCIS udløbstiden
+            _timeProvider.SetUtcNow(new DateTimeOffset(otp.ExpiresAt, TimeSpan.Zero));
+
+            // Act
+            bool isValid = await _repository.IsValidAsync(otp.Id, code);
+
+            // Assert
+            isValid.ShouldBeTrue();
+        }
     }
 
-    [Fact]
-    public async Task IsValidAsync_WithIncorrectCode_ReturnsFalse()
+    public class MarkAsUsedAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
     {
-        // Arrange
-        int code = 333333;
-        Guid id = await _repository.SaveAsync(code);
+        [Fact]
+        public async Task MarkAsUsedAsync_WithValidOtp_ReturnsTrue()
+        {
+            // Arrange
+            var otpToMark = await _dbContext.SeedOtpAsync(_timeProvider, code: 555555, isUsed: false);
+            
+            // Pre-assert
+            otpToMark.IsUsed.ShouldBeFalse();
 
-        // Act
-        bool isValid = await _repository.IsValidAsync(id, 444444);
+            // Act
+            bool result = await _repository.MarkAsUsedAsync(otpToMark.Id);
 
-        // Assert
-        isValid.ShouldBeFalse();
-    }
+            // Assert
+            result.ShouldBeTrue();
 
-    [Fact]
-    public async Task IsValidAsync_WithExpiredOtp_ReturnsFalse()
-    {
-        // Arrange
-        int code = 444444;
-        Guid id = await _repository.SaveAsync(code);
+            // verificer i databasen at Otp er ændret til brugt
+            var updatedOtp = await _dbContext.OneTimePasswords
+                .AsNoTracking() 
+                .FirstOrDefaultAsync(otp => otp.Id == otpToMark.Id);
+            updatedOtp.ShouldNotBeNull();
+            updatedOtp.IsUsed.ShouldBeTrue();
+        }
+        
+        [Fact]
+        public async Task MarkAsUsedAsync_WithNonExistingId_ReturnsFalse()
+        {
+            // Arrange
+            var nonExistingId = Guid.NewGuid();
+            await _dbContext.SeedOtpAsync(_timeProvider); 
 
-        // sætter tiden 16 min frem - alt over 15 minutter skal få den til at returne false
-        _timeProvider.Advance(TimeSpan.FromMinutes(16));
+            // Act
+            bool result = await _repository.MarkAsUsedAsync(nonExistingId);
 
-        // Act
-        bool isValid = await _repository.IsValidAsync(id, code);
-
-        // Assert
-        isValid.ShouldBeFalse();
-    }
-
-    [Fact]
-    public async Task IsValidAsync_WithUsedOtp_ReturnsFalse()
-    {
-        // Arrange
-        int code = 444444;
-        Guid id = await _repository.SaveAsync(code);
-
-        // Ændrer id'et til brugt.
-        await _repository.MarkAsUsedAsync(id);
-
-        // Act
-        bool isValid = await _repository.IsValidAsync(id, code);
-
-        // Assert
-        isValid.ShouldBeFalse();
-    }
-
-    [Fact]
-    public async Task MarkAsUsedAsync_WithValidOtp_ReturnsTrue()
-    {
-        // Arrange
-        int code = 555555;
-        Guid id = await _repository.SaveAsync(code);
-
-        // Act
-        bool result = await _repository.MarkAsUsedAsync(id);
-
-        // Assert
-        result.ShouldBeTrue();
-
-        // verificer i databasen at Otp er ændret til brugt
-        var otp = await _dbContext.OneTimePasswords.FindAsync(id);
-        otp.ShouldNotBeNull();
-        otp.IsUsed.ShouldBeTrue();
+            // Assert
+            result.ShouldBeFalse();
+        }
     }
 }

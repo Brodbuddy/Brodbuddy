@@ -4,7 +4,7 @@ using Core.Extensions;
 using Microsoft.Extensions.Logging;
 
 
-namespace Application;
+namespace Application.Services;
 
 public interface IRefreshTokenService
 {

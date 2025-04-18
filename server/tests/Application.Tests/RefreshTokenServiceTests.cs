@@ -1,4 +1,5 @@
 using Application.Interfaces;
+using Application.Services;
 using Microsoft.Extensions.Logging;
 using Moq;
 using SharedTestDependencies;
