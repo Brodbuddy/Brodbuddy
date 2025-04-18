@@ -271,7 +271,7 @@ def generate_markdown_summary(summary: MutationSummary) -> str:
         )
 
     lines.append(
-        "\n_Note: This is an aggregated summary. See individual artifacts for detailed HTML reports._"
+        "\n_Note: Dette er en aggregeret opsummering. Se individuelle artifacts for detaljeret HTML rapprter._"
     )
     return "\n".join(lines)
 
