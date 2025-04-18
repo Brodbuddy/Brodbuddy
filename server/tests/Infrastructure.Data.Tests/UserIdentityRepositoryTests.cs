@@ -41,11 +41,10 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
         public async Task ExistsAsync_WithExistingUserId_ReturnsTrue()
         {
             // Arrange
-            var email = "test@email.com";
-            var userId = await _repository.SaveAsync(email);
+            var seededUser = await DbContext.SeedUserAsync(_timeProvider);
 
             // Act
-            var exists = await _repository.ExistsAsync(userId);
+            var exists = await _repository.ExistsAsync(seededUser.Id);
 
             // Assert
             exists.ShouldBeTrue();
@@ -68,11 +67,10 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
         public async Task ExistsAsync_WithExistingEmail_ReturnsTrue()
         {
             // Arrange
-            var email = "test@email.com";
-            await _repository.SaveAsync(email);
+            var seededUser = await DbContext.SeedUserAsync(_timeProvider);
 
             // Act
-            var exists = await _repository.ExistsAsync(email);
+            var exists = await _repository.ExistsAsync(seededUser.Email);
 
             // Assert
             exists.ShouldBeTrue();
@@ -82,7 +80,7 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
         public async Task ExistsAsync_WithNonExistingEmail_ReturnsFalse()
         {
             // Arrange
-            var nonExistingEmail = "nonexisting@email.com";
+            const string nonExistingEmail = "nonexisting@email.com";
 
             // Act
             var exists = await _repository.ExistsAsync(nonExistingEmail);
@@ -98,16 +96,15 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
         public async Task GetAsync_WithExistingUserId_ReturnsUser()
         {
             // Arrange
-            var email = "test@email.com";
-            var userId = await _repository.SaveAsync(email);
+            var seededUser = await DbContext.SeedUserAsync(_timeProvider);
 
             // Act
-            var user = await _repository.GetAsync(userId);
+            var user = await _repository.GetAsync(seededUser.Id); 
 
             // Assert
             user.ShouldNotBeNull();
-            user.Id.ShouldBe(userId);
-            user.Email.ShouldBe(email);
+            user.Id.ShouldBe(seededUser.Id);
+            user.Email.ShouldBe(seededUser.Email); 
         }
 
         [Fact]
@@ -127,23 +124,22 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
         public async Task GetAsync_WithExistingEmail_ReturnsUser()
         {
             // Arrange
-            var email = "test@email.com";
-            var userId = await _repository.SaveAsync(email);
+            var seededUser = await DbContext.SeedUserAsync(_timeProvider);
 
             // Act
-            var user = await _repository.GetAsync(email);
+            var user = await _repository.GetAsync(seededUser.Email);
 
             // Assert
             user.ShouldNotBeNull();
-            user.Id.ShouldBe(userId);
-            user.Email.ShouldBe(email);
+            user.Id.ShouldBe(seededUser.Id);
+            user.Email.ShouldBe(seededUser.Email);
         }
 
         [Fact]
         public async Task GetAsync_WithNonExistingEmail_ReturnsNull()
         {
             // Arrange
-            var nonExistingEmail = "nonexisting@email.com";
+            const string nonExistingEmail = "nonexisting@email.com";
 
             // Act 
             var result = await _repository.GetAsync(nonExistingEmail);
@@ -156,15 +152,15 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
         public async Task GetAsync_WithDifferentCaseEmail_ReturnsCorrectUser()
         {
             // Arrange
-            var email = "Test@Email.com";
-            var userId = await _repository.SaveAsync(email);
+            const string email = "Test@Email.com";
+            var seededUser = await DbContext.SeedUserAsync(_timeProvider, email);
 
             // Act
             var user = await _repository.GetAsync("test@email.com");
 
             // Assert
             user.ShouldNotBeNull();
-            user.Id.ShouldBe(userId);
+            user.Id.ShouldBe(seededUser.Id);
             user.Email.ShouldBe(email);
         }
     }

@@ -191,7 +191,6 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
             const string token = "clearlyValidToken";
             const int expiryDays = 30;
             var created = await DbContext.SeedRefreshTokenAsync(_timeProvider, expiresDays: expiryDays, tokenValue: token);
-            var id = created.Id;
 
             _timeProvider.Advance(TimeSpan.FromDays(expiryDays).Subtract(TimeSpan.FromSeconds(1)));
 
@@ -200,7 +199,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
 
             // Assert
             result.isValid.ShouldBeTrue();
-            result.tokenId.ShouldBe(id);
+            result.tokenId.ShouldBe(created.Id);
         }
     }
 
@@ -251,23 +250,21 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         {
             // Arrange
             var revokedTime = _timeProvider.Yesterday();
-
             var createdToken = await DbContext.SeedRefreshTokenAsync(_timeProvider, tokenValue: "alreadyRevoked", revokedAt: revokedTime);
-            var id = createdToken.Id;
 
             // Pre-assert 
             createdToken.RevokedAt.ShouldBe(revokedTime);
             _timeProvider.Advance(TimeSpan.FromMinutes(1));
 
             // Act
-            bool result = await _repository.RevokeAsync(id);
+            bool result = await _repository.RevokeAsync(createdToken.Id);
 
             // Assert
             result.ShouldBeFalse();
 
             var recheckedToken = await DbContext.RefreshTokens
                 .AsNoTracking()
-                .FirstOrDefaultAsync(rt => rt.Id == id);
+                .FirstOrDefaultAsync(rt => rt.Id == createdToken.Id);
 
             recheckedToken.ShouldNotBeNull();
             recheckedToken.RevokedAt.ShouldNotBeNull();
@@ -319,17 +316,16 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         {
             // Arrange
             var oldToken = await DbContext.SeedRefreshTokenAsync(_timeProvider, tokenValue: "oldTokenToRotate");
-            var oldTokenId = oldToken.Id;
             var timeBeforeAct = _timeProvider.Now();
 
             // Act
-            var (newTokenString, newTokenId) = await _repository.RotateAsync(oldTokenId);
+            var (newTokenString, newTokenId) = await _repository.RotateAsync(oldToken.Id);
 
             // Assert
             newTokenString.ShouldNotBeNullOrWhiteSpace();
             newTokenString.ShouldNotBe(oldToken.Token);
             newTokenId.ShouldNotBe(Guid.Empty);
-            newTokenId.ShouldNotBe(oldTokenId);
+            newTokenId.ShouldNotBe(oldToken.Id);
 
             // Verificer ny token
             DbContext.ChangeTracker.Clear();
@@ -342,7 +338,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
             newTokenEntity.ReplacedByTokenId.ShouldBeNull();
 
             // Verificer gammel token
-            var oldTokenEntity = await DbContext.RefreshTokens.FindAsync(oldTokenId);
+            var oldTokenEntity = await DbContext.RefreshTokens.FindAsync(oldToken.Id);
             oldTokenEntity.ShouldNotBeNull();
             oldTokenEntity.RevokedAt.ShouldNotBeNull();
             oldTokenEntity.RevokedAt.Value.ShouldBeWithinTolerance(timeBeforeAct);
@@ -353,7 +349,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         public async Task RotateAsync_WithNonExistentTokenId_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            Guid nonExistentId = Guid.NewGuid();
+            var nonExistentId = Guid.NewGuid();
 
             // Act & Assert
             await Should.ThrowAsync<InvalidOperationException>(async () => await _repository.RotateAsync(nonExistentId));
@@ -363,7 +359,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         public async Task RotateAsync_WithEmptyTokenId_ShouldThrowInvalidOperationException()
         {
             // Arrange
-            Guid emptyId = Guid.Empty;
+            var emptyId = Guid.Empty;
             await DbContext.SeedRefreshTokenAsync(_timeProvider);
 
             // Act & Assert
