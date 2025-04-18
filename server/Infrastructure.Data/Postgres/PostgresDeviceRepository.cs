@@ -18,7 +18,7 @@ public class PostgresDeviceRepository : IDeviceRepository
 
     public async Task<Guid> SaveAsync(Device device)
     {
-        if (device == null) throw new NullReferenceException("Device cannot be null");
+        ArgumentNullException.ThrowIfNull(device);
 
         if (device.Id != Guid.Empty) throw new ArgumentException();
 
@@ -38,7 +38,8 @@ public class PostgresDeviceRepository : IDeviceRepository
     }
 
     public async Task<IEnumerable<Device>> GetByIdsAsync(IEnumerable<Guid> ids)
-    {
+    { 
+        ArgumentNullException.ThrowIfNull(ids);
         return await _dbContext.Devices.Where(d => ids.Contains(d.Id)).ToListAsync();
     }
 
@@ -64,7 +65,6 @@ public class PostgresDeviceRepository : IDeviceRepository
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(d => d.IsActive, false));
 
-        await _dbContext.SaveChangesAsync();
         return rowsAffected > 0;
     }
 }

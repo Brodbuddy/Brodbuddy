@@ -7,8 +7,8 @@ namespace Infrastructure.Data.Tests;
 public static class TestDataSeeder
 {
     public static async Task<User> SeedUserAsync(this PostgresDbContext context,
-                                                 TimeProvider timeProvider,
-                                                 string email = "peter@test.dk")
+        TimeProvider timeProvider,
+        string email = "peter@test.dk")
     {
         var user = new User
         {
@@ -20,8 +20,9 @@ public static class TestDataSeeder
         context.ChangeTracker.Clear();
         return user;
     }
-    
-    public static async Task<Device> SeedDeviceAsync(this PostgresDbContext context, TimeProvider timeProvider, string os = "linux", string browser = "browser")
+
+    public static async Task<Device> SeedDeviceAsync(this PostgresDbContext context, TimeProvider timeProvider,
+        string os = "linux", string browser = "firefox", DateTime? lastSeenAt = null, bool isActive = true)
     {
         var now = timeProvider.Now();
         var device = new Device
@@ -30,8 +31,8 @@ public static class TestDataSeeder
             Os = os,
             Browser = browser,
             CreatedAt = now,
-            LastSeenAt = now,
-            IsActive = true
+            LastSeenAt = lastSeenAt ?? now,
+            IsActive = isActive
         };
         await context.Devices.AddAsync(device);
         await context.SaveChangesAsync();
@@ -39,7 +40,8 @@ public static class TestDataSeeder
         return device;
     }
 
-    public static async Task<OneTimePassword> SeedOtpAsync(this PostgresDbContext context, TimeProvider timeProvider, int expiresMinutes = 15, int code = 123456)
+    public static async Task<OneTimePassword> SeedOtpAsync(this PostgresDbContext context, TimeProvider timeProvider,
+        int expiresMinutes = 15, int code = 123456)
     {
         var now = timeProvider.Now();
         var otp = new OneTimePassword
