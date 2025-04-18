@@ -11,9 +11,4 @@ public static class TimeProviderExtensions
     {
         return timeProvider.Now().AddDays(1);
     }
-
-    public static DateTime Yesterday(this TimeProvider timeProvider)
-    {
-        return timeProvider.Now().AddDays(-1);
-    }
 }
