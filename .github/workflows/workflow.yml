@@ -156,7 +156,6 @@ jobs:
         with:
           pattern: mutation-json-report-* 
           path: all-mutation-reports
-          merge-multiple: true
 
       - name: List downloaded files 
         run: ls -R all-mutation-reports
@@ -165,7 +164,7 @@ jobs:
         id: aggregate 
         run: |
           chmod +x .github/scripts/aggregate_mutation_summary.py
-          python .github/scripts/aggregate_mutation_summary.py ./all-mutation-reports 
+          python .github/scripts/aggregate_mutation_summary.py ./all-mutation-reports
 
       - name: Check final mutation threshold (80%)
         env:
