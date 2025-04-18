@@ -98,6 +98,14 @@ jobs:
           retention-days: 7
 
   mutation-tests:
+    strategy:
+      matrix:
+        project: [
+          'server/Infrastructure.Data/Infrastructure.Data.csproj',
+          'server/Application/Application.csproj',
+          'server/Core/Core.csproj'
+        ]
+      fail-fast: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -116,7 +124,7 @@ jobs:
 
       - name: Run Stryker mutation tests
         run: |
-          dotnet stryker --output StrykerOutput --reporter "json" --reporter "html" | tee stryker-output.log
+          dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput" --reporter "json" --reporter "html" | tee "stryker-output-${{ matrix.project }}.log"
 
       - name: Generate mutation summary
         if: always()
@@ -128,7 +136,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stryker-report
+          name: stryker-report-${{ matrix.project }}
           path: |
             **/StrykerOutput/**/*
           retention-days: 7

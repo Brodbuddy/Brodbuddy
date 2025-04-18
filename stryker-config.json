@@ -15,6 +15,7 @@
       "!/**/Extension.cs",
       "!/**/AppOptions.cs"
     ],
-    "reporters": ["html", "progress"]
+    "reporters": ["html", "progress"],
+    "coverage-analysis": "perTest"
   }
 }
