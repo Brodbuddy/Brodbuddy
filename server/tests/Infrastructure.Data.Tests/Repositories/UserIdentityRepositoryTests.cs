@@ -1,4 +1,5 @@
 ﻿using Infrastructure.Data.Postgres;
+using Infrastructure.Data.Tests.Bases;
 using SharedTestDependencies.Constants;
 using SharedTestDependencies.Database;
 using SharedTestDependencies.Fakes;

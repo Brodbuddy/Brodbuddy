@@ -1,4 +1,5 @@
 using Infrastructure.Data.Postgres;
+using Infrastructure.Data.Tests.Bases;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Constants;
 using SharedTestDependencies.Database;

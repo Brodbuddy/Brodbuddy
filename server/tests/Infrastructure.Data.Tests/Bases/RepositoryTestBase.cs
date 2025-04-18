@@ -2,7 +2,7 @@ using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Database;
 
-namespace Infrastructure.Data.Tests;
+namespace Infrastructure.Data.Tests.Bases;
 
 public abstract class RepositoryTestBase : IAsyncLifetime
 {
