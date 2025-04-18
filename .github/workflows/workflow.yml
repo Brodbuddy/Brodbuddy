@@ -126,6 +126,7 @@ jobs:
         run: |
           PROJECT_DIR=$(dirname "${{ matrix.project }}")
           PROJECT_NAME=$(basename "$PROJECT_DIR")
+          echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
           SAFE_NAME=$(echo "${{ matrix.project }}" | tr '/' '_')
           dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput_${SAFE_NAME}" --reporter "json" --reporter "html" | tee "stryker-output-${SAFE_NAME}.log"
 
