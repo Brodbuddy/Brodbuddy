@@ -102,16 +102,14 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         public async Task TryValidateAsync_WithValidToken_ShouldReturnTrueAndTokenId()
         {
             // Arrange
-            string token = "validToken";
-            DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(30);
-            var created = await _repository.CreateAsync(token, expiresAt);
+            var created = await DbContext.SeedRefreshTokenAsync(_timeProvider);
 
             // Act
-            var result = await _repository.TryValidateAsync(token);
+            var result = await _repository.TryValidateAsync(created.Token);
 
             // Assert
             result.isValid.ShouldBeTrue();
-            result.tokenId.ShouldBe(created.tokenId);
+            result.tokenId.ShouldBe(created.Id);
         }
 
         [Fact]
@@ -132,14 +130,11 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         public async Task TryValidateAsync_WithExpiredToken_ShouldReturnFalse()
         {
             // Arrange
-            string token = "expiredToken";
-            DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(5);
-            await _repository.CreateAsync(token, expiresAt);
-
+            var created = await DbContext.SeedRefreshTokenAsync(_timeProvider, expiresDays: 5);
             _timeProvider.Advance(TimeSpan.FromDays(6));
 
             // Act
-            var result = await _repository.TryValidateAsync(token);
+            var result = await _repository.TryValidateAsync(created.Token);
 
             // Assert
             result.isValid.ShouldBeFalse();
@@ -150,16 +145,14 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         public async Task TryValidateAsync_WithRevokedToken_ShouldReturnFalse()
         {
             // Arrange
-            string token = "revokedToken";
-            DateTime expiresAt = _timeProvider.Tomorrow();
-            var created = await _repository.CreateAsync(token, expiresAt);
+            var created = await DbContext.SeedRefreshTokenAsync(_timeProvider);
 
-            bool revoked = await _repository.RevokeAsync(created.tokenId);
+            bool revoked = await _repository.RevokeAsync(created.Id);
             revoked.ShouldBeTrue();
             DbContext.ChangeTracker.Clear();
 
             // Act
-            var result = await _repository.TryValidateAsync(token);
+            var result = await _repository.TryValidateAsync(created.Token);
 
             // Assert
             result.isValid.ShouldBeFalse();
@@ -170,14 +163,13 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         public async Task TryValidateAsync_WithExpiryClearlyInThePast_ShouldReturnFalse()
         {
             // Arrange
-            const string token = "clearlyExpiredToken";
             const int expiryDays = 30;
-            await DbContext.SeedRefreshTokenAsync(_timeProvider, expiresDays: expiryDays, tokenValue: token);
+            var created = await DbContext.SeedRefreshTokenAsync(_timeProvider, expiresDays: expiryDays);
 
             _timeProvider.Advance(TimeSpan.FromDays(expiryDays).Add(TimeSpan.FromSeconds(1)));
 
             // Act
-            var result = await _repository.TryValidateAsync(token);
+            var result = await _repository.TryValidateAsync(created.Token);
 
             // Assert
             result.isValid.ShouldBeFalse();
@@ -188,14 +180,13 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         public async Task TryValidateAsync_WithExpiryClearlyInTheFuture_ShouldReturnTrue()
         {
             // Arrange
-            const string token = "clearlyValidToken";
             const int expiryDays = 30;
-            var created = await DbContext.SeedRefreshTokenAsync(_timeProvider, expiresDays: expiryDays, tokenValue: token);
+            var created = await DbContext.SeedRefreshTokenAsync(_timeProvider, expiresDays: expiryDays);
 
             _timeProvider.Advance(TimeSpan.FromDays(expiryDays).Subtract(TimeSpan.FromSeconds(1)));
 
             // Act
-            var result = await _repository.TryValidateAsync(token);
+            var result = await _repository.TryValidateAsync(created.Token);
 
             // Assert
             result.isValid.ShouldBeTrue();
@@ -210,7 +201,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         public async Task RevokeAsync_WithValidTokenId_ShouldReturnTrueAndRevokeToken()
         {
             // Arrange
-            var createdToken = await DbContext.SeedRefreshTokenAsync(_timeProvider, tokenValue: "tokenToRevoke");
+            var createdToken = await DbContext.SeedRefreshTokenAsync(_timeProvider);
             var expectedRevocationTime = _timeProvider.Now();
 
             // Pre-assert
@@ -250,7 +241,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         {
             // Arrange
             var revokedTime = _timeProvider.Yesterday();
-            var createdToken = await DbContext.SeedRefreshTokenAsync(_timeProvider, tokenValue: "alreadyRevoked", revokedAt: revokedTime);
+            var createdToken = await DbContext.SeedRefreshTokenAsync(_timeProvider, revokedAt: revokedTime);
 
             // Pre-assert 
             createdToken.RevokedAt.ShouldBe(revokedTime);
@@ -275,7 +266,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         public async Task RevokeAsync_WithExpiredToken_ShouldRevokeSuccessfully()
         {
             // Arrange
-            var created = await DbContext.SeedRefreshTokenAsync(_timeProvider, tokenValue: "expiredButActive", expiresDays: -1);
+            var created = await DbContext.SeedRefreshTokenAsync(_timeProvider, expiresDays: -1);
             var expectedRevocationTime = _timeProvider.Now();
 
             // Act
@@ -315,7 +306,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         public async Task RotateAsync_WithExistingTokenId_ShouldCreateNewTokenAndRevokeOldOne()
         {
             // Arrange
-            var oldToken = await DbContext.SeedRefreshTokenAsync(_timeProvider, tokenValue: "oldTokenToRotate");
+            var oldToken = await DbContext.SeedRefreshTokenAsync(_timeProvider);
             var timeBeforeAct = _timeProvider.Now();
 
             // Act
