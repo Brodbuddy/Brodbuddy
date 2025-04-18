@@ -1,6 +1,5 @@
 using Application.Interfaces;
 using Application.Services;
-using Microsoft.Extensions.Logging;
 using Moq;
 using SharedTestDependencies;
 using Shouldly;
@@ -11,15 +10,16 @@ namespace Application.Tests;
 public class RefreshTokenServiceTests
 {
     private readonly Mock<IRefreshTokenRepository> _repositoryMock;
-    private readonly Mock<ILogger<RefreshTokenService>> _loggerMock;
+
     private readonly RefreshTokenService _service;
+    private readonly FakeTimeProvider _timeProvider;
 
     protected RefreshTokenServiceTests()
     {
         _repositoryMock = new Mock<IRefreshTokenRepository>();
-        var timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _loggerMock = new Mock<ILogger<RefreshTokenService>>();
-        _service = new RefreshTokenService(_repositoryMock.Object, timeProvider, _loggerMock.Object);
+
+        _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        _service = new RefreshTokenService(_repositoryMock.Object, _timeProvider);
     }
 
     public class GenerateAsync : RefreshTokenServiceTests
@@ -35,7 +35,7 @@ public class RefreshTokenServiceTests
             var testToken = "token";
 
             var timeProvider = new FakeTimeProvider(new DateTimeOffset(utcNow));
-            var service = new RefreshTokenService(_repositoryMock.Object, timeProvider, _loggerMock.Object);
+            var service = new RefreshTokenService(_repositoryMock.Object, timeProvider);
 
             _repositoryMock
                 .Setup(r => r.CreateAsync(It.IsAny<string>(), utcNow.AddDays(30)))
@@ -54,7 +54,7 @@ public class RefreshTokenServiceTests
     public class TryValidateAsync : RefreshTokenServiceTests
     {
         [Fact]
-        public async Task TryValidateAsync_ShouldReturnResultFromRepository()
+        public async Task TryValidateAsync_ShouldReturnValidationResult()
         {
             // Arrange
             var token = "testToken";
@@ -145,8 +145,7 @@ public class RefreshTokenServiceTests
             var token = "validToken";
             var tokenId = Guid.NewGuid();
             _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((true, tokenId));
-            _repositoryMock.Setup(r => r.RotateAsync(tokenId))
-                .ThrowsAsync(new InvalidOperationException("Token rotation failed"));
+            _repositoryMock.Setup(r => r.RotateAsync(tokenId)).ThrowsAsync(new InvalidOperationException("Token rotation failed"));
 
             // Act
             var result = await _service.RotateAsync(token);

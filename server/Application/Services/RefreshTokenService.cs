@@ -1,8 +1,6 @@
 using System.Security.Cryptography;
 using Application.Interfaces;
 using Core.Extensions;
-using Microsoft.Extensions.Logging;
-
 
 namespace Application.Services;
 
@@ -18,16 +16,11 @@ public class RefreshTokenService : IRefreshTokenService
 {
     private readonly IRefreshTokenRepository _repository;
     private readonly TimeProvider _timeProvider;
-    private readonly ILogger<RefreshTokenService> _logger;
 
-    public RefreshTokenService(
-        IRefreshTokenRepository repository,
-        TimeProvider timeProvider,
-        ILogger<RefreshTokenService> logger)
+    public RefreshTokenService(IRefreshTokenRepository repository, TimeProvider timeProvider)
     {
         _repository = repository;
         _timeProvider = timeProvider;
-        _logger = logger;
     }
 
     private readonly TimeSpan _tokenValidity = TimeSpan.FromDays(30);
@@ -62,21 +55,18 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task<(string token, Guid tokenId)> RotateAsync(string token)
     {
-        if (string.IsNullOrEmpty(token))
-            return (string.Empty, Guid.Empty);
+        if (string.IsNullOrEmpty(token)) return (string.Empty, Guid.Empty);
 
         var validationResult = await TryValidateAsync(token);
-        if (!validationResult.isValid)
-            return (string.Empty, Guid.Empty);
+        
+        if (!validationResult.isValid) return (string.Empty, Guid.Empty);
 
         try
         {
-            var result = await _repository.RotateAsync(validationResult.tokenId);
-            return result;
+            return await _repository.RotateAsync(validationResult.tokenId);
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogWarning(ex, "Failed to rotate refresh token. Token ID: {TokenId}", validationResult.tokenId);
             return (string.Empty, Guid.Empty);
         }
     }

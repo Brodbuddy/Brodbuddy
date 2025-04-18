@@ -7,7 +7,6 @@ using JWT.Serializers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-
 namespace Application.Services;
 
 public interface IJwtService
@@ -16,10 +15,7 @@ public interface IJwtService
     bool TryValidate(string jwt, out JwtClaims validatedClaims);
 }
 
-public class JwtService(
-    IOptionsMonitor<AppOptions> optionsMonitor,
-    TimeProvider timeProvider,
-    ILogger<JwtService> logger) : IJwtService
+public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider timeProvider, ILogger<JwtService> logger) : IJwtService
 {
     public string Generate(string subject, string email, string role)
     {
