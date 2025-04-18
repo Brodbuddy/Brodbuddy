@@ -10,7 +10,7 @@ import argparse
 
 from collections import defaultdict
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Dict
 from enum import Enum
 
 STRYKER_REPORT_FILENAME = "mutation-report.json"
@@ -37,6 +37,8 @@ class MutationStats(NamedTuple):
     total_mutants: int = 0
 
     def __add__(self, other: "MutationStats") -> "MutationStats":
+        if not isinstance(other, MutationStats):
+            return NotImplemented
         return MutationStats(
             killed=self.killed + other.killed,
             survived=self.survived + other.survived,
@@ -95,8 +97,7 @@ def extract_directory(file_path_str: str) -> str:
 def parse_single_stryker_report(
     file_path: Path,
 ) -> tuple[MutationStats, dict[str, MutationStats]] | None:
-    """Parses a single report and returns overall stats and directory stats for THAT report."""
-    print(f"Parsing individual Stryker report: {file_path}")
+    print(f"\n--- Attempting to parse report: {file_path} ---")
     if not file_path.is_file():
         print(f"Error: Stryker report file not found at {file_path}")
         return None
@@ -113,10 +114,12 @@ def parse_single_stryker_report(
         report_directory_stats: dict[str, defaultdict[str, int]] = defaultdict(
             lambda: defaultdict(int)
         )
+        print(f"  Processing files within {file_path}:")
 
         for file_path_str, file_data in data.get("files", {}).items():
+            print(f"  - Internal file path: {file_path_str}")
             if not isinstance(file_data, dict) or "mutants" not in file_data:
-                print(f"Warning: Skipping invalid file entry for '{file_path_str}'")
+                print(f"    Warning: Skipping invalid file entry for '{file_path_str}'")
                 continue
 
             directory = extract_directory(file_path_str)
@@ -126,7 +129,7 @@ def parse_single_stryker_report(
             for mutant in file_data.get("mutants", []):
                 if not isinstance(mutant, dict) or "status" not in mutant:
                     print(
-                        f"Warning: Skipping invalid mutant in file '{file_path_str}': {mutant}"
+                        f"    Warning: Skipping invalid mutant in file '{file_path_str}': {mutant}"
                     )
                     continue
 
@@ -140,33 +143,52 @@ def parse_single_stryker_report(
 
         individual_directory_metrics: dict[str, MutationStats] = {}
         for dir_name, counts in report_directory_stats.items():
-            stats_data = {
-                k.lower().replace("error", "_error"): v for k, v in counts.items()
-            }
+            stats_data = {}
+            for k, v in counts.items():
+                key_lower = k.lower()
+                if key_lower == "nocoverage":
+                    stats_data["no_coverage"] = v
+                elif key_lower == "compileerror":
+                    stats_data["compile_error"] = v
+                elif key_lower == "runtimeerror":
+                    stats_data["runtime_error"] = v
+                elif key_lower == "total_mutants":
+                    stats_data["total_mutants"] = v
+                else:
+                    stats_data[key_lower] = v
+
             for field in MutationStats._fields:
                 stats_data.setdefault(field, 0)
             individual_directory_metrics[dir_name] = MutationStats(**stats_data)
 
-        overall_stats_data = {
-            k.lower().replace("error", "_error"): v
-            for k, v in report_overall_counts.items()
-        }
+        overall_stats_data = {}
+        for k, v in report_overall_counts.items():
+            key_lower = k.lower()
+            if key_lower == "nocoverage":
+                overall_stats_data["no_coverage"] = v
+            elif key_lower == "compileerror":
+                overall_stats_data["compile_error"] = v
+            elif key_lower == "runtimeerror":
+                overall_stats_data["runtime_error"] = v
+            elif key_lower == "total_mutants":
+                overall_stats_data["total_mutants"] = v
+            else:
+                overall_stats_data[key_lower] = v
+
         for field in MutationStats._fields:
             overall_stats_data.setdefault(field, 0)
         individual_overall_metrics = MutationStats(**overall_stats_data)
 
-        print(f"Successfully parsed individual report: {file_path}")
+        print(f"  Successfully finished parsing individual report: {file_path}")
+        print(
+            f"  Directories found in this report: {list(individual_directory_metrics.keys())}"
+        )
         return individual_overall_metrics, individual_directory_metrics
 
-    except json.JSONDecodeError as e:
-        print(f"Error decoding JSON from '{file_path}': {e}")
-    except (KeyError, ValueError, AttributeError, TypeError) as e:
-        print(f"Error processing data in report '{file_path}': {e}")
     except Exception as e:
-        print(f"An unexpected error occurred parsing report '{file_path}': {e}")
+        print(f"[ERROR] FAILED PARSING REPORT {file_path}: {e}")
         traceback.print_exc()
-
-    return None
+        return None
 
 
 def get_status_emoji(score: float) -> CoverageStatus:
@@ -344,16 +366,26 @@ def main() -> int:
     aggregated_overall_stats = MutationStats()
     aggregated_directory_stats: dict[str, MutationStats] = defaultdict(MutationStats)
     parse_errors = 0
+    processed_files_count = 0
 
     for report_file in json_report_files:
+        print(
+            f"\n>>> Processing report file {processed_files_count + 1}/{len(json_report_files)}: {report_file} <<<"
+        )
         parsed_data = parse_single_stryker_report(report_file)
         if parsed_data:
             individual_overall, individual_dirs = parsed_data
             aggregated_overall_stats += individual_overall
             for dir_name, dir_stats in individual_dirs.items():
+                print(
+                    f"    Aggregating stats for directory '{dir_name}' (Total Mutants: {dir_stats.total_mutants})"
+                )
                 aggregated_directory_stats[dir_name] += dir_stats
+            processed_files_count += 1
         else:
-            print(f"Warning: Failed to parse report {report_file}. Skipping.")
+            print(
+                f"!!! SKIPPING AGGREGATION for report {report_file} due to parsing failure."
+            )
             parse_errors += 1
 
     if parse_errors > 0:
@@ -368,6 +400,16 @@ def main() -> int:
         )
         return 1
 
+    print(f"\n--- Final Aggregated Directory Stats (Before Summary Generation) ---")
+    if not aggregated_directory_stats:
+        print("  <No directories were successfully aggregated>")
+    else:
+        for d, s in aggregated_directory_stats.items():
+            print(
+                f"  '{d}': Killed={s.killed}, Survived={s.survived}, Timeout={s.timeout}, NoCoverage={s.no_coverage}, Ignored={s.ignored}, CompileError={s.compile_error}, RuntimeError={s.runtime_error}, Total={s.total_mutants}"
+            )
+    print("--- End Aggregated Stats ---\n")
+
     final_summary = MutationSummary(
         overall=aggregated_overall_stats, directories=dict(aggregated_directory_stats)
     )
@@ -377,9 +419,11 @@ def main() -> int:
     write_github_env(final_summary.overall)
 
     overall_score, _ = calculate_scores(final_summary.overall)
-    print(f"Aggregation complete. Final Overall Mutation Score: {overall_score:.1f}%")
+    print(
+        f"Aggregation complete. Successfully processed {processed_files_count} reports. Final Overall Mutation Score: {overall_score:.1f}%"
+    )
 
-    return 0 if parse_errors < len(json_report_files) else 1
+    return 0 if parse_errors == 0 else 1
 
 
 if __name__ == "__main__":
