@@ -1,6 +1,7 @@
 using Core.Entities;
 using Core.Extensions;
 using Infrastructure.Data.Postgres;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Tests;
 
@@ -40,6 +41,23 @@ public static class TestDataSeeder
         return device;
     }
 
+    public static async Task<RefreshToken> SeedRefreshTokenAsync(this PostgresDbContext context,
+        TimeProvider timeProvider, DateTime? expiresAt = null, string tokenValue = "test-refresh-token")
+    {
+        var now = timeProvider.Now();
+
+        var refreshToken = new RefreshToken
+        {
+            Token = tokenValue,
+            CreatedAt = now,
+            ExpiresAt = expiresAt ?? now.AddDays(30)
+        };
+        await context.RefreshTokens.AddAsync(refreshToken);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        return refreshToken;
+    }
+
     public static async Task<OneTimePassword> SeedOtpAsync(this PostgresDbContext context, TimeProvider timeProvider,
         int expiresMinutes = 15, int code = 123456)
     {
@@ -54,5 +72,38 @@ public static class TestDataSeeder
         await context.SaveChangesAsync();
         context.ChangeTracker.Clear();
         return otp;
+    }
+
+    public static async Task<TokenContext> SeedTokenContextAsync(
+        this PostgresDbContext context,
+        TimeProvider timeProvider,
+        Guid? userId = null,
+        Guid? deviceId = null,
+        Guid? refreshTokenId = null,
+        bool isRevoked = false)
+    {
+        var effectiveUserId = userId ?? (await context.SeedUserAsync(timeProvider)).Id;
+        var effectiveDeviceId = deviceId ?? (await context.SeedDeviceAsync(timeProvider)).Id;
+        var effectiveRefreshTokenId = refreshTokenId ?? (await context.SeedRefreshTokenAsync(timeProvider)).Id;
+
+        var tokenContext = new TokenContext
+        {
+            UserId = effectiveUserId,
+            DeviceId = effectiveDeviceId,
+            RefreshTokenId = effectiveRefreshTokenId,
+            CreatedAt = timeProvider.Now(),
+            IsRevoked = isRevoked
+        };
+
+        await context.TokenContexts.AddAsync(tokenContext);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+
+        var createdContext = await context.TokenContexts
+            .AsNoTracking()
+            .FirstAsync(tc => tc.UserId == effectiveUserId &&
+                              tc.DeviceId == effectiveDeviceId &&
+                              tc.RefreshTokenId == effectiveRefreshTokenId);
+        return createdContext;
     }
 }
