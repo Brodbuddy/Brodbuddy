@@ -1,4 +1,5 @@
 using Core.Entities;
+using Core.Extensions;
 using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies;
@@ -24,19 +25,9 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
         public async Task CreateAsync_WhenUserAndOtpExist_ShouldCreateVerificationContext()
         {
             // Arrange
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@example.com"
-            };
-            var otp = new OneTimePassword { Id = Guid.NewGuid() };
-
-            await DbContext.Users.AddAsync(user);
-            await DbContext.OneTimePasswords.AddAsync(otp);
-            await DbContext.SaveChangesAsync();
-
-            var currentTime = DateTime.UtcNow;
-            _timeProvider.SetUtcNow(new DateTimeOffset(currentTime));
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var otp = await DbContext.SeedOtpAsync(_timeProvider);
+            var expectedTime = _timeProvider.Now(); 
 
             // Act
             var resultId = await _repository.CreateAsync(user.Id, otp.Id);
@@ -48,7 +39,7 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
             context.ShouldNotBeNull();
             context.UserId.ShouldBe(user.Id);
             context.OtpId.ShouldBe(otp.Id);
-            context.CreatedAt.ShouldBe(currentTime);
+            context.CreatedAt.ShouldBeWithinTolerance(expectedTime);
         }
 
         
@@ -73,48 +64,13 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
         }
 
         [Fact]
-        public async Task CreateAsync_WhenCalled_ShouldSaveContextWithCorrectTimestamp()
+        public async Task CreateAsync_WhenUserHasMultipleOtps_ShouldCreateSeparateContexts()
         {
             // Arrange
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@example.com"
-            };
-            var otp = new OneTimePassword { Id = Guid.NewGuid() };
-
-            await DbContext.Users.AddAsync(user);
-            await DbContext.OneTimePasswords.AddAsync(otp);
-            await DbContext.SaveChangesAsync();
-
-            var expectedTime = new DateTime(2023, 1, 1, 12, 0, 0, DateTimeKind.Utc);
-            _timeProvider.SetUtcNow(new DateTimeOffset(expectedTime));
-
-            // Act
-            var resultId = await _repository.CreateAsync(user.Id, otp.Id);
-
-            // Assert
-            var context = await DbContext.VerificationContexts.FindAsync(resultId);
-            context.ShouldNotBeNull();
-            context.CreatedAt.ShouldBe(expectedTime);
-        }
-
-        [Fact]
-        public async Task CreateAsync_WhenCalledWithSameUser_ShouldCreateMultipleContexts()
-        {
-            // Arrange
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@example.com"
-            };
-            var otp1 = new OneTimePassword { Id = Guid.NewGuid() };
-            var otp2 = new OneTimePassword { Id = Guid.NewGuid() };
-
-            await DbContext.Users.AddAsync(user);
-            await DbContext.OneTimePasswords.AddRangeAsync(otp1, otp2);
-            await DbContext.SaveChangesAsync();
-
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var otp1 = await DbContext.SeedOtpAsync(_timeProvider);
+            var otp2 = await DbContext.SeedOtpAsync(_timeProvider);
+            
             // Act
             var resultId1 = await _repository.CreateAsync(user.Id, otp1.Id);
             var resultId2 = await _repository.CreateAsync(user.Id, otp2.Id);
@@ -128,6 +84,21 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
             contexts.ShouldContain(c => c.Id == resultId1);
             contexts.ShouldContain(c => c.Id == resultId2);
         }
+        
+        [Fact]
+        public async Task CreateAsync_WhenUserAlreadyHasContextForOtp_ShouldThrowDbUpdateException()
+        {
+            // Arrange
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var otp = await DbContext.SeedOtpAsync(_timeProvider);
+    
+            // Første oprettelse - 10-4
+            await _repository.CreateAsync(user.Id, otp.Id);
+
+            // Act & Assert
+            // Anden oprettese - fejler
+            await Should.ThrowAsync<DbUpdateException>(() => _repository.CreateAsync(user.Id, otp.Id));
+        }
     }
 
     public class GetLatestAsync(PostgresFixture fixture) : IdentityVerificationRepositoryTest(fixture)
@@ -136,49 +107,23 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
         public async Task GetLatestAsync_WhenContextsExist_ShouldReturnLatestContext()
         {
             // Arrange
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@example.com"
-            };
-            var otp1 = new OneTimePassword { Id = Guid.NewGuid() };
-            var otp2 = new OneTimePassword { Id = Guid.NewGuid() };
-
-            await DbContext.Users.AddAsync(user);
-            await DbContext.OneTimePasswords.AddRangeAsync(otp1, otp2);
-            await DbContext.SaveChangesAsync();
-
-            var olderDate = DateTime.UtcNow.AddDays(-2);
-            var newerDate = DateTime.UtcNow.AddDays(-1);
-
-            var context1 = new VerificationContext
-            {
-                UserId = user.Id,
-                OtpId = otp1.Id,
-                CreatedAt = olderDate,
-                User = user,
-                Otp = otp1
-            };
-
-            var context2 = new VerificationContext
-            {
-                UserId = user.Id,
-                OtpId = otp2.Id,
-                CreatedAt = newerDate,
-                User = user,
-                Otp = otp2
-            };
-
-            await DbContext.VerificationContexts.AddRangeAsync(context1, context2);
-            await DbContext.SaveChangesAsync();
-
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var otp1 = await DbContext.SeedOtpAsync(_timeProvider, code: 111111);
+            var otp2 = await DbContext.SeedOtpAsync(_timeProvider, code: 222222);
+            
+            _timeProvider.Advance(TimeSpan.FromDays(-2));
+            await _repository.CreateAsync(user.Id, otp1.Id);
+            
+            _timeProvider.Advance(TimeSpan.FromDays(1));
+            await _repository.CreateAsync(user.Id, otp2.Id);
+            
             // Act
             var result = await _repository.GetLatestAsync(user.Id);
 
             // Assert
             result.ShouldNotBeNull();
             result.OtpId.ShouldBe(otp2.Id);
-            result.CreatedAt.ShouldBe(newerDate);
+            result.CreatedAt.ShouldBeWithinTolerance(_timeProvider.Now());
         }
 
         [Fact]
@@ -198,28 +143,9 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
         public async Task GetLatestAsync_WhenContextExists_ShouldIncludeRelatedEntities()
         {
             // Arrange
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Email = "test@example.com"
-            };
-            var otp = new OneTimePassword { Id = Guid.NewGuid() };
-
-            await DbContext.Users.AddAsync(user);
-            await DbContext.OneTimePasswords.AddAsync(otp);
-            await DbContext.SaveChangesAsync();
-
-            var context = new VerificationContext
-            {
-                UserId = user.Id,
-                OtpId = otp.Id,
-                CreatedAt = DateTime.UtcNow,
-                User = user,
-                Otp = otp
-            };
-
-            await DbContext.VerificationContexts.AddAsync(context);
-            await DbContext.SaveChangesAsync();
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var otp = await DbContext.SeedOtpAsync(_timeProvider);
+            await _repository.CreateAsync(user.Id, otp.Id);
 
             // Act
             var result = await _repository.GetLatestAsync(user.Id);

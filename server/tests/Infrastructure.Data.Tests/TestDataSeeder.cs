@@ -76,7 +76,7 @@ public static class TestDataSeeder
         
         var createdOtp = await context.OneTimePasswords
             .AsNoTracking()
-            .FirstAsync(o => o.Code == code && o.CreatedAt == now);
+            .FirstAsync(o => o.Id == otp.Id); 
         return createdOtp;
     }
 
