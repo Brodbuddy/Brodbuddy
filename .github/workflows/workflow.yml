@@ -124,6 +124,8 @@ jobs:
         # Har ikke threshold med her for at kunne få summary
         # Men se sidste trin i dette som tjekker for om vi rammer 80%
         run: |
+          PROJECT_DIR=$(dirname "${{ matrix.project }}")
+          PROJECT_NAME=$(basename "$PROJECT_DIR")
           SAFE_NAME=$(echo "${{ matrix.project }}" | tr '/' '_')
           dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput_${SAFE_NAME}" --reporter "json" --reporter "html" | tee "stryker-output-${SAFE_NAME}.log"
 
@@ -139,7 +141,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stryker-html-report-${{ strategy.job-index }}
+          name: stryker-html-report-${{ env.PROJECT_NAME }}
           path: StrykerOutput_*/reports/mutation-report.html
           retention-days: 7
           
