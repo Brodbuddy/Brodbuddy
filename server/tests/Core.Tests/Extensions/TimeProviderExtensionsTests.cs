@@ -1,5 +1,5 @@
 using Core.Extensions;
-using SharedTestDependencies;
+using SharedTestDependencies.Fakes;
 using Shouldly;
 
 namespace Core.Tests.Extensions;

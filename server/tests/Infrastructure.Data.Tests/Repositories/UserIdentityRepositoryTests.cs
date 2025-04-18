@@ -1,8 +1,10 @@
 ﻿using Infrastructure.Data.Postgres;
-using SharedTestDependencies;
+using SharedTestDependencies.Constants;
+using SharedTestDependencies.Database;
+using SharedTestDependencies.Fakes;
 using Shouldly;
 
-namespace Infrastructure.Data.Tests;
+namespace Infrastructure.Data.Tests.Repositories;
 
 [Collection(TestCollections.Database)]
 public class UserIdentityRepositoryTests : RepositoryTestBase

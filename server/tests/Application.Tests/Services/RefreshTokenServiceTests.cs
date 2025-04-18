@@ -1,11 +1,11 @@
 using Application.Interfaces;
 using Application.Services;
 using Moq;
-using SharedTestDependencies;
+using SharedTestDependencies.Fakes;
 using Shouldly;
 using Xunit;
 
-namespace Application.Tests;
+namespace Application.Tests.Services;
 
 public class RefreshTokenServiceTests
 {

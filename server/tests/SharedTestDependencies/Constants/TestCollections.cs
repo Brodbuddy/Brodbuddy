@@ -1,4 +1,4 @@
-namespace SharedTestDependencies;
+namespace SharedTestDependencies.Constants;
 
 public static class TestCollections
 {

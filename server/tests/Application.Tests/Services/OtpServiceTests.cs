@@ -1,10 +1,10 @@
-namespace Application.Tests;
-
-using Xunit;
-using Shouldly;
-using Interfaces;
-using Services;
+using Application.Interfaces;
+using Application.Services;
 using Moq;
+using Shouldly;
+using Xunit;
+
+namespace Application.Tests.Services;
 
 public class OtpServiceTests
 {

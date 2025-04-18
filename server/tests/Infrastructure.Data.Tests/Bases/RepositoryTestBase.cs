@@ -1,6 +1,6 @@
 using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
-using SharedTestDependencies;
+using SharedTestDependencies.Database;
 
 namespace Infrastructure.Data.Tests;
 

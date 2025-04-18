@@ -5,7 +5,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Application.Tests;
+namespace Application.Tests.Services;
 
 public class DeviceRegistryServiceTests
 {

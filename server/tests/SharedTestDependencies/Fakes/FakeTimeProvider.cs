@@ -1,4 +1,4 @@
-namespace SharedTestDependencies;
+namespace SharedTestDependencies.Fakes;
 
 
 public class FakeTimeProvider(DateTimeOffset startDateTime) : TimeProvider

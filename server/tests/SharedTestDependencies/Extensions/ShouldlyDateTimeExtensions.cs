@@ -1,6 +1,6 @@
 using Shouldly;
 
-namespace SharedTestDependencies;
+namespace SharedTestDependencies.Extensions;
 
 public static class ShouldlyDateTimeExtensions
 {

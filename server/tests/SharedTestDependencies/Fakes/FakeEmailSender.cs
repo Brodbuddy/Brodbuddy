@@ -1,6 +1,6 @@
 using Application.Interfaces;
 
-namespace SharedTestDependencies;
+namespace SharedTestDependencies.Fakes;
 
 public class FakeEmailSender : IEmailSender
 {

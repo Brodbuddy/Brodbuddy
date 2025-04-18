@@ -1,9 +1,12 @@
 ﻿using Core.Extensions;
 using Infrastructure.Data.Postgres;
+using SharedTestDependencies.Constants;
+using SharedTestDependencies.Database;
+using SharedTestDependencies.Extensions;
+using SharedTestDependencies.Fakes;
 using Shouldly;
-using SharedTestDependencies;
 
-namespace Infrastructure.Data.Tests;
+namespace Infrastructure.Data.Tests.Repositories;
 
 [Collection(TestCollections.Database)]
 public class DeviceRegistryRepositoryTests : RepositoryTestBase

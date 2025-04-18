@@ -3,11 +3,11 @@ using Application.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using SharedTestDependencies;
+using SharedTestDependencies.Fakes;
 using Shouldly;
 using Xunit;
 
-namespace Application.Tests;
+namespace Application.Tests.Services;
 
 public class JwtServiceTests
 {
@@ -140,7 +140,7 @@ public class JwtServiceTests
             string headerJson = System.Text.Encoding.UTF8.GetString(headerBytes);
 
             // Parse JSON til dictionary
-            var header = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(headerJson);
+            var header = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(headerJson);
 
             header.ShouldNotBeNull("Deserialized header should not be null");
             header.ShouldContainKey("typ");

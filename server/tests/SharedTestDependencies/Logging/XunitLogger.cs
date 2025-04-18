@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace SharedTestDependencies;
+namespace SharedTestDependencies.Logging;
 
 public class XunitLogger(ITestOutputHelper output, string category) : ILogger
 {

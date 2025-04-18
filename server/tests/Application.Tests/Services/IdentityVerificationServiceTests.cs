@@ -2,11 +2,11 @@ using Application.Interfaces;
 using Application.Services;
 using Core.Entities;
 using Moq;
-using SharedTestDependencies;
+using SharedTestDependencies.Fakes;
 using Shouldly;
 using Xunit;
 
-namespace Application.Tests;
+namespace Application.Tests.Services;
 
 public class IdentityVerificationServiceTests
 {

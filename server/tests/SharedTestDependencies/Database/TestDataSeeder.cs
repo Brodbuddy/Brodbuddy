@@ -3,7 +3,7 @@ using Core.Extensions;
 using Infrastructure.Data.Postgres;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Data.Tests;
+namespace SharedTestDependencies.Database;
 
 public static class TestDataSeeder
 {
