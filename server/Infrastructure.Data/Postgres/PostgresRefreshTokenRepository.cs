@@ -50,15 +50,14 @@ public class PostgresRefreshTokenRepository : IRefreshTokenRepository
 
     public async Task<bool> RevokeAsync(Guid tokenId)
     {
-        var refreshToken = await _dbContext.RefreshTokens.FirstOrDefaultAsync(rt => rt.Id == tokenId);
+        var now = _timeProvider.Now(); 
 
-        if (refreshToken == null)
-            return false;
+        int rowsAffected = await _dbContext.RefreshTokens
+            .Where(rt => rt.Id == tokenId && rt.RevokedAt == null ) 
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(rt => rt.RevokedAt, now));
 
-        refreshToken.RevokedAt = _timeProvider.Now();
-
-        await _dbContext.SaveChangesAsync();
-        return true;
+        return rowsAffected > 0;
     }
 
     public async Task<(string token, Guid tokenId)> RotateAsync(Guid oldTokenId)

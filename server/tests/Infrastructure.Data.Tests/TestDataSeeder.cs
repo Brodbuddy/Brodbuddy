@@ -42,15 +42,16 @@ public static class TestDataSeeder
     }
 
     public static async Task<RefreshToken> SeedRefreshTokenAsync(this PostgresDbContext context,
-        TimeProvider timeProvider, DateTime? expiresAt = null, string tokenValue = "test-refresh-token")
+        TimeProvider timeProvider, int expiresDays = 30, string tokenValue = "test-refresh-token", DateTime? revokedAt = null, Guid? replacedByTokenId = null)
     {
         var now = timeProvider.Now();
-
         var refreshToken = new RefreshToken
         {
             Token = tokenValue,
             CreatedAt = now,
-            ExpiresAt = expiresAt ?? now.AddDays(30)
+            ExpiresAt = now.AddDays(expiresDays),
+            RevokedAt = revokedAt,
+            ReplacedByTokenId = replacedByTokenId
         };
         await context.RefreshTokens.AddAsync(refreshToken);
         await context.SaveChangesAsync();
