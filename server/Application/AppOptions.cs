@@ -7,7 +7,6 @@ public class AppOptions
     public int HttpPort { get; set; } = 5001;
     public EmailOptions Email { get; set; } = new();
     public PostgresOptions Postgres { get; set; } = new();
-    
     public JwtOptions Jwt { get; set; } = new();
 }
 
@@ -27,8 +26,7 @@ public class PostgresOptions
     public string Username { get; set; } = "user";
     public string Password { get; set; } = "pass";
 
-    public string ConnectionString =>
-        $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password}";
+    public string ConnectionString => $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password}";
 }
 
 public class JwtOptions

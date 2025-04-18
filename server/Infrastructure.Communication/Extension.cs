@@ -12,7 +12,7 @@ public static class Extension
 {
     public static IServiceCollection AddCommunicationInfrastructure(this IServiceCollection services)
     {
-        services.AddSingleton<IFluentEmail>(provider => 
+        services.AddSingleton<IFluentEmail>(provider =>
         {
             var options = provider.GetRequiredService<IOptions<AppOptions>>().Value;
             var email = Email.From(options.Email.FromEmail, options.Email.Sender);
@@ -23,9 +23,9 @@ public static class Extension
             });
             return email;
         });
-        
+
         services.AddScoped<IEmailSender, FluentEmailSender>();
-    
+
         return services;
     }
 }

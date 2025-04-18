@@ -19,12 +19,8 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
     }
 
 
-    public class CreateAsync : PostgresRefreshTokenRepositoryTests
+    public class CreateAsync(PostgresFixture fixture) : PostgresRefreshTokenRepositoryTests(fixture)
     {
-        public CreateAsync(PostgresFixture fixture) : base(fixture)
-        {
-        }
-
         [Fact]
         public async Task CreateAsync_WithValidToken_ShouldCreateTokenInDatabase()
         {
@@ -33,10 +29,10 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
             DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(30);
 
             // Act
-            Guid id = await _repository.CreateAsync(token, expiresAt);
+            var result = await _repository.CreateAsync(token, expiresAt);
 
             // Assert
-            var savedToken = await _dbContext.RefreshTokens.FindAsync(id);
+            var savedToken = await _dbContext.RefreshTokens.FindAsync(result.tokenId);
             savedToken.ShouldNotBeNull();
             savedToken.Token.ShouldBe(token);
             savedToken.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
@@ -53,10 +49,10 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
             DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddYears(10);
 
             // Act
-            Guid id = await _repository.CreateAsync(token, expiresAt);
+            var result = await _repository.CreateAsync(token, expiresAt);
 
             // Assert
-            var savedToken = await _dbContext.RefreshTokens.FindAsync(id);
+            var savedToken = await _dbContext.RefreshTokens.FindAsync(result.tokenId);
             savedToken.ShouldNotBeNull();
             savedToken.Token.ShouldBe(token);
             savedToken.ExpiresAt.ShouldBe(expiresAt);
@@ -70,10 +66,10 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
             DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(-1);
 
             // Act
-            Guid id = await _repository.CreateAsync(token, expiresAt);
+            var result = await _repository.CreateAsync(token, expiresAt);
 
             // Assert
-            var savedToken = await _dbContext.RefreshTokens.FindAsync(id);
+            var savedToken = await _dbContext.RefreshTokens.FindAsync(result.tokenId);
             savedToken.ShouldNotBeNull();
             savedToken.Token.ShouldBe(token);
             savedToken.ExpiresAt.ShouldBe(expiresAt);
@@ -91,43 +87,39 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
             DateTime expiresAt2 = _timeProvider.GetUtcNow().UtcDateTime.AddDays(20);
 
             // Act
-            Guid id1 = await _repository.CreateAsync(token, expiresAt1);
-            Guid id2 = await _repository.CreateAsync(token, expiresAt2);
+            var result1 = await _repository.CreateAsync(token, expiresAt1);
+            var result2 = await _repository.CreateAsync(token, expiresAt2);
 
             // Assert
-            id1.ShouldNotBe(id2);
+            result1.tokenId.ShouldNotBe(result2.tokenId);
 
             var tokens = await _dbContext.RefreshTokens
                 .Where(rt => rt.Token == token)
                 .ToListAsync();
 
             tokens.Count.ShouldBe(2);
-            tokens.ShouldContain(t => t.Id == id1);
-            tokens.ShouldContain(t => t.Id == id2);
+            tokens.ShouldContain(t => t.Id == result1.tokenId);
+            tokens.ShouldContain(t => t.Id == result2.tokenId);
         }
     }
 
 
-    public class TryValidateAsync : PostgresRefreshTokenRepositoryTests
+    public class TryValidateAsync(PostgresFixture fixture) : PostgresRefreshTokenRepositoryTests(fixture)
     {
-        public TryValidateAsync(PostgresFixture fixture) : base(fixture)
-        {
-        }
-
         [Fact]
         public async Task TryValidateAsync_WithValidToken_ShouldReturnTrueAndTokenId()
         {
             // Arrange
             string token = "validToken";
             DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(30);
-            Guid id = await _repository.CreateAsync(token, expiresAt);
+            var created = await _repository.CreateAsync(token, expiresAt);
 
             // Act
             var result = await _repository.TryValidateAsync(token);
 
             // Assert
             result.isValid.ShouldBeTrue();
-            result.tokenId.ShouldBe(id);
+            result.tokenId.ShouldBe(created.tokenId);
         }
 
         [Fact]
@@ -168,9 +160,9 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
             // Arrange
             string token = "revokedToken";
             DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(30);
-            Guid id = await _repository.CreateAsync(token, expiresAt);
+            var created= await _repository.CreateAsync(token, expiresAt);
 
-            await _repository.RevokeAsync(id);
+            await _repository.RevokeAsync(created.tokenId);
 
             // Act
             var result = await _repository.TryValidateAsync(token);
@@ -203,39 +195,35 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
             // Arrange
             const string token = "barelyValidToken";
             DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddMilliseconds(1);
-            Guid id = await _repository.CreateAsync(token, expiresAt);
+            var created = await _repository.CreateAsync(token, expiresAt);
 
             // Act
             var result = await _repository.TryValidateAsync(token);
 
             // Assert
             result.isValid.ShouldBeTrue();
-            result.tokenId.ShouldBe(id);
+            result.tokenId.ShouldBe(created.tokenId);
         }
     }
 
 
-    public class RevokeAsync : PostgresRefreshTokenRepositoryTests
+    public class RevokeAsync(PostgresFixture fixture) : PostgresRefreshTokenRepositoryTests(fixture)
     {
-        public RevokeAsync(PostgresFixture fixture) : base(fixture)
-        {
-        }
-
         [Fact]
         public async Task RevokeAsync_WithValidTokenId_ShouldReturnTrueAndRevokeToken()
         {
             // Arrange
             string token = "tokenToRevoke";
             DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(30);
-            Guid id = await _repository.CreateAsync(token, expiresAt);
+            var created = await _repository.CreateAsync(token, expiresAt);
 
             // Act
-            bool result = await _repository.RevokeAsync(id);
+            bool result = await _repository.RevokeAsync(created.tokenId);
 
             // Assert
             result.ShouldBeTrue();
 
-            var revokedToken = await _dbContext.RefreshTokens.FindAsync(id);
+            var revokedToken = await _dbContext.RefreshTokens.FindAsync(created.tokenId);
             revokedToken.ShouldNotBeNull();
             revokedToken.RevokedAt.ShouldNotBeNull();
             revokedToken.RevokedAt.Value.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
@@ -260,20 +248,20 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
             // Arrange
             string token = "alreadyRevokedToken";
             DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(30);
-            Guid id = await _repository.CreateAsync(token, expiresAt);
+            var created = await _repository.CreateAsync(token, expiresAt);
 
             var firstRevocationTime = _timeProvider.GetUtcNow().UtcDateTime;
-            await _repository.RevokeAsync(id);
+            await _repository.RevokeAsync(created.tokenId);
 
             _timeProvider.Advance(TimeSpan.FromHours(1));
 
             // Act
-            bool result = await _repository.RevokeAsync(id);
+            bool result = await _repository.RevokeAsync(created.tokenId);
 
             // Assert
             result.ShouldBeTrue();
 
-            var revokedToken = await _dbContext.RefreshTokens.FindAsync(id);
+            var revokedToken = await _dbContext.RefreshTokens.FindAsync(created.tokenId);
             revokedToken.ShouldNotBeNull();
             revokedToken.RevokedAt.ShouldNotBeNull();
 
@@ -287,17 +275,17 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
             // Arrange
             string token = "expiredToken";
             DateTime expiresAt = _timeProvider.GetUtcNow().UtcDateTime.AddDays(1);
-            Guid id = await _repository.CreateAsync(token, expiresAt);
+            var created = await _repository.CreateAsync(token, expiresAt);
 
             _timeProvider.Advance(TimeSpan.FromDays(2));
 
             // Act
-            bool result = await _repository.RevokeAsync(id);
+            bool result = await _repository.RevokeAsync(created.tokenId);
 
             // Assert
             result.ShouldBeTrue();
 
-            var revokedToken = await _dbContext.RefreshTokens.FindAsync(id);
+            var revokedToken = await _dbContext.RefreshTokens.FindAsync(created.tokenId);
             revokedToken.ShouldNotBeNull();
             revokedToken.RevokedAt.ShouldNotBeNull();
             revokedToken.RevokedAt.Value.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
@@ -308,13 +296,8 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
     }
 
 
-    public class RotateAsync : PostgresRefreshTokenRepositoryTests
+    public class RotateAsync(PostgresFixture fixture) : PostgresRefreshTokenRepositoryTests(fixture)
     {
-        public RotateAsync(PostgresFixture fixture) : base(fixture)
-        {
-        }
-
-
         [Fact]
         public async Task RotateAsync_WithNonExistentTokenId_ShouldThrowInvalidOperationException()
         {
@@ -322,9 +305,7 @@ public class PostgresRefreshTokenRepositoryTests : RepositoryTestBase
             Guid nonExistentId = Guid.NewGuid();
 
             // Act & Assert
-            await Should.ThrowAsync<InvalidOperationException>(async () =>
-                await _repository.RotateAsync(nonExistentId));
+            await Should.ThrowAsync<InvalidOperationException>(async () => await _repository.RotateAsync(nonExistentId));
         }
-        
     }
 }

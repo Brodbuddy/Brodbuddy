@@ -28,15 +28,25 @@ public class RefreshTokenServiceTests
         public async Task GenerateAsync_ShouldReturnToken()
         {
             // Arrange
+
             var utcNow = DateTime.UtcNow;
 
-            _timeProvider.SetUtcNow(utcNow);
+            var expectedTokenId = Guid.NewGuid();
+            var testToken = "token";
+
+            var timeProvider = new FakeTimeProvider(new DateTimeOffset(utcNow));
+            var service = new RefreshTokenService(_repositoryMock.Object, timeProvider);
+
+            _repositoryMock
+                .Setup(r => r.CreateAsync(It.IsAny<string>(), utcNow.AddDays(30)))
+                .ReturnsAsync((testToken, expectedTokenId));
 
             // Act
-            var token = await _service.GenerateAsync();
+            var result = await service.GenerateAsync();
 
             // Assert
-            token.ShouldNotBeNullOrEmpty();
+            result.token.ShouldNotBeNullOrEmpty();
+            result.tokenId.ShouldBe(expectedTokenId);
             _repositoryMock.Verify(r => r.CreateAsync(It.IsAny<string>(), utcNow.AddDays(30)), Times.Once);
         }
     }
@@ -105,7 +115,8 @@ public class RefreshTokenServiceTests
             var result = await _service.RotateAsync(token);
 
             // Assert
-            result.ShouldBe(string.Empty);
+            result.token.ShouldBe(string.Empty);
+            result.tokenId.ShouldBe(Guid.Empty);
         }
 
         [Fact]
@@ -115,14 +126,16 @@ public class RefreshTokenServiceTests
             var token = "validToken";
             var tokenId = Guid.NewGuid();
             var newToken = "newToken";
+            var newTokenId = Guid.NewGuid();
             _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((true, tokenId));
-            _repositoryMock.Setup(r => r.RotateAsync(tokenId)).ReturnsAsync(newToken);
+            _repositoryMock.Setup(r => r.RotateAsync(tokenId)).ReturnsAsync((newToken, newTokenId));
 
             // Act
             var result = await _service.RotateAsync(token);
 
             // Assert
-            result.ShouldBe(newToken);
+            result.token.ShouldBe(newToken);
+            result.tokenId.ShouldBe(newTokenId);
         }
 
         [Fact]
@@ -132,14 +145,14 @@ public class RefreshTokenServiceTests
             var token = "validToken";
             var tokenId = Guid.NewGuid();
             _repositoryMock.Setup(r => r.TryValidateAsync(token)).ReturnsAsync((true, tokenId));
-            _repositoryMock.Setup(r => r.RotateAsync(tokenId))
-                .ThrowsAsync(new InvalidOperationException("Token rotation failed"));
+            _repositoryMock.Setup(r => r.RotateAsync(tokenId)).ThrowsAsync(new InvalidOperationException("Token rotation failed"));
 
             // Act
             var result = await _service.RotateAsync(token);
 
             // Assert
-            result.ShouldBe(string.Empty);
+            result.token.ShouldBe(string.Empty);
+            result.tokenId.ShouldBe(Guid.Empty);
         }
     }
 }

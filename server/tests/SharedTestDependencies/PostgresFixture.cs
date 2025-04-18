@@ -17,13 +17,13 @@ public class PostgresFixture :  DbContainerFixture<PostgreSqlBuilder, PostgreSql
     private readonly IMessageSink _messageSink;
 
     private Respawner? Respawner { get; set; }
-
+    
     public PostgresFixture(IMessageSink messageSink) : base(messageSink)
     {
         _messageSink = messageSink; 
         _network = new NetworkBuilder().WithName($"postgres-net-{Guid.NewGuid()}").Build();
     }
-
+    
     protected override PostgreSqlBuilder Configure(PostgreSqlBuilder builder)
     {
         return builder.WithImage("postgres:16-alpine")
@@ -33,17 +33,17 @@ public class PostgresFixture :  DbContainerFixture<PostgreSqlBuilder, PostgreSql
             .WithNetwork(_network)
             .WithNetworkAliases("postgres-db");
     }
-
+    
     public override DbProviderFactory DbProviderFactory => NpgsqlFactory.Instance;
-
+    
     protected override async Task InitializeAsync()
     {
         Log("Starting PostgreSQL container...");
         await base.InitializeAsync();
         Log("PostgreSQL container started. Connection string: " + ConnectionString);
-
+        
         await ApplyDatabaseSchemaAsync();
-
+    
         Log("Initializing Respawner...");
         await InitializeRespawnerAsync();
         Log("Respawner initialized successfully.");
@@ -52,7 +52,7 @@ public class PostgresFixture :  DbContainerFixture<PostgreSqlBuilder, PostgreSql
     private async Task ApplyDatabaseSchemaAsync()
     {
         Log($"Applying database schema to: {ConnectionString}");
-
+        
         IContainer? flywayContainer = null;
         try
         {
@@ -168,7 +168,7 @@ public class PostgresFixture :  DbContainerFixture<PostgreSqlBuilder, PostgreSql
         await base.DisposeAsyncCore();
         await _network.DisposeAsync();
     }
-
+    
     private void Log(string message)
     {
         _messageSink.OnMessage(new DiagnosticMessage(message));

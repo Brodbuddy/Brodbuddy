@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces;
 using Core.Entities;
+using Core.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Postgres;
@@ -17,16 +18,15 @@ public class PostgresOtpRepository : IOtpRepository
 
     public async Task<Guid> SaveAsync(int code)
     {
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
+        var now = _timeProvider.Now();
         var otp = new OneTimePassword
         {
             Code = code,
             CreatedAt = now,
             ExpiresAt = now.AddMinutes(15),
             IsUsed = false
-           
         };
-        
+
         await _dbContext.OneTimePasswords.AddAsync(otp);
         await _dbContext.SaveChangesAsync();
 
@@ -35,24 +35,23 @@ public class PostgresOtpRepository : IOtpRepository
 
     public async Task<bool> IsValidAsync(Guid id, int code)
     {
-        var now = _timeProvider.GetUtcNow().UtcDateTime;
-        
-        var otp = await _dbContext.OneTimePasswords
-            .FirstOrDefaultAsync(otp => otp.Id == id && otp.Code == code);
+        var now = _timeProvider.Now();
+
+        var otp = await _dbContext.OneTimePasswords.FirstOrDefaultAsync(otp => otp.Id == id && otp.Code == code);
 
         if (otp == null)
         {
-            return false; // Otp kan ikke findes i db.
+            return false; 
         }
 
         if (otp.IsUsed)
         {
-            return false; // Otp er allerede brugt 
+            return false;
         }
 
         if (otp.ExpiresAt < now)
         {
-            return false; // Otp er udløbet
+            return false; 
         }
 
         await _dbContext.SaveChangesAsync();
@@ -61,15 +60,15 @@ public class PostgresOtpRepository : IOtpRepository
 
     public async Task<bool> MarkAsUsedAsync(Guid id)
     {
-        var otp = await _dbContext.OneTimePasswords
-            .FirstOrDefaultAsync(otp => otp.Id == id);
-        
+        var otp = await _dbContext.OneTimePasswords.FirstOrDefaultAsync(otp => otp.Id == id);
+
         if (otp == null)
         {
             return false;
         }
 
         otp.IsUsed = true;
+        
         await _dbContext.SaveChangesAsync();
         return true;
     }
