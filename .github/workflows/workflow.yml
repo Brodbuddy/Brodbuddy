@@ -131,8 +131,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mutation-json-reports
-          path: StrykerOutput_*/reports/mutation-report.json
+          name: mutation-json-report-${{ strategy.job-index }}
+          path: StrykerOutput_*/reports/mutation-report.json 
           retention-days: 1 # Skal kun bruges til næste job
 
       - name: Upload Stryker HTML report for ${{ matrix.project }}
@@ -148,11 +148,15 @@ jobs:
     needs: mutation-tests
     if: always() # For at få overordnet summary tabel selvom en fejler
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download all JSON reports
         uses: actions/download-artifact@v4
         with:
-          name: mutation-json-reports
+          pattern: mutation-json-report-* 
           path: all-mutation-reports
+          merge-multiple: true
 
       - name: List downloaded files 
         run: ls -R all-mutation-reports
@@ -160,7 +164,7 @@ jobs:
       - name: Aggregate reports and generate final summary
         id: aggregate 
         run: |
-          chmod +x .github/scripts/aggregate_mutation_summary.py 
+          chmod +x .github/scripts/aggregate_mutation_summary.py
           python .github/scripts/aggregate_mutation_summary.py ./all-mutation-reports 
 
       - name: Check final mutation threshold (80%)
