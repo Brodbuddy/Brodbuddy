@@ -17,23 +17,27 @@ public class DeviceRegistryRepositoryTests : RepositoryTestBase
         _repository = new PostgresDeviceRegistryRepository(_dbContext, _timeProvider);
     }
 
-    [Fact]
-    public async Task SaveAsync_ShouldCreateDeviceRegistry_AndReturnId()
+    public class SaveAsync(PostgresFixture fixture) : DeviceRegistryRepositoryTests(fixture)
     {
-        // Arrange
-        var user = await _dbContext.SeedUserAsync(_timeProvider);
-        var device = await _dbContext.SeedDeviceAsync(_timeProvider);
+        [Fact]
+        public async Task SaveAsync_ShouldCreateDeviceRegistry_AndReturnId()
+        {
+            // Arrange
+            var user = await _dbContext.SeedUserAsync(_timeProvider);
+            var device = await _dbContext.SeedDeviceAsync(_timeProvider);
+            var expectedTime = _timeProvider.Now();
 
-        // Act
-        var registryId = await _repository.SaveAsync(user.Id, device.Id);
+            // Act
+            var registryId = await _repository.SaveAsync(user.Id, device.Id);
 
-        // Assert
-        registryId.ShouldNotBe(Guid.Empty);
+            // Assert
+            registryId.ShouldNotBe(Guid.Empty);
 
-        var savedRegistry = await _dbContext.DeviceRegistries.FindAsync(registryId);
-        savedRegistry.ShouldNotBeNull();
-        savedRegistry.UserId.ShouldBe(user.Id);
-        savedRegistry.DeviceId.ShouldBe(device.Id);
-        (savedRegistry.CreatedAt - _timeProvider.Now()).TotalMilliseconds.ShouldBeLessThan(1);
+            var savedRegistry = await _dbContext.DeviceRegistries.FindAsync(registryId);
+            savedRegistry.ShouldNotBeNull();
+            savedRegistry.UserId.ShouldBe(user.Id);
+            savedRegistry.DeviceId.ShouldBe(device.Id);
+            savedRegistry.CreatedAt.ShouldBeWithinTolerance(expectedTime);
+        }
     }
 }

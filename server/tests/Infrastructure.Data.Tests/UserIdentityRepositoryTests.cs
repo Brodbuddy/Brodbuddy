@@ -15,21 +15,24 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
         _repository = new PostgresUserIdentityRepository(_dbContext, _timeProvider);
     }
-    
-    [Fact]
-    public async Task SaveAsync_WithValidEmail_SavesUserAndReturnsId()
+
+    public class SaveAsync(PostgresFixture fixture) : UserIdentityRepositoryTests(fixture)
     {
-        // Arrange
-        var email = "Test@email.com";
+        [Fact]
+        public async Task SaveAsync_WithValidEmail_SavesUserAndReturnsId()
+        {
+            // Arrange
+            var email = "Test@email.com";
 
-        // Act
-        Guid userId = await _repository.SaveAsync(email);
+            // Act
+            Guid userId = await _repository.SaveAsync(email);
 
-        //Assert
-        var savedUser = await _dbContext.Users.FindAsync(userId);
-        savedUser.ShouldNotBeNull();
-        savedUser.Email.ShouldBe(email);
-        savedUser.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
+            //Assert
+            var savedUser = await _dbContext.Users.FindAsync(userId);
+            savedUser.ShouldNotBeNull();
+            savedUser.Email.ShouldBe(email);
+            savedUser.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
+        }
     }
 
     public class ExistsAsync(PostgresFixture fixture) : UserIdentityRepositoryTests(fixture)

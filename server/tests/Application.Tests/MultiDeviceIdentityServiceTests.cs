@@ -205,90 +205,89 @@ public class MultiDeviceIdentityServiceTests
 
             exception.Message.ShouldBe("Failed to rotate refresh token");
         }
-    }
 
-
-    [Fact]
-    public async Task RefreshIdentityAsync_WithValidRepositoryCalls_ReturnsExpectedTokens()
-    {
-        // Arrange
-        var userId = Guid.NewGuid();
-        var deviceId = Guid.NewGuid();
-        var email = "test@email.com";
-        var oldTokenId = Guid.NewGuid();
-        var newTokenId = Guid.NewGuid();
-        var oldRefreshToken = "old-refresh";
-        var newRefreshToken = "new-refresh";
-        var expectedAccessToken = "access";
-
-        var userInfo = new User { Email = email };
-        var tokenContext = new TokenContext
+        [Fact]
+        public async Task RefreshIdentityAsync_WithValidRepositoryCalls_ReturnsExpectedTokens()
         {
-            UserId = userId,
-            DeviceId = deviceId,
-            User = userInfo
-        };
+            // Arrange
+            var userId = Guid.NewGuid();
+            var deviceId = Guid.NewGuid();
+            var email = "test@email.com";
+            var oldTokenId = Guid.NewGuid();
+            var newTokenId = Guid.NewGuid();
+            var oldRefreshToken = "old-refresh";
+            var newRefreshToken = "new-refresh";
+            var expectedAccessToken = "access";
 
-        var revokeTokenCalled = false;
-        Guid revokedTokenId = Guid.Empty;
-
-        var saveIdentityCalled = false;
-        Guid savedUserId = Guid.Empty;
-        Guid savedDeviceId = Guid.Empty;
-        Guid savedTokenId = Guid.Empty;
-
-        _refreshTokenServiceMock
-            .Setup(x => x.TryValidateAsync(oldRefreshToken))
-            .ReturnsAsync((true, oldTokenId));
-
-        _repositoryMock
-            .Setup(x => x.GetAsync(oldTokenId))
-            .ReturnsAsync(tokenContext);
-
-        _refreshTokenServiceMock
-            .Setup(x => x.RotateAsync(oldRefreshToken))
-            .ReturnsAsync((newRefreshToken, newTokenId));
-
-        _refreshTokenServiceMock
-            .Setup(x => x.TryValidateAsync(newRefreshToken))
-            .ReturnsAsync((true, newTokenId));
-
-        _repositoryMock
-            .Setup(x => x.RevokeTokenContextAsync(It.IsAny<Guid>()))
-            .Callback<Guid>(tokenId =>
+            var userInfo = new User { Email = email };
+            var tokenContext = new TokenContext
             {
-                revokeTokenCalled = true;
-                revokedTokenId = tokenId;
-            })
-            .Returns(Task.FromResult(true));
+                UserId = userId,
+                DeviceId = deviceId,
+                User = userInfo
+            };
 
-        _repositoryMock
-            .Setup(x => x.SaveIdentityAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
-            .Callback<Guid, Guid, Guid>((u, d, t) =>
-            {
-                saveIdentityCalled = true;
-                savedUserId = u;
-                savedDeviceId = d;
-                savedTokenId = t;
-            })
-            .Returns(Task.FromResult(Guid.NewGuid()));
+            var revokeTokenCalled = false;
+            Guid revokedTokenId = Guid.Empty;
 
-        _jwtServiceMock
-            .Setup(x => x.Generate(userId.ToString(), email, "user"))
-            .Returns(expectedAccessToken);
+            var saveIdentityCalled = false;
+            Guid savedUserId = Guid.Empty;
+            Guid savedDeviceId = Guid.Empty;
+            Guid savedTokenId = Guid.Empty;
 
-        // Act
-        var result = await _multiDeviceIdentityService.RefreshIdentityAsync(oldRefreshToken);
+            _refreshTokenServiceMock
+                .Setup(x => x.TryValidateAsync(oldRefreshToken))
+                .ReturnsAsync((true, oldTokenId));
 
-        // Assert
-        result.accessToken.ShouldBe(expectedAccessToken);
-        result.refreshToken.ShouldBe(newRefreshToken);
+            _repositoryMock
+                .Setup(x => x.GetAsync(oldTokenId))
+                .ReturnsAsync(tokenContext);
 
-        revokeTokenCalled.ShouldBeTrue();
-        revokedTokenId.ShouldBe(oldTokenId);
-        saveIdentityCalled.ShouldBeTrue();
-        savedUserId.ShouldBe(userId);
-        savedDeviceId.ShouldBe(deviceId);
-        savedTokenId.ShouldBe(newTokenId);
+            _refreshTokenServiceMock
+                .Setup(x => x.RotateAsync(oldRefreshToken))
+                .ReturnsAsync((newRefreshToken, newTokenId));
+
+            _refreshTokenServiceMock
+                .Setup(x => x.TryValidateAsync(newRefreshToken))
+                .ReturnsAsync((true, newTokenId));
+
+            _repositoryMock
+                .Setup(x => x.RevokeTokenContextAsync(It.IsAny<Guid>()))
+                .Callback<Guid>(tokenId =>
+                {
+                    revokeTokenCalled = true;
+                    revokedTokenId = tokenId;
+                })
+                .Returns(Task.FromResult(true));
+
+            _repositoryMock
+                .Setup(x => x.SaveIdentityAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>()))
+                .Callback<Guid, Guid, Guid>((u, d, t) =>
+                {
+                    saveIdentityCalled = true;
+                    savedUserId = u;
+                    savedDeviceId = d;
+                    savedTokenId = t;
+                })
+                .Returns(Task.FromResult(Guid.NewGuid()));
+
+            _jwtServiceMock
+                .Setup(x => x.Generate(userId.ToString(), email, "user"))
+                .Returns(expectedAccessToken);
+
+            // Act
+            var result = await _multiDeviceIdentityService.RefreshIdentityAsync(oldRefreshToken);
+
+            // Assert
+            result.accessToken.ShouldBe(expectedAccessToken);
+            result.refreshToken.ShouldBe(newRefreshToken);
+
+            revokeTokenCalled.ShouldBeTrue();
+            revokedTokenId.ShouldBe(oldTokenId);
+            saveIdentityCalled.ShouldBeTrue();
+            savedUserId.ShouldBe(userId);
+            savedDeviceId.ShouldBe(deviceId);
+            savedTokenId.ShouldBe(newTokenId);
+        }
     }
 }
