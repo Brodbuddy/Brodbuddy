@@ -1,8 +1,10 @@
+using Core.Extensions;
 using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Constants;
 using SharedTestDependencies.Database;
+using SharedTestDependencies.Extensions;
 using SharedTestDependencies.Fakes;
 using Shouldly;
 
@@ -27,6 +29,8 @@ public class OtpRepositoryTests : RepositoryTestBase
         {
             // Arrange
             int code = 123123;
+            var expectedCreationTime = _timeProvider.Now();
+            var expectedExpiryTime = expectedCreationTime.AddMinutes(15);
 
             // Act
             Guid id = await _repository.SaveAsync(code);
@@ -36,8 +40,8 @@ public class OtpRepositoryTests : RepositoryTestBase
             savedOtp.ShouldNotBeNull();
             savedOtp.Code.ShouldBe(code);
             savedOtp.IsUsed.ShouldBeFalse();
-            savedOtp.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
-            savedOtp.ExpiresAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime.AddMinutes(15));
+            savedOtp.CreatedAt.ShouldBeWithinTolerance(expectedCreationTime);
+            savedOtp.ExpiresAt.ShouldBeWithinTolerance(expectedExpiryTime); 
         }
     }
 

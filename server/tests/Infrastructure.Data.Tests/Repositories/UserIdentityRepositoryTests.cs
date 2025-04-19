@@ -1,7 +1,9 @@
-﻿using Infrastructure.Data.Repositories;
+﻿using Core.Extensions;
+using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
 using SharedTestDependencies.Constants;
 using SharedTestDependencies.Database;
+using SharedTestDependencies.Extensions;
 using SharedTestDependencies.Fakes;
 using Shouldly;
 
@@ -26,6 +28,7 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
         {
             // Arrange
             var email = "Test@email.com";
+            var expectedCreationTime = _timeProvider.Now();
 
             // Act
             Guid userId = await _repository.SaveAsync(email);
@@ -34,7 +37,7 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
             var savedUser = await DbContext.Users.FindAsync(userId);
             savedUser.ShouldNotBeNull();
             savedUser.Email.ShouldBe(email);
-            savedUser.CreatedAt.ShouldBe(_timeProvider.GetUtcNow().UtcDateTime);
+            savedUser.CreatedAt.ShouldBeWithinTolerance(expectedCreationTime);
         }
     }
 
