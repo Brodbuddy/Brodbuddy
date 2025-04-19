@@ -1,15 +1,17 @@
 ﻿using Application.Interfaces;
+using Application.Interfaces.Data.Repositories;
 using Core.Entities;
 using Core.Extensions;
+using Infrastructure.Data.Persistence;
 
-namespace Infrastructure.Data.Postgres;
+namespace Infrastructure.Data.Repositories;
 
-public class PostgresDeviceRegistryRepository : IDeviceRegistryRepository
+public class PgDeviceRegistryRepository : IDeviceRegistryRepository
 {
-    private readonly PostgresDbContext _dbContext;
+    private readonly PgDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
 
-    public PostgresDeviceRegistryRepository(PostgresDbContext dbContext, TimeProvider timeProvider)
+    public PgDeviceRegistryRepository(PgDbContext dbContext, TimeProvider timeProvider)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;

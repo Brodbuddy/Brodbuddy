@@ -1,16 +1,18 @@
 ﻿using Application.Interfaces;
+using Application.Interfaces.Data.Repositories;
 using Core.Entities;
 using Core.Extensions;
+using Infrastructure.Data.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Data.Postgres;
+namespace Infrastructure.Data.Repositories;
 
-public class PostgresOtpRepository : IOtpRepository
+public class PgOtpRepository : IOtpRepository
 {
-    private readonly PostgresDbContext _dbContext;
+    private readonly PgDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
 
-    public PostgresOtpRepository(PostgresDbContext dbContext, TimeProvider timeProvider)
+    public PgOtpRepository(PgDbContext dbContext, TimeProvider timeProvider)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;

@@ -1,6 +1,6 @@
 using Core.Entities;
 
-namespace Application.Interfaces;
+namespace Application.Interfaces.Data.Repositories;
 
 public interface IDeviceRepository
 {

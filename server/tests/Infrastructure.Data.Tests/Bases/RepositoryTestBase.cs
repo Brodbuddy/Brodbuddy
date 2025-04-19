@@ -1,4 +1,5 @@
-using Infrastructure.Data.Postgres;
+using Infrastructure.Data.Persistence;
+using Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Database;
 
@@ -7,14 +8,14 @@ namespace Infrastructure.Data.Tests.Bases;
 public abstract class RepositoryTestBase : IAsyncLifetime
 {
     private readonly PostgresFixture _fixture;
-    protected readonly PostgresDbContext DbContext;
+    protected readonly PgDbContext DbContext;
     
     protected RepositoryTestBase(PostgresFixture fixture)
     {
         _fixture = fixture;
         
-        var options = new DbContextOptionsBuilder<PostgresDbContext>().UseNpgsql(_fixture.ConnectionString).Options;
-        DbContext = new PostgresDbContext(options);
+        var options = new DbContextOptionsBuilder<PgDbContext>().UseNpgsql(_fixture.ConnectionString).Options;
+        DbContext = new PgDbContext(options);
     }
     
     public async Task InitializeAsync()

@@ -28,7 +28,7 @@ def configure_sonarqube():
         "**/coverage-report/**/*",
         "client/**/*",
         "**/Program.cs",
-        "**/PostgresDbContext.cs",
+        "**/PgDbContext.cs",
         "**/scaffold.py",
         "**/.github/scripts/**/*",
     ]

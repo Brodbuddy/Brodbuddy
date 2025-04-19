@@ -1,5 +1,6 @@
 ﻿using Application;
 using Application.Interfaces;
+using Application.Interfaces.Communication.Mail;
 using FluentEmail.Core;
 using FluentEmail.MailKitSmtp;
 using Infrastructure.Communication.Mail;

@@ -1,5 +1,5 @@
 using Core.Extensions;
-using Infrastructure.Data.Postgres;
+using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Constants;
@@ -14,12 +14,12 @@ namespace Infrastructure.Data.Tests.Repositories;
 public class MultiDeviceIdentityRepositoryTests : RepositoryTestBase
 {
     private readonly FakeTimeProvider _timeProvider;
-    private readonly PostgresMultiDeviceIdentityRepository _repository;
+    private readonly PgMultiDeviceIdentityRepository _repository;
 
     private MultiDeviceIdentityRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresMultiDeviceIdentityRepository(DbContext, _timeProvider);
+        _repository = new PgMultiDeviceIdentityRepository(DbContext, _timeProvider);
     }
 
     public class SaveIdentityAsync(PostgresFixture fixture) : MultiDeviceIdentityRepositoryTests(fixture)

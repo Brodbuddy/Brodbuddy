@@ -1,5 +1,5 @@
 using Core.Extensions;
-using Infrastructure.Data.Postgres;
+using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Constants;
@@ -14,12 +14,12 @@ namespace Infrastructure.Data.Tests.Repositories;
 public class IdentityVerificationRepositoryTest : RepositoryTestBase
 {
     private readonly FakeTimeProvider _timeProvider;
-    private readonly PostgresIdentityVerificationRepository _repository;
+    private readonly PgIdentityVerificationRepository _repository;
 
     private IdentityVerificationRepositoryTest(PostgresFixture fixture) :  base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresIdentityVerificationRepository(DbContext, _timeProvider);
+        _repository = new PgIdentityVerificationRepository(DbContext, _timeProvider);
     }
 
     public class CreateAsync(PostgresFixture fixture) : IdentityVerificationRepositoryTest(fixture)

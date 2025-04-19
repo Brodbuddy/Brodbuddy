@@ -1,5 +1,5 @@
 ﻿using Core.Extensions;
-using Infrastructure.Data.Postgres;
+using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
 using SharedTestDependencies.Constants;
 using SharedTestDependencies.Database;
@@ -13,12 +13,12 @@ namespace Infrastructure.Data.Tests.Repositories;
 public class DeviceRegistryRepositoryTests : RepositoryTestBase
 {
     private readonly FakeTimeProvider _timeProvider;
-    private readonly PostgresDeviceRegistryRepository _repository;
+    private readonly PgDeviceRegistryRepository _repository;
 
     private DeviceRegistryRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresDeviceRegistryRepository(DbContext, _timeProvider);
+        _repository = new PgDeviceRegistryRepository(DbContext, _timeProvider);
     }
 
     public class SaveAsync(PostgresFixture fixture) : DeviceRegistryRepositoryTests(fixture)

@@ -1,6 +1,6 @@
 ﻿using Core.Entities;
 using Core.Extensions;
-using Infrastructure.Data.Postgres;
+using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
 using SharedTestDependencies.Constants;
 using SharedTestDependencies.Database;
@@ -14,12 +14,12 @@ namespace Infrastructure.Data.Tests.Repositories;
 public class DeviceRepositoryTests : RepositoryTestBase
 {
     private readonly FakeTimeProvider _timeProvider;
-    private readonly PostgresDeviceRepository _repository;
+    private readonly PgDeviceRepository _repository;
 
     private DeviceRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresDeviceRepository(DbContext, _timeProvider);
+        _repository = new PgDeviceRepository(DbContext, _timeProvider);
     }
 
     public class SaveAsync(PostgresFixture fixture) : DeviceRepositoryTests(fixture)

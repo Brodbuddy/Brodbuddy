@@ -10,7 +10,7 @@
       "/**/*.cs",
       "!/**/*.g.cs",
       "!/**/*.generated.cs",
-      "!/**/PostgresDbContext.cs",
+      "!/**/PgDbContext.cs",
       "!/**/tests/**/*",
       "!/**/Extension.cs",
       "!/**/AppOptions.cs"

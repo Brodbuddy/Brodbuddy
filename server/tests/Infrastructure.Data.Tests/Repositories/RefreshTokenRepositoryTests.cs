@@ -1,5 +1,5 @@
 using Core.Extensions;
-using Infrastructure.Data.Postgres;
+using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Constants;
@@ -14,12 +14,12 @@ namespace Infrastructure.Data.Tests.Repositories;
 public class RefreshTokenRepositoryTests : RepositoryTestBase
 {
     private readonly FakeTimeProvider _timeProvider;
-    private readonly PostgresRefreshTokenRepository _repository;
+    private readonly PgRefreshTokenRepository _repository;
 
     private RefreshTokenRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresRefreshTokenRepository(DbContext, _timeProvider);
+        _repository = new PgRefreshTokenRepository(DbContext, _timeProvider);
     }
 
 

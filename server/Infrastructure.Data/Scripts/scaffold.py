@@ -59,12 +59,12 @@ scaffold_command = f"""dotnet ef dbcontext scaffold \
   "{connection_string}" \
   Npgsql.EntityFrameworkCore.PostgreSQL \
   --output-dir ../Core/Entities \
-  --context-dir Postgres/ \
-  --context PostgresDbContext \
+  --context-dir Persistence/ \
+  --context PgDbContext \
   --no-onconfiguring \
   --namespace Core.Entities \
-  --context-namespace Infrastructure.Data.Postgres \
-  --project ../ \
+  --context-namespace Infrastructure.Data.Persistence \
+  --project Infrastructure.Data.csproj \
   --force \
   {table_params}"""
 

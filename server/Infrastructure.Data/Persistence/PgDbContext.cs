@@ -1,11 +1,13 @@
-﻿using Core.Entities;
+﻿using System;
+using System.Collections.Generic;
+using Core.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Data.Postgres;
+namespace Infrastructure.Data.Persistence;
 
-public partial class PostgresDbContext : DbContext
+public partial class PgDbContext : DbContext
 {
-    public PostgresDbContext(DbContextOptions<PostgresDbContext> options)
+    public PgDbContext(DbContextOptions<PgDbContext> options)
         : base(options)
     {
     }
@@ -63,8 +65,6 @@ public partial class PostgresDbContext : DbContext
 
             entity.ToTable("device_registry");
 
-            entity.HasIndex(e => e.DeviceId, "device_registry_device_id_key").IsUnique();
-
             entity.HasIndex(e => new { e.UserId, e.DeviceId }, "device_registry_user_id_device_id_key").IsUnique();
 
             entity.Property(e => e.Id)
@@ -76,8 +76,8 @@ public partial class PostgresDbContext : DbContext
             entity.Property(e => e.DeviceId).HasColumnName("device_id");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
-            entity.HasOne(d => d.Device).WithOne(p => p.DeviceRegistry)
-                .HasForeignKey<DeviceRegistry>(d => d.DeviceId)
+            entity.HasOne(d => d.Device).WithMany(p => p.DeviceRegistries)
+                .HasForeignKey(d => d.DeviceId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("device_registry_device_id_fkey");
 
@@ -97,7 +97,9 @@ public partial class PostgresDbContext : DbContext
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("id");
             entity.Property(e => e.Code).HasColumnName("code");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
             entity.Property(e => e.ExpiresAt).HasColumnName("expires_at");
             entity.Property(e => e.IsUsed)
                 .HasDefaultValue(false)
@@ -172,7 +174,9 @@ public partial class PostgresDbContext : DbContext
             entity.Property(e => e.Id)
                 .HasDefaultValueSql("uuid_generate_v4()")
                 .HasColumnName("id");
-            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
             entity.Property(e => e.Email)
                 .HasMaxLength(255)
                 .HasColumnName("email");

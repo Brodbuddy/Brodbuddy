@@ -1,4 +1,4 @@
-﻿using Infrastructure.Data.Postgres;
+﻿using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
 using SharedTestDependencies.Constants;
 using SharedTestDependencies.Database;
@@ -11,12 +11,12 @@ namespace Infrastructure.Data.Tests.Repositories;
 public class UserIdentityRepositoryTests : RepositoryTestBase
 {
     private readonly FakeTimeProvider _timeProvider;
-    private readonly PostgresUserIdentityRepository _repository;
+    private readonly PgUserIdentityRepository _repository;
 
     private UserIdentityRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresUserIdentityRepository(DbContext, _timeProvider);
+        _repository = new PgUserIdentityRepository(DbContext, _timeProvider);
     }
 
     public class SaveAsync(PostgresFixture fixture) : UserIdentityRepositoryTests(fixture)

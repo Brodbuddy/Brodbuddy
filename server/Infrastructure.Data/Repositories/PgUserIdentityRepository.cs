@@ -1,16 +1,18 @@
 ﻿using Application.Interfaces;
+using Application.Interfaces.Data.Repositories;
 using Core.Entities;
 using Core.Extensions;
+using Infrastructure.Data.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace Infrastructure.Data.Postgres;
+namespace Infrastructure.Data.Repositories;
 
-public class PostgresUserIdentityRepository : IUserIdentityRepository
+public class PgUserIdentityRepository : IUserIdentityRepository
 {
-    private readonly PostgresDbContext _dbContext;
+    private readonly PgDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
 
-    public PostgresUserIdentityRepository(PostgresDbContext dbContext, TimeProvider timeProvider)
+    public PgUserIdentityRepository(PgDbContext dbContext, TimeProvider timeProvider)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;

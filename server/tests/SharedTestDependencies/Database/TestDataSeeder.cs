@@ -1,13 +1,14 @@
 using Core.Entities;
 using Core.Extensions;
-using Infrastructure.Data.Postgres;
+using Infrastructure.Data.Persistence;
+using Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace SharedTestDependencies.Database;
 
 public static class TestDataSeeder
 {
-    public static async Task<User> SeedUserAsync(this PostgresDbContext context,
+    public static async Task<User> SeedUserAsync(this PgDbContext context,
         TimeProvider timeProvider,
         string email = "peter@test.dk")
     {
@@ -22,7 +23,7 @@ public static class TestDataSeeder
         return user;
     }
 
-    public static async Task<Device> SeedDeviceAsync(this PostgresDbContext context, TimeProvider timeProvider,
+    public static async Task<Device> SeedDeviceAsync(this PgDbContext context, TimeProvider timeProvider,
         string os = "linux", string browser = "firefox", DateTime? lastSeenAt = null, bool isActive = true)
     {
         var now = timeProvider.Now();
@@ -41,7 +42,7 @@ public static class TestDataSeeder
         return device;
     }
 
-    public static async Task<RefreshToken> SeedRefreshTokenAsync(this PostgresDbContext context,
+    public static async Task<RefreshToken> SeedRefreshTokenAsync(this PgDbContext context,
         TimeProvider timeProvider, int expiresDays = 30, string tokenValue = "test-refresh-token", DateTime? revokedAt = null, Guid? replacedByTokenId = null)
     {
         var now = timeProvider.Now();
@@ -59,7 +60,7 @@ public static class TestDataSeeder
         return refreshToken;
     }
 
-    public static async Task<OneTimePassword> SeedOtpAsync(this PostgresDbContext context, TimeProvider timeProvider,
+    public static async Task<OneTimePassword> SeedOtpAsync(this PgDbContext context, TimeProvider timeProvider,
         int expiresMinutes = 15, int code = 123456, bool isUsed = false)
     {
         var now = timeProvider.Now();
@@ -81,7 +82,7 @@ public static class TestDataSeeder
     }
 
     public static async Task<TokenContext> SeedTokenContextAsync(
-        this PostgresDbContext context,
+        this PgDbContext context,
         TimeProvider timeProvider,
         Guid? userId = null,
         Guid? deviceId = null,

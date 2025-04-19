@@ -1,4 +1,4 @@
-using Infrastructure.Data.Postgres;
+using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Constants;
@@ -12,12 +12,12 @@ namespace Infrastructure.Data.Tests.Repositories;
 public class OtpRepositoryTests : RepositoryTestBase
 {
     private readonly FakeTimeProvider _timeProvider;
-    private readonly PostgresOtpRepository _repository;
+    private readonly PgOtpRepository _repository;
 
     private OtpRepositoryTests(PostgresFixture fixture) : base(fixture)
     {
         _timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
-        _repository = new PostgresOtpRepository(DbContext, _timeProvider);
+        _repository = new PgOtpRepository(DbContext, _timeProvider);
     }
 
     public class SaveAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
