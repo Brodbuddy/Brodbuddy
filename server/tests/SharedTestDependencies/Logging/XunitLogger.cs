@@ -64,14 +64,9 @@ public class XunitLoggerProvider : ILoggerProvider
 
     protected virtual void Dispose(bool disposing)
     {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                // Free any managed objects here
-            }
-            _disposed = true;
-        }
+        if (_disposed) return;
+        
+        _disposed = true;
     }
 
     public void Dispose()
