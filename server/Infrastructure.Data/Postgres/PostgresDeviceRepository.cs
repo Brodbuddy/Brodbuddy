@@ -19,8 +19,7 @@ public class PostgresDeviceRepository : IDeviceRepository
     public async Task<Guid> SaveAsync(Device device)
     {
         ArgumentNullException.ThrowIfNull(device);
-
-        if (device.Id != Guid.Empty) throw new ArgumentException();
+        if (device.Id != Guid.Empty) throw new ArgumentException("Device ID should be empty", nameof(device));
 
         var now = _timeProvider.Now();
         device.CreatedAt = now;

@@ -20,13 +20,6 @@ public class UserIdentityServiceTests
         _repositoryMock = new Mock<IUserIdentityRepository>();
         _service = new UserIdentityService(_repositoryMock.Object);
     }
-
-    public static IEnumerable<object?[]> NullOrEmptyOrWhitespaceEmailData()
-    {
-        yield return [null];     
-        yield return [""];    
-        yield return ["      "]; 
-    }
     
     public class CreateAsync(ITestOutputHelper outputHelper) : UserIdentityServiceTests(outputHelper)
     {
@@ -51,12 +44,13 @@ public class UserIdentityServiceTests
         }
         
         [Theory]
-        [MemberData(nameof(NullOrEmptyOrWhitespaceEmailData))]
-        public async Task CreateAsync_WithNullOrEmptyEmail_ThrowsArgumentException(string email)
+        [InlineData(null)]    
+        [InlineData("")]
+        [InlineData("      ")]
+        public async Task CreateAsync_WithNullOrEmptyEmail_ThrowsArgumentException(string? email)
         {
             // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() =>
-                _service.CreateAsync(email));
+            await Should.ThrowAsync<ArgumentException>(() => _service.CreateAsync(email!));
         }
 
         [Theory]
@@ -215,12 +209,13 @@ public class UserIdentityServiceTests
         }
 
         [Theory]
-        [MemberData(nameof(NullOrEmptyOrWhitespaceEmailData))]
-        public async Task GetAsync_WithNullOrEmptyEmail_ThrowsArgumentException(string email)
+        [InlineData(null)]    
+        [InlineData("")]
+        [InlineData("      ")]
+        public async Task GetAsync_WithNullOrEmptyEmail_ThrowsArgumentException(string? email)
         {
             // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() =>
-                _service.GetAsync(email));
+            await Should.ThrowAsync<ArgumentException>(() => _service.GetAsync(email!));
 
             _repositoryMock.Verify(r => r.GetAsync(It.IsAny<string>()), Times.Never);
         }

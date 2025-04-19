@@ -49,26 +49,21 @@ public class DeviceServiceTests
             capturedDevice.ShouldNotBeNull();
             capturedDevice.Name.ShouldBe(expectedName);
         }
-
-        public static IEnumerable<object?[]> InvalidBrowserOsData()
-        {
-            yield return ["", "windows"]; 
-            yield return ["   ", "windows"];
-            yield return ["chrome", ""];
-            yield return ["chrome", "   "];
-            yield return ["chrome", null];
-            yield return [null, "MacOS"];
-            yield return [null, null];
-            yield return ["", ""];
-            yield return ["   ", "   "];
-        }
-
+        
         [Theory]
-        [MemberData(nameof(InvalidBrowserOsData))]
-        public async Task CreateAsync_WithNullOrEmptyOrWhitespaceBrowserOrOs_ThrowsArgumentException(string browser, string os) 
+        [InlineData("", "windows")]
+        [InlineData("   ", "windows")]
+        [InlineData("chrome", "")]
+        [InlineData("chrome", "   ")]
+        [InlineData("chrome", null)]
+        [InlineData(null, "MacOS")]
+        [InlineData(null, null)]
+        [InlineData("", "")]
+        [InlineData("   ", "   ")]
+        public async Task CreateAsync_WithNullOrEmptyOrWhitespaceBrowserOrOs_ThrowsArgumentException(string? browser, string? os) 
         {
             // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() => _service.CreateAsync(browser, os));
+            await Should.ThrowAsync<ArgumentException>(() => _service.CreateAsync(browser!, os!));
         }
     }
 

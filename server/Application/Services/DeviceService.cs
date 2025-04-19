@@ -27,8 +27,8 @@ public class DeviceService : IDeviceService
 
     public async Task<Guid> CreateAsync(string browser, string os)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(browser, nameof(browser));
-        ArgumentException.ThrowIfNullOrWhiteSpace(os, nameof(os));
+        ArgumentException.ThrowIfNullOrWhiteSpace(browser);
+        ArgumentException.ThrowIfNullOrWhiteSpace(os);
         
         browser = browser.Trim().ToLowerInvariant();
         os = os.Trim().ToLowerInvariant();

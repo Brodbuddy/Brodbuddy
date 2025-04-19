@@ -37,7 +37,7 @@ public class PostgresUserIdentityRepository : IUserIdentityRepository
 
     public async Task<bool> ExistsAsync(string email)
     {
-        return await _dbContext.Users.AnyAsync(u => u.Email.ToLower() == email.Trim().ToLowerInvariant());
+        return await _dbContext.Users.AnyAsync(u => EF.Functions.ILike(u.Email, email.Trim()));
     }
 
     public async Task<User?> GetAsync(Guid id)
@@ -47,6 +47,6 @@ public class PostgresUserIdentityRepository : IUserIdentityRepository
 
     public async Task<User?> GetAsync(string email)
     {
-        return await _dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.Trim().ToLowerInvariant());
+        return await _dbContext.Users.FirstOrDefaultAsync(u => EF.Functions.ILike(u.Email, email.Trim()));
     }
 }
