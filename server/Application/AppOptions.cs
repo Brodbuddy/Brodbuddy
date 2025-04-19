@@ -1,11 +1,11 @@
-namespace Application;
+﻿namespace Application;
 
 public class AppOptions
 {
     public int HttpPort { get; set; } = 5001;
-    public EmailOptions Email { get; set; } = new();
-    public PostgresOptions Postgres { get; set; } = new();
-    public JwtOptions Jwt { get; set; } = new();
+    public EmailOptions Email { get; init; } = new();
+    public PostgresOptions Postgres { get; init; } = new();
+    public JwtOptions Jwt { get; init; } = new();
 }
 
 public class EmailOptions

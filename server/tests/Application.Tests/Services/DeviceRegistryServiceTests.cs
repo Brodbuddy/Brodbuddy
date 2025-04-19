@@ -1,5 +1,4 @@
-﻿using Application.Interfaces;
-using Application.Interfaces.Data.Repositories;
+﻿using Application.Interfaces.Data.Repositories;
 using Application.Services;
 using Moq;
 using Shouldly;

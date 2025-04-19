@@ -1,5 +1,4 @@
-﻿using Application.Interfaces;
-using Application.Interfaces.Data.Repositories;
+﻿using Application.Interfaces.Data.Repositories;
 using Application.Services;
 using Core.Entities;
 using Moq;
@@ -50,7 +49,7 @@ public class DeviceServiceTests
             capturedDevice.ShouldNotBeNull();
             capturedDevice.Name.ShouldBe(expectedName);
         }
-        
+
         [Theory]
         [InlineData("", "windows")]
         [InlineData("   ", "windows")]
@@ -61,7 +60,8 @@ public class DeviceServiceTests
         [InlineData(null, null)]
         [InlineData("", "")]
         [InlineData("   ", "   ")]
-        public async Task CreateAsync_WithNullOrEmptyOrWhitespaceBrowserOrOs_ThrowsArgumentException(string? browser, string? os) 
+        public async Task CreateAsync_WithNullOrEmptyOrWhitespaceBrowserOrOs_ThrowsArgumentException(string? browser,
+            string? os)
         {
             // Act & Assert
             await Should.ThrowAsync<ArgumentException>(() => _service.CreateAsync(browser!, os!));
@@ -119,10 +119,10 @@ public class DeviceServiceTests
             };
 
             _repositoryMock.Setup(r => r.GetByIdsAsync(It.Is<List<Guid>>(
-            list => list.Contains(id1) &&
-                  list.Contains(id2) &&
-                  list.Count == 2)))
-                  .ReturnsAsync(expectedDevices);
+                    list => list.Contains(id1) &&
+                            list.Contains(id2) &&
+                            list.Count == 2)))
+                .ReturnsAsync(expectedDevices);
 
             // Act
             var result = await _service.GetByIdsAsync(ids);

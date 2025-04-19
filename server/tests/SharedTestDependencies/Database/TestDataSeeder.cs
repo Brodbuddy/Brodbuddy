@@ -1,7 +1,6 @@
 using Core.Entities;
 using Core.Extensions;
 using Infrastructure.Data.Persistence;
-using Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace SharedTestDependencies.Database;
