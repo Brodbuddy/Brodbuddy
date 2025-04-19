@@ -35,14 +35,48 @@ public class LoggerAdapter<T> : ILogger<T>
         => _logger.BeginScope(state);
 }
 
-public class XunitLoggerProvider(ITestOutputHelper output) : ILoggerProvider
+public class XunitLoggerProvider : ILoggerProvider
 {
-    public ILogger CreateLogger(string categoryName) => new XunitLogger(output, categoryName);
+    private readonly ITestOutputHelper _output;
+    private bool _disposed;
 
-    public ILogger<T> CreateLogger<T>() => new LoggerAdapter<T>(CreateLogger(typeof(T).Name));
+    public XunitLoggerProvider(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    public ILogger CreateLogger(string categoryName)
+    {
+        ThrowIfDisposed();
+        return new XunitLogger(_output, categoryName);
+    }
+
+    public ILogger<T> CreateLogger<T>()
+    {
+        ThrowIfDisposed();
+        return new LoggerAdapter<T>(CreateLogger(typeof(T).Name));
+    }
+
+    private void ThrowIfDisposed()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, nameof(XunitLoggerProvider));
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                // Free any managed objects here
+            }
+            _disposed = true;
+        }
+    }
 
     public void Dispose()
     {
+        Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
 }

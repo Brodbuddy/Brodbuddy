@@ -6,7 +6,7 @@ public class FakeEmailSender : IEmailSender
 {
     public bool SimulateFailure { get; set; }
 
-    public Task<bool> SendEmailAsync(string to, string topic, string content)
+    public Task<bool> SendEmailAsync(string recipient, string topic, string content)
     {
         return Task.FromResult(!SimulateFailure);
     }

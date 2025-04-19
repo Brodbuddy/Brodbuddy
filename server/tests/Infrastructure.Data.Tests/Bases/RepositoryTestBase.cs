@@ -1,15 +1,15 @@
 using Infrastructure.Data.Persistence;
-using Infrastructure.Data.Repositories;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Database;
 
 namespace Infrastructure.Data.Tests.Bases;
 
-public abstract class RepositoryTestBase : IAsyncLifetime
+public abstract class RepositoryTestBase : IAsyncLifetime, IAsyncDisposable
 {
     private readonly PostgresFixture _fixture;
-    protected readonly PgDbContext DbContext;
-    
+
+    protected PgDbContext DbContext { get; }
+
     protected RepositoryTestBase(PostgresFixture fixture)
     {
         _fixture = fixture;
@@ -22,10 +22,20 @@ public abstract class RepositoryTestBase : IAsyncLifetime
     {
         await _fixture.ResetDatabaseAsync();
     }
-
-    public Task DisposeAsync()
+    
+    public async ValueTask DisposeAsync()
     {
-        DbContext.Dispose();
-        return Task.CompletedTask;
+        await DisposeAsyncCore();
+        GC.SuppressFinalize(this);
+    }
+
+    private async ValueTask DisposeAsyncCore()
+    {
+        await DbContext.DisposeAsync();
+    }
+    
+    Task IAsyncLifetime.DisposeAsync()
+    {
+        return DisposeAsync().AsTask();
     }
 }

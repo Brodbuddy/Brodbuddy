@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Startup;
 
-public class Program
+public static class Program
 {
     private static void ConfigureServices(IServiceCollection services)
     {
