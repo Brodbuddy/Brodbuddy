@@ -36,27 +36,7 @@ public class UserIdentityService : IUserIdentityService
         var existingUser = await _repository.GetAsync(email);
         return existingUser!.Id;
     }
-
-    private bool IsValidEmail(string email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            throw new ArgumentException("Email cannot be null or empty", nameof(email));
-        }
-
-        if (!MailAddress.TryCreate(email, out var _))
-            return false;
-
-        if (!email.Contains('@') || !email.Contains('.'))
-            return false;
-
-        var parts = email.Split('@');
-        if (parts.Length != 2 || string.IsNullOrEmpty(parts[0]) || string.IsNullOrEmpty(parts[1]))
-            return false;
-        
-        return parts[1].Contains('.');
-    }
-
+    
     public Task<bool> ExistsAsync(Guid id)
     {
         return _repository.ExistsAsync(id);
@@ -99,5 +79,25 @@ public class UserIdentityService : IUserIdentityService
         }
 
         return user;
+    }
+    
+    private static bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email cannot be null or empty", nameof(email));
+        }
+
+        if (!MailAddress.TryCreate(email, out var _))
+            return false;
+
+        if (!email.Contains('@') || !email.Contains('.'))
+            return false;
+
+        var parts = email.Split('@');
+        if (parts.Length != 2 || string.IsNullOrEmpty(parts[0]) || string.IsNullOrEmpty(parts[1]))
+            return false;
+        
+        return parts[1].Contains('.');
     }
 }

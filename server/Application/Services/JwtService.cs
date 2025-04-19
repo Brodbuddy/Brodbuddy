@@ -73,22 +73,23 @@ public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider
         }
         catch (TokenExpiredException ex)
         {
-            logger.LogWarning($"Token expired: {ex.Message}");
+            logger.LogWarning(ex, "Token expired: {Message}", ex.Message);
+
             return false;
         }
         catch (SignatureVerificationException ex)
         {
-            logger.LogWarning($"Signature verification failed: {ex.Message}");
+            logger.LogWarning(ex, "Signature verification failed: {Message}", ex.Message);
             return false;
         }
         catch (Exception ex)
         {
-            logger.LogError($"An error occurred: {ex.Message}");
+            logger.LogError(ex, "An error occurred: {Message}", ex.Message);
             return false;
         }
     }
 
-    private class TimeProviderAdapter(TimeProvider timeProvider) : IDateTimeProvider
+    private sealed class TimeProviderAdapter(TimeProvider timeProvider) : IDateTimeProvider
     {
         private readonly TimeProvider _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
 

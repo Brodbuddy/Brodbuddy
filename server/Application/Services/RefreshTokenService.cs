@@ -66,7 +66,7 @@ public class RefreshTokenService : IRefreshTokenService
         {
             return await _repository.RotateAsync(validationResult.tokenId);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
             return (string.Empty, Guid.Empty);
         }
