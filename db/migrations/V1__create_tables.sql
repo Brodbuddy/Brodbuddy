@@ -1,7 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-CREATE TABLE refresh_tokens
-(
+CREATE TABLE refresh_tokens (
     id                   UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
     token                TEXT        NOT NULL,
     created_at           TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -10,15 +9,13 @@ CREATE TABLE refresh_tokens
     replaced_by_token_id UUID REFERENCES refresh_tokens (id)
 );
 
-CREATE TABLE users
-(
+CREATE TABLE users (
     id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email      VARCHAR(255) NOT NULL,
-    created_at TIMESTAMPTZ  NOT NULL
+    created_at TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE one_time_passwords
-(
+CREATE TABLE one_time_passwords (
     id         UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
     code       INTEGER     NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -26,8 +23,7 @@ CREATE TABLE one_time_passwords
     is_used    BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
-CREATE TABLE devices
-(
+CREATE TABLE devices (
     id           UUID PRIMARY KEY      DEFAULT uuid_generate_v4(),
     name         VARCHAR(255) NOT NULL,
     browser      VARCHAR(255) NOT NULL,
@@ -37,8 +33,7 @@ CREATE TABLE devices
     is_active    BOOLEAN      NOT NULL DEFAULT TRUE
 );
 
-CREATE TABLE device_registry
-(
+CREATE TABLE device_registry (
     id         UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
     user_id    UUID        NOT NULL REFERENCES users (id),
     device_id  UUID        NOT NULL REFERENCES devices (id),
@@ -46,8 +41,7 @@ CREATE TABLE device_registry
     UNIQUE (user_id, device_id)
 );
 
-CREATE TABLE token_contexts
-(
+CREATE TABLE token_contexts (
     id               UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
     user_id          UUID        NOT NULL REFERENCES users (id),
     device_id        UUID        NOT NULL REFERENCES devices (id),
@@ -57,8 +51,7 @@ CREATE TABLE token_contexts
     UNIQUE (refresh_token_id)
 );
 
-CREATE TABLE verification_contexts
-(
+CREATE TABLE verification_contexts (
     id         UUID PRIMARY KEY     DEFAULT uuid_generate_v4(),
     user_id    UUID        NOT NULL REFERENCES users (id),
     otp_id     UUID        NOT NULL REFERENCES one_time_passwords (id),
