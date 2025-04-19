@@ -1,5 +1,4 @@
 ﻿using Application;
-using Application.Interfaces;
 using Application.Interfaces.Data.Repositories;
 using Infrastructure.Data.Persistence;
 using Infrastructure.Data.Repositories;

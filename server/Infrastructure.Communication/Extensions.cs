@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace Infrastructure.Communication;
 
-public static class Extension
+public static class Extensions
 {
     public static IServiceCollection AddCommunicationInfrastructure(this IServiceCollection services)
     {
