@@ -1,6 +1,7 @@
 ﻿using Core.Extensions;
 using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
+using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Constants;
 using SharedTestDependencies.Database;
 using SharedTestDependencies.Extensions;
@@ -37,7 +38,7 @@ public class DeviceRegistryRepositoryTests : RepositoryTestBase
             // Assert
             registryId.ShouldNotBe(Guid.Empty);
 
-            var savedRegistry = await DbContext.DeviceRegistries.FindAsync(registryId);
+            var savedRegistry = await DbContext.DeviceRegistries.AsNoTracking().FirstOrDefaultAsync(dr => dr.Id == registryId);
             savedRegistry.ShouldNotBeNull();
             savedRegistry.UserId.ShouldBe(user.Id);
             savedRegistry.DeviceId.ShouldBe(device.Id);

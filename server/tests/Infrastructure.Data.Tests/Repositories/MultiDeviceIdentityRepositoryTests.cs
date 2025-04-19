@@ -39,7 +39,7 @@ public class MultiDeviceIdentityRepositoryTests : RepositoryTestBase
             // Assert
             id.ShouldNotBe(Guid.Empty);
 
-            var savedContext = await DbContext.TokenContexts.FindAsync(id);
+            var savedContext = await DbContext.TokenContexts.AsNoTracking().FirstOrDefaultAsync(tc => tc.Id == id);
             
             savedContext.ShouldNotBeNull();
             savedContext.Id.ShouldBe(id);
@@ -115,13 +115,11 @@ public class MultiDeviceIdentityRepositoryTests : RepositoryTestBase
             // Arrange
             var tokenContext = await DbContext.SeedTokenContextAsync(_timeProvider, isRevoked: false);
             var refreshTokenIdToRevoke = tokenContext.RefreshTokenId;
-            var contextId = tokenContext.Id;
 
             // Pre-assert
-            var initialContext = await DbContext.TokenContexts.FindAsync(contextId);
+            var initialContext = await DbContext.TokenContexts.FindAsync(tokenContext.Id);
             initialContext.ShouldNotBeNull();
             initialContext.IsRevoked.ShouldBeFalse();
-            DbContext.ChangeTracker.Clear();
 
             // Act
             var result = await _repository.RevokeTokenContextAsync(refreshTokenIdToRevoke);
@@ -129,7 +127,7 @@ public class MultiDeviceIdentityRepositoryTests : RepositoryTestBase
             // Assert
             result.ShouldBeTrue();
 
-            var updatedContext = await DbContext.TokenContexts.FindAsync(contextId);
+            var updatedContext = await DbContext.TokenContexts.AsNoTracking().FirstOrDefaultAsync(tc => tc.Id == tokenContext.Id);
             updatedContext.ShouldNotBeNull();
             updatedContext.IsRevoked.ShouldBeTrue(); 
         }
@@ -154,21 +152,19 @@ public class MultiDeviceIdentityRepositoryTests : RepositoryTestBase
             // Arrange
             var tokenContext = await DbContext.SeedTokenContextAsync(_timeProvider, isRevoked: true);
             var refreshTokenIdToRevoke = tokenContext.RefreshTokenId;
-            var contextId = tokenContext.Id;
 
             // Pre-assert
-            var initialContext = await DbContext.TokenContexts.FindAsync(contextId);
+            var initialContext = await DbContext.TokenContexts.FindAsync(tokenContext.Id);
             initialContext.ShouldNotBeNull();
             initialContext.IsRevoked.ShouldBeTrue();
 
             // Act
             var result = await _repository.RevokeTokenContextAsync(refreshTokenIdToRevoke);
-            DbContext.ChangeTracker.Clear();
 
             // Assert
             result.ShouldBeTrue(); 
 
-            var updatedContext = await DbContext.TokenContexts.FindAsync(contextId);
+            var updatedContext = await DbContext.TokenContexts.AsNoTracking().FirstOrDefaultAsync(tc => tc.Id == tokenContext.Id);
             updatedContext.ShouldNotBeNull();
             updatedContext.IsRevoked.ShouldBeTrue();
         }

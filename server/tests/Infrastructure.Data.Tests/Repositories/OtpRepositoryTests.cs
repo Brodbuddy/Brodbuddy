@@ -25,7 +25,7 @@ public class OtpRepositoryTests : RepositoryTestBase
     public class SaveAsync(PostgresFixture fixture) : OtpRepositoryTests(fixture)
     {
         [Fact]
-        public async Task SaveAsync_WithValidOtp_SavesInDatabase()
+        public async Task SaveAsync_WithValidOtp_CreatesOtpAndReturnsId()
         {
             // Arrange
             int code = 123123;
@@ -36,7 +36,7 @@ public class OtpRepositoryTests : RepositoryTestBase
             Guid id = await _repository.SaveAsync(code);
 
             // Assert
-            var savedOtp = await DbContext.OneTimePasswords.FindAsync(id);
+            var savedOtp = await DbContext.OneTimePasswords.AsNoTracking().FirstOrDefaultAsync(o => o.Id == id);
             savedOtp.ShouldNotBeNull();
             savedOtp.Code.ShouldBe(code);
             savedOtp.IsUsed.ShouldBeFalse();

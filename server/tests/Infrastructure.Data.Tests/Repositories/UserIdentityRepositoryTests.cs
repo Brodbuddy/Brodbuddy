@@ -1,6 +1,7 @@
 ﻿using Core.Extensions;
 using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
+using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Constants;
 using SharedTestDependencies.Database;
 using SharedTestDependencies.Extensions;
@@ -34,7 +35,7 @@ public class UserIdentityRepositoryTests : RepositoryTestBase
             Guid userId = await _repository.SaveAsync(email);
 
             //Assert
-            var savedUser = await DbContext.Users.FindAsync(userId);
+            var savedUser = await DbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
             savedUser.ShouldNotBeNull();
             savedUser.Email.ShouldBe(email);
             savedUser.CreatedAt.ShouldBeWithinTolerance(expectedCreationTime);

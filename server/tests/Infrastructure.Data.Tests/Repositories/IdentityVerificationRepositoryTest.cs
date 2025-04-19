@@ -38,7 +38,7 @@ public class IdentityVerificationRepositoryTest : RepositoryTestBase
             // Assert
             resultId.ShouldNotBe(Guid.Empty);
 
-            var context = await DbContext.VerificationContexts.FindAsync(resultId);
+            var context = await DbContext.VerificationContexts.AsNoTracking().FirstOrDefaultAsync(vc => vc.Id == resultId);
             context.ShouldNotBeNull();
             context.UserId.ShouldBe(user.Id);
             context.OtpId.ShouldBe(otp.Id);

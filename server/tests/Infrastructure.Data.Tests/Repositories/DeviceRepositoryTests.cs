@@ -2,6 +2,7 @@
 using Core.Extensions;
 using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Tests.Bases;
+using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Constants;
 using SharedTestDependencies.Database;
 using SharedTestDependencies.Extensions;
@@ -41,9 +42,8 @@ public class DeviceRepositoryTests : RepositoryTestBase
             var id = await _repository.SaveAsync(device);
 
             // Assert
-            DbContext.ChangeTracker.Clear();
             id.ShouldNotBe(Guid.Empty);
-            var savedDevice = await DbContext.Devices.FindAsync(id);
+            var savedDevice = await DbContext.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.Id == id);
 
             savedDevice.ShouldNotBeNull();
             savedDevice.Id.ShouldBe(id); 
@@ -251,7 +251,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
             await _repository.UpdateLastSeenAsync(device.Id, newLastSeen);
 
             // Assert
-            var updatedDevice = await DbContext.Devices.FindAsync(device.Id);
+            var updatedDevice = await DbContext.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.Id == device.Id);
             updatedDevice.ShouldNotBeNull();
             updatedDevice.LastSeenAt.ShouldBeWithinTolerance(newLastSeen);
         }
@@ -283,24 +283,21 @@ public class DeviceRepositoryTests : RepositoryTestBase
             var targetDevice = await DbContext.SeedDeviceAsync(_timeProvider, "windows", "chrome", lastSeenAt: initialTargetTime);
             var otherDevice = await DbContext.SeedDeviceAsync(_timeProvider, "macos", "safari", lastSeenAt: initialOtherTime);
             
-            var targetId = targetDevice.Id;
-            var otherId = otherDevice.Id;
-            
             var newLastSeenTime = _timeProvider.Now();
             
             // Act
-            var result = await _repository.UpdateLastSeenAsync(targetId, newLastSeenTime);
+            var result = await _repository.UpdateLastSeenAsync(targetDevice.Id, newLastSeenTime);
             
             // Assert
             result.ShouldBeTrue();
 
             // Tjek at target device ER opdateret
-            var reloadedTargetDevice = await DbContext.Devices.FindAsync(targetId);
+            var reloadedTargetDevice = await DbContext.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.Id == targetDevice.Id);
             reloadedTargetDevice.ShouldNotBeNull();
             reloadedTargetDevice.LastSeenAt.ShouldBeWithinTolerance(newLastSeenTime);
             
             // Tjek at det andet device IKKE er opdateret
-            var reloadedOtherDevice = await DbContext.Devices.FindAsync(otherId);
+            var reloadedOtherDevice = await DbContext.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.Id == otherDevice.Id);
             reloadedOtherDevice.ShouldNotBeNull();
             reloadedOtherDevice.LastSeenAt.ShouldBeWithinTolerance(initialOtherTime);
         }
@@ -320,7 +317,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
             // Assert
             result.ShouldBeTrue();
 
-            var updatedDevice = await DbContext.Devices.FindAsync(device.Id);
+            var updatedDevice = await DbContext.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.Id == device.Id);
             updatedDevice.ShouldNotBeNull();
             updatedDevice.IsActive.ShouldBeFalse();
         }
@@ -342,7 +339,7 @@ public class DeviceRepositoryTests : RepositoryTestBase
         }
         
         [Fact]
-        public async Task DisableAsync_WithExistingInactiveId_ReturnsTrueAndDeviceRemainsInactive()
+        public async Task DisableAsync_WhenDeviceIsAlreadyInactive_ReturnsTrueAndDeviceRemainsInactive()
         {
             // Arrange
             var device = await DbContext.SeedDeviceAsync(_timeProvider, isActive: false); 
@@ -352,8 +349,8 @@ public class DeviceRepositoryTests : RepositoryTestBase
 
             // Assert
             result.ShouldBeTrue(); 
-
-            var updatedDevice = await DbContext.Devices.FindAsync(device.Id);
+            
+            var updatedDevice = await DbContext.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.Id == device.Id);
             updatedDevice.ShouldNotBeNull();
             updatedDevice.IsActive.ShouldBeFalse(); 
         }

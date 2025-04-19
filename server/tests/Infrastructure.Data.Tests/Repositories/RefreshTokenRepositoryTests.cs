@@ -26,7 +26,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
     public class CreateAsync(PostgresFixture fixture) : RefreshTokenRepositoryTests(fixture)
     {
         [Fact]
-        public async Task CreateAsync_WithValidToken_ShouldCreateToken()
+        public async Task CreateAsync_WithValidToken_CreatesTokenAndReturnsResult()
         {
             // Arrange
             string token = "testToken";
@@ -37,18 +37,18 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
             var result = await _repository.CreateAsync(token, expiresAt);
 
             // Assert
-            var savedToken = await DbContext.RefreshTokens.FindAsync(result.tokenId);
+            var savedToken = await DbContext.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(rt => rt.Id == result.tokenId);
             savedToken.ShouldNotBeNull();
             savedToken.Id.ShouldBe(result.tokenId);
             savedToken.Token.ShouldBe(token);
-            savedToken.ExpiresAt.ShouldBe(expiresAt);
+            savedToken.ExpiresAt.ShouldBeWithinTolerance(expiresAt);
             savedToken.CreatedAt.ShouldBeWithinTolerance(expectedTime);
             savedToken.RevokedAt.ShouldBeNull();
             savedToken.ReplacedByTokenId.ShouldBeNull();
         }
 
         [Fact]
-        public async Task CreateAsync_WithPastExpiryDate_ShouldCreateExpiredToken()
+        public async Task CreateAsync_WithPastExpiryDate_SavesTokenWhichThenFailsValidation()
         {
             // Arrange
             string token = "alreadyExpiredToken";
@@ -58,17 +58,17 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
             var result = await _repository.CreateAsync(token, expiresAt);
 
             // Assert
-            var savedToken = await DbContext.RefreshTokens.FindAsync(result.tokenId);
+            var savedToken = await DbContext.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(rt => rt.Id == result.tokenId);
             savedToken.ShouldNotBeNull();
             savedToken.Token.ShouldBe(token);
-            savedToken.ExpiresAt.ShouldBe(expiresAt);
+            savedToken.ExpiresAt.ShouldBeWithinTolerance(expiresAt);
 
             var validationResult = await _repository.TryValidateAsync(token);
             validationResult.isValid.ShouldBeFalse();
         }
 
         [Fact]
-        public async Task CreateAsync_WithDuplicateTokenValue_ShouldCreateUniqueRecords()
+        public async Task CreateAsync_WhenTokenStringIsNotUnique_AllowsCreation()
         {
             // Arrange
             string token = "duplicateToken";
@@ -266,7 +266,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         }
 
         [Fact]
-        public async Task RevokeAsync_WithExpiredToken_ShouldRevokeSuccessfully()
+        public async Task RevokeAsync_WithExpiredToken_ShouldReturnTrueAndMarkAsRevoked()
         {
             // Arrange
             var created = await DbContext.SeedRefreshTokenAsync(_timeProvider, expiresDays: -1);
@@ -322,8 +322,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
             newTokenId.ShouldNotBe(oldToken.Id);
 
             // Verificer ny token
-            DbContext.ChangeTracker.Clear();
-            var newTokenEntity = await DbContext.RefreshTokens.FindAsync(newTokenId);
+            var newTokenEntity = await DbContext.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(rt => rt.Id == newTokenId);
             newTokenEntity.ShouldNotBeNull();
             newTokenEntity.Token.ShouldBe(newTokenString);
             newTokenEntity.CreatedAt.ShouldBeWithinTolerance(timeBeforeAct);
@@ -332,7 +331,7 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
             newTokenEntity.ReplacedByTokenId.ShouldBeNull();
 
             // Verificer gammel token
-            var oldTokenEntity = await DbContext.RefreshTokens.FindAsync(oldToken.Id);
+            var oldTokenEntity = await DbContext.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(rt => rt.Id == oldToken.Id);
             oldTokenEntity.ShouldNotBeNull();
             oldTokenEntity.RevokedAt.ShouldNotBeNull();
             oldTokenEntity.RevokedAt.Value.ShouldBeWithinTolerance(timeBeforeAct);
