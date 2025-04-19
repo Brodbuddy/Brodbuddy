@@ -12,7 +12,7 @@
       "!/**/*.generated.cs",
       "!/**/PgDbContext.cs",
       "!/**/tests/**/*",
-      "!/**/Extension.cs",
+      "!/**/Extensions.cs",
       "!/**/AppOptions.cs"
     ],
     "reporters": ["html", "progress"],

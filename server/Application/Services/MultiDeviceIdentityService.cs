@@ -31,9 +31,12 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
         _userIdentityService = userIdentityService;
     }
 
-    public async Task<(string accessToken, string refreshToken)> EstablishIdentityAsync(Guid userId, string browser,
-        string os)
+    public async Task<(string accessToken, string refreshToken)> EstablishIdentityAsync(Guid userId, string browser, string os)
     {
+        if (Guid.Empty == userId) throw new ArgumentException("UserId cannot be empty");
+        ArgumentException.ThrowIfNullOrWhiteSpace(browser);
+        ArgumentException.ThrowIfNullOrWhiteSpace(os);
+            
         var deviceId = await _deviceRegistryService.AssociateDeviceAsync(userId, browser, os);
 
         var userInfo = await _userIdentityService.GetAsync(userId);
