@@ -38,12 +38,21 @@ jobs:
           chmod +x .github/scripts/sonarqube_config.py
           python .github/scripts/sonarqube_config.py
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        id: cache-nuget
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-v1-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-v1-
+
       - name: Restore dependencies
         run: dotnet restore
 
       - name: Build
         run: dotnet build --no-restore
-        
+
       - name: Run .NET tests
         run: |
           chmod +x .github/scripts/run_dotnet_tests.py
@@ -117,8 +126,20 @@ jobs:
         run: |
           dotnet tool install -g dotnet-stryker 
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        id: cache-nuget
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-v1-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-v1-
+
+      - name: Restore dependencies
+        run: dotnet restore
+
       - name: Build
-        run: dotnet build
+        run: dotnet build --no-restore
 
       - name: Run Stryker mutation tests
         # Har ikke threshold med her for at kunne få summary
@@ -135,7 +156,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mutation-json-report-${{ strategy.job-index }}
-          path: StrykerOutput_*/reports/mutation-report.json 
+          path: StrykerOutput_*/reports/mutation-report.json
           retention-days: 1 # Skal kun bruges til næste job
 
       - name: Upload Stryker HTML report for ${{ matrix.project }}
@@ -145,7 +166,7 @@ jobs:
           name: stryker-html-report-${{ env.PROJECT_NAME }}
           path: StrykerOutput_*/reports/mutation-report.html
           retention-days: 7
-          
+  
   aggregate-mutation-results:
     runs-on: ubuntu-latest
     needs: mutation-tests
@@ -157,14 +178,14 @@ jobs:
       - name: Download all JSON reports
         uses: actions/download-artifact@v4
         with:
-          pattern: mutation-json-report-* 
+          pattern: mutation-json-report-*
           path: all-mutation-reports
 
-      - name: List downloaded files 
+      - name: List downloaded files
         run: ls -R all-mutation-reports
 
       - name: Aggregate reports and generate final summary
-        id: aggregate 
+        id: aggregate
         run: |
           chmod +x .github/scripts/aggregate_mutation_summary.py
           python .github/scripts/aggregate_mutation_summary.py ./all-mutation-reports

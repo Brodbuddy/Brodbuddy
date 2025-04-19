@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# .github/scripts/run_tests.py
+# .github/scripts/run_dotnet_tests.py
 
 import os
 import subprocess

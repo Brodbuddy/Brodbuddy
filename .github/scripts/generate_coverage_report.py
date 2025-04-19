@@ -61,6 +61,8 @@ def run_report_generator() -> bool:
         f"-reports:{COVERAGE_INPUT_PATTERN}",
         f"-targetdir:{report_path}",
         f"-reporttypes:{TARGET_REPORT_TYPES}",
+        "-excludebyattribute:*ExcludeFromCodeCoverage*",
+        "-assemblyfilters:-SharedTestDependencies"
     ]
 
     try:
