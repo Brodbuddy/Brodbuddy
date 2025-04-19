@@ -46,11 +46,11 @@ public class PasswordlessAuthServiceTests
     public class CompleteLoginAsync : PasswordlessAuthServiceTests
     {
         [Theory]
-        [InlineData("test@example.com", 123456)]
-        [InlineData("another@example.com", 654321)]
-        [InlineData("mobile@example.com", 112233)]
+        [InlineData("test@example.com", 123456, "Chrome", "Windows")]
+        [InlineData("another@example.com", 654321, "Firefox", "macOS")]
+        [InlineData("mobile@example.com", 112233, "Safari", "iOS")]
         public async Task CompleteLoginAsync_WithValidCode_ShouldReturnTokens(
-            string email, int code)
+            string email, int code, string browser, string os)
         {
             // Arrange
             Guid userId = Guid.NewGuid();
@@ -58,17 +58,17 @@ public class PasswordlessAuthServiceTests
 
             _mockIdentityVerificationService.Setup(s => s.TryVerifyCodeAsync(email, code))
                 .ReturnsAsync((true, userId));
-            _mockMultiDeviceIdentityService.Setup(s => s.EstablishIdentityAsync(userId, "browser", "os"))
+            _mockMultiDeviceIdentityService.Setup(s => s.EstablishIdentityAsync(userId, browser, os))
                 .ReturnsAsync(expectedTokens);
 
             // Act
-            var result = await _service.CompleteLoginAsync(email, code);
+            var result = await _service.CompleteLoginAsync(email, code, browser, os);
 
             // Assert
             result.accessToken.ShouldBe(expectedTokens.Item1);
             result.refreshToken.ShouldBe(expectedTokens.Item2);
             _mockIdentityVerificationService.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);
-            _mockMultiDeviceIdentityService.Verify(s => s.EstablishIdentityAsync(userId, "browser", "os"), Times.Once);
+            _mockMultiDeviceIdentityService.Verify(s => s.EstablishIdentityAsync(userId, browser, os), Times.Once);
         }
 
         [Fact]
@@ -77,14 +77,15 @@ public class PasswordlessAuthServiceTests
             // Arrange
             string email = "test@example.com";
             int code = 123456;
-            Guid? userId = Guid.NewGuid();
+            string browser = "Chrome";
+            string os = "Windows";
 
             _mockIdentityVerificationService.Setup(s => s.TryVerifyCodeAsync(email, code))
                 .ReturnsAsync((false, Guid.Empty));
 
             // Act & Assert
             var exception =
-                await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.CompleteLoginAsync(email, code));
+                await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.CompleteLoginAsync(email, code, browser, os));
 
             exception.ShouldBeOfType<UnauthorizedAccessException>();
             _mockIdentityVerificationService.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);

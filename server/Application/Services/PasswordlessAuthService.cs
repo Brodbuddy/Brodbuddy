@@ -3,8 +3,8 @@ namespace Application.Services;
 public interface IPasswordlessAuthService
 {
     Task<bool> InitiateLoginAsync(string email);
-    Task<(string accessToken, string refreshToken)> CompleteLoginAsync(string email, int code);
-    Task<(string accessToken, string refreshToken)> RefreshTokenAsync(string currentToken);
+    Task<(string accessToken, string refreshToken)> CompleteLoginAsync(string email, int code, string browser, string os);
+    Task<(string accessToken, string refreshToken)> RefreshTokenAsync(string refreshToken);
 }
 
 public class PasswordlessAuthService : IPasswordlessAuthService
@@ -26,21 +26,21 @@ public class PasswordlessAuthService : IPasswordlessAuthService
         return await _identityVerificationService.SendCodeAsync(email);
     }
 
-    public async Task<(string accessToken, string refreshToken)> CompleteLoginAsync(string email, int code)
+    public async Task<(string accessToken, string refreshToken)> CompleteLoginAsync(string email, int code, string browser, string os)
     {
         var (verified, userId) = await _identityVerificationService.TryVerifyCodeAsync(email, code);
 
         if (!verified)
         {
-            throw new UnauthorizedAccessException("Ugyldig verifikationskode");
+            throw new UnauthorizedAccessException("Invalid verification code");
         }
 
-        return await _multiDeviceIdentityService.EstablishIdentityAsync(userId, "browser", "os");
+        return await _multiDeviceIdentityService.EstablishIdentityAsync(userId, browser, os);
     }
 
 
-    public async Task<(string accessToken, string refreshToken)> RefreshTokenAsync(string currentToken)
+    public async Task<(string accessToken, string refreshToken)> RefreshTokenAsync(string refreshToken)
     {
-        return await _multiDeviceIdentityService.RefreshIdentityAsync(currentToken);
+        return await _multiDeviceIdentityService.RefreshIdentityAsync(refreshToken);
     }
 }
