@@ -151,7 +151,7 @@ jobs:
           CORE_COUNT=$(nproc)
           echo "Detected $CORE_COUNT cores"
           SAFE_NAME=$(echo "${{ matrix.project }}" | tr '/' '_')
-          dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput_${SAFE_NAME}" -V debug --concurrency 4 --reporter "json" --reporter "html" | tee "stryker-output-${SAFE_NAME}.log"
+          dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput_${SAFE_NAME}" --concurrency $CORE_COUNT --reporter "json" --reporter "html" | tee "stryker-output-${SAFE_NAME}.log"
 
       - name: Upload Stryker JSON report for ${{ matrix.project }}
         if: always()
