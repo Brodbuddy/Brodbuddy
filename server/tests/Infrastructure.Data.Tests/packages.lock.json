@@ -776,8 +776,6 @@
       "sharedtestdependencies": {
         "type": "Project",
         "dependencies": {
-          "Application": "[1.0.0, )",
-          "Infrastructure.Data": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore.InMemory": "[9.0.3, )",
           "Microsoft.NET.Test.Sdk": "[17.8.0, )",
           "Moq": "[4.20.72, )",

@@ -167,17 +167,6 @@
           "Microsoft.Extensions.Logging": "9.0.3"
         }
       },
-      "Microsoft.EntityFrameworkCore.Relational": {
-        "type": "Transitive",
-        "resolved": "9.0.3",
-        "contentHash": "xsS+5TM7M5f3tCSRaSbzouGCoIgD2zokQxBGXvf9z3DusRztWvT1NNT9XJaY2JoK1qEEDcHah8is6azYmpZhIg==",
-        "dependencies": {
-          "Microsoft.EntityFrameworkCore": "9.0.3",
-          "Microsoft.Extensions.Caching.Memory": "9.0.3",
-          "Microsoft.Extensions.Configuration.Abstractions": "9.0.3",
-          "Microsoft.Extensions.Logging": "9.0.3"
-        }
-      },
       "Microsoft.Extensions.Caching.Abstractions": {
         "type": "Transitive",
         "resolved": "9.0.3",
@@ -195,14 +184,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "9.0.3",
           "Microsoft.Extensions.Logging.Abstractions": "9.0.3",
           "Microsoft.Extensions.Options": "9.0.3",
-          "Microsoft.Extensions.Primitives": "9.0.3"
-        }
-      },
-      "Microsoft.Extensions.Configuration.Abstractions": {
-        "type": "Transitive",
-        "resolved": "9.0.3",
-        "contentHash": "q5qlbm6GRUrle2ZZxy9aqS/wWoc+mRD3JeP6rcpiJTh5XcemYkplAcJKq8lU11ZfPom5lfbZZfnQvDqcUhqD5Q==",
-        "dependencies": {
           "Microsoft.Extensions.Primitives": "9.0.3"
         }
       },
@@ -380,16 +361,6 @@
         "contentHash": "tPvY61CxOAWxNsKLEBg+oR646X4Bc8UmyQ/tJszL/7mEmIXQnnBhVJZrZEEUv0Bstu0mEsHZD5At3EO8zQRAYw==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
-        }
-      },
-      "Npgsql.EntityFrameworkCore.PostgreSQL": {
-        "type": "Transitive",
-        "resolved": "9.0.3",
-        "contentHash": "1A6HpMPbzK+quxdtug1aDHI4BSRTgpi7OaDt8WQh7SFJd2sSQ0nNTZ7sYrwyxVf4AdKdN7XJL9tpiiJjRUaa4g==",
-        "dependencies": {
-          "Microsoft.EntityFrameworkCore": "[9.0.1, 10.0.0)",
-          "Microsoft.EntityFrameworkCore.Relational": "[9.0.1, 10.0.0)",
-          "Npgsql": "9.0.2"
         }
       },
       "NuGet.Frameworks": {
@@ -763,21 +734,9 @@
       "core": {
         "type": "Project"
       },
-      "infrastructure.data": {
-        "type": "Project",
-        "dependencies": {
-          "Application": "[1.0.0, )",
-          "Microsoft.EntityFrameworkCore": "[9.0.3, )",
-          "Microsoft.EntityFrameworkCore.Relational": "[9.0.3, )",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.3, )",
-          "Npgsql.EntityFrameworkCore.PostgreSQL": "[9.0.3, )"
-        }
-      },
       "sharedtestdependencies": {
         "type": "Project",
         "dependencies": {
-          "Application": "[1.0.0, )",
-          "Infrastructure.Data": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore.InMemory": "[9.0.3, )",
           "Microsoft.NET.Test.Sdk": "[17.8.0, )",
           "Moq": "[4.20.72, )",

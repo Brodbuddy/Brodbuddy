@@ -1,8 +1,8 @@
 using Application.Interfaces.Data.Repositories;
 using Application.Services;
+using Application.Tests.Fakes;
 using Core.Entities;
 using Moq;
-using SharedTestDependencies.Fakes;
 using Shouldly;
 using Xunit;
 
