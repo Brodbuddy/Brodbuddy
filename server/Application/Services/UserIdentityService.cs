@@ -88,15 +88,12 @@ public class UserIdentityService : IUserIdentityService
             throw new ArgumentException("Email cannot be null or empty", nameof(email));
         }
 
-        if (!MailAddress.TryCreate(email, out var _))
+        if (!MailAddress.TryCreate(email, out _))
+        {
             return false;
-
-        if (!email.Contains('@') || !email.Contains('.'))
-            return false;
-
+        }
+        
         var parts = email.Split('@');
-        if (parts.Length != 2 || string.IsNullOrEmpty(parts[0]) || string.IsNullOrEmpty(parts[1]))
-            return false;
         
         return parts[1].Contains('.');
     }

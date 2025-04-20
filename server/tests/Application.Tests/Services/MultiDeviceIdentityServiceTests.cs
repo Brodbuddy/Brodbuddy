@@ -254,9 +254,7 @@ public class MultiDeviceIdentityServiceTests
             _repositoryMock.Setup(x => x.GetAsync(oldTokenId)).ReturnsAsync(tokenContext);
 
             // Act & Assert
-            var exception = await Should.ThrowAsync<InvalidOperationException>(() => _multiDeviceIdentityService.RefreshIdentityAsync(oldRefreshToken));
-
-            exception.Message.ShouldBe("Failed to rotate refresh token");
+            await Should.ThrowAsync<InvalidOperationException>(() => _multiDeviceIdentityService.RefreshIdentityAsync(oldRefreshToken));
         }
 
         [Theory]

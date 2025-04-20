@@ -59,13 +59,14 @@ public class UserIdentityServiceTests
         [InlineData("@test.com")]
         [InlineData(".test@test.com")]
         [InlineData("test@test")]
+        [InlineData("test@test@test.com")]
+        [InlineData("@")]                  
+        [InlineData("@.")]
+        [InlineData("test.com")]
         public async Task CreateAsync_WithInvalidEmailFormat_ThrowsArgumentException(string email)
         {
             // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() =>
-                _service.CreateAsync(email));
-
-
+            await Should.ThrowAsync<ArgumentException>(() => _service.CreateAsync(email));
         }
 
         [Fact]

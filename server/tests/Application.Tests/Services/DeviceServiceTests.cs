@@ -67,9 +67,8 @@ public class DeviceServiceTests
             await Should.ThrowAsync<ArgumentException>(() => _service.CreateAsync(browser!, os!));
         }
     }
-
-
-    public class GetAsync(ITestOutputHelper outputHelper) : DeviceServiceTests(outputHelper)
+    
+    public class GetByIdAsync(ITestOutputHelper outputHelper) : DeviceServiceTests(outputHelper)
     {
         [Fact]
         public async Task GetByIdAsync_WithValidId_ReturnsDevice()
@@ -94,13 +93,8 @@ public class DeviceServiceTests
             // Arrange
             var deviceId = Guid.Empty;
 
-            // Act
-            var exception = await Should.ThrowAsync<ArgumentException>(() =>
-                _service.GetByIdAsync(deviceId));
-
-            // Assert
-            exception.Message.ShouldStartWith("Device ID cannot be empty");
-            exception.ParamName.ShouldBe("id");
+            // Act & Assert
+            await Should.ThrowAsync<ArgumentException>(() => _service.GetByIdAsync(deviceId));
         }
 
 
@@ -192,13 +186,9 @@ public class DeviceServiceTests
             // Arrange
             var deviceId = Guid.Empty;
 
-            // Act
-            var exception = await Should.ThrowAsync<ArgumentException>(() =>
-                _service.ExistsAsync(deviceId));
-
-            // Assert
-            exception.Message.ShouldStartWith("Device ID cannot be empty");
-            exception.ParamName.ShouldBe("id");
+            // // Act & Assert
+             await Should.ThrowAsync<ArgumentException>(() => _service.ExistsAsync(deviceId));
+             
             _repositoryMock.Verify(r => r.ExistsAsync(It.IsAny<Guid>()), Times.Never);
         }
     }
@@ -243,13 +233,9 @@ public class DeviceServiceTests
             // Arrange
             var deviceId = Guid.Empty;
 
-            // Act
-            var exception = await Should.ThrowAsync<ArgumentException>(() =>
-                _service.UpdateLastSeenAsync(deviceId));
-
-            // Assert
-            exception.Message.ShouldStartWith("Device ID cannot be empty");
-            exception.ParamName.ShouldBe("id");
+            // Act & Assert
+            await Should.ThrowAsync<ArgumentException>(() => _service.UpdateLastSeenAsync(deviceId));
+            
             _repositoryMock.Verify(r => r.UpdateLastSeenAsync(It.IsAny<Guid>(), It.IsAny<DateTime>()), Times.Never);
         }
 

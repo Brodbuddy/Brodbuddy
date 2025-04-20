@@ -67,6 +67,22 @@ public class RefreshTokenServiceTests
             // Assert
             result.ShouldBe(expectedResult);
         }
+        
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task TryValidateAsync_WithNullOrEmptyToken_ShouldReturnInvalidResult(string? token)
+        {
+            // Act
+            var result = await _service.TryValidateAsync(token!);
+
+            // Assert
+            result.isValid.ShouldBeFalse();
+            result.tokenId.ShouldBe(Guid.Empty);
+
+            _repositoryMock.Verify(r => r.TryValidateAsync(It.IsAny<string>()), Times.Never);
+        }
     }
 
     public class RevokeAsync : RefreshTokenServiceTests
@@ -99,6 +115,21 @@ public class RefreshTokenServiceTests
 
             // Assert
             result.ShouldBeTrue();
+        }
+        
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task RevokeAsync_WithNullOrEmptyToken_ShouldReturnFalse(string? token)
+        {
+            // Act
+            var result = await _service.RevokeAsync(token!);
+
+            // Assert
+            result.ShouldBeFalse();
+            
+            _repositoryMock.Verify(r => r.RevokeAsync(It.IsAny<Guid>()), Times.Never);
         }
     }
 
@@ -153,6 +184,22 @@ public class RefreshTokenServiceTests
             // Assert
             result.token.ShouldBe(string.Empty);
             result.tokenId.ShouldBe(Guid.Empty);
+        }
+        
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task RotateAsync_WithNullOrEmptyToken_ShouldReturnEmptyResult(string? token)
+        {
+            // Act
+            var result = await _service.RotateAsync(token!);
+
+            // Assert
+            result.token.ShouldBe(string.Empty);
+            result.tokenId.ShouldBe(Guid.Empty);
+            
+            _repositoryMock.Verify(r => r.RotateAsync(It.IsAny<Guid>()), Times.Never);
         }
     }
 }

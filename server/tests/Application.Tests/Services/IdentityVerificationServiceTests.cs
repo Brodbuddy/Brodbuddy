@@ -28,8 +28,7 @@ public class IdentityVerificationServiceTests
         _mockUserIdentityService = new Mock<IUserIdentityService>();
         _emailSender = new FakeEmailSender();
         _mockRepository = new Mock<IIdentityVerificationRepository>();
-
-
+        
         _service = new IdentityVerificationService(
             _mockOtpService.Object,
             _mockUserIdentityService.Object,

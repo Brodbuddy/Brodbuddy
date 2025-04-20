@@ -15,7 +15,7 @@ public class DeviceRegistryServiceTests
     private readonly Mock<IDeviceService> _deviceServiceMock;
     private readonly DeviceRegistryService _service;
 
-    public DeviceRegistryServiceTests(ITestOutputHelper testOutputHelper)
+    private DeviceRegistryServiceTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
         _repositoryMock = new Mock<IDeviceRegistryRepository>();
@@ -28,39 +28,41 @@ public class DeviceRegistryServiceTests
             _userIdentityServiceMock.Object
         );
     }
-
-
-    [Fact]
-    public async Task AssociateDevice_ValidUser_ReturnsDeviceId()
+    
+    public class AssociateDeviceAsync(ITestOutputHelper outputHelper) : DeviceRegistryServiceTests(outputHelper)
     {
-        // Arrange
-        var userId = Guid.NewGuid();
-        var deviceId = Guid.NewGuid();
-        _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(true);
-        _deviceServiceMock.Setup(x => x.CreateAsync("chrome", "windows")).ReturnsAsync(deviceId);
+        [Fact]
+        public async Task AssociateDeviceAsync_ValidUser_ReturnsDeviceId()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var deviceId = Guid.NewGuid();
+            _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(true);
+            _deviceServiceMock.Setup(x => x.CreateAsync("chrome", "windows")).ReturnsAsync(deviceId);
 
-        // Act
-        var result = await _service.AssociateDeviceAsync(userId, "chrome", "windows");
+            // Act
+            var result = await _service.AssociateDeviceAsync(userId, "chrome", "windows");
 
-        // Assert
-        result.ShouldBe(deviceId);
-        _repositoryMock.Verify(x => x.SaveAsync(userId, deviceId), Times.Once);
-    }
+            // Assert
+            result.ShouldBe(deviceId);
+            _repositoryMock.Verify(x => x.SaveAsync(userId, deviceId), Times.Once);
+        }
 
-    [Fact]
-    public async Task AssociateDevice_UserDoesNotExist_ThrowsArgumentException()
-    {
-        // Arrange
-        var userId = Guid.NewGuid();
-        _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(false);
+        [Fact]
+        public async Task AssociateDeviceAsync_UserDoesNotExist_ThrowsArgumentException()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(false);
 
-        // Act & Assert
-        await Should.ThrowAsync<ArgumentException>(() =>
-            _service.AssociateDeviceAsync(userId, "chrome", "windows")
-        );
+            // Act & Assert
+            await Should.ThrowAsync<ArgumentException>(() =>
+                _service.AssociateDeviceAsync(userId, "chrome", "windows")
+            );
 
 
-        _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
+            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
+        }
     }
 }
