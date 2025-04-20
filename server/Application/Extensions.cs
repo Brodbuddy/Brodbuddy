@@ -16,6 +16,7 @@ public static class Extensions
         services.AddScoped<IMultiDeviceIdentityService, MultiDeviceIdentityService>();
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IIdentityVerificationService, IdentityVerificationService>();
+        services.AddScoped<IPasswordlessAuthService, PasswordlessAuthService>();
         return services;
     }
 }
