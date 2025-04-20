@@ -194,14 +194,14 @@ jobs:
         env:
           FINAL_MUTATION_SCORE: ${{ env.MUTATION_SCORE_FLOAT }}
         run: |
-          echo "Final Overall Mutation Score: $FINAL_MUTATION_SCORE%"
+          echo "Checking final mutation score: $FINAL_MUTATION_SCORE%"
           if [[ -z "$FINAL_MUTATION_SCORE" ]]; then
-            echo "::error::Could not determine final mutation score."
+            echo "::error::Could not determine final mutation score float value."
             exit 1
           fi
-          if (( $(echo "$SCORE_TO_CHECK < 80" | bc -l) )); then
+          if (( $(echo "$FINAL_MUTATION_SCORE < 80" | bc -l) )); then
             echo "::error::Overall Mutation score ($FINAL_MUTATION_SCORE%) is below threshold (80%)"
             exit 1
           else
-            echo "Overall Mutation score meets threshold requirement"
+            echo "Overall Mutation score ($FINAL_MUTATION_SCORE%) meets or exceeds threshold requirement (80%)"
           fi
