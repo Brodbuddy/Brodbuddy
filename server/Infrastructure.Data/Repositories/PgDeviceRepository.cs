@@ -34,6 +34,7 @@ public class PgDeviceRepository : IDeviceRepository
 
     public async Task<Device> GetAsync(Guid id)
     {
+        if (id == Guid.Empty) throw new ArgumentException("Device ID cannot be empty", nameof(id));
         return await _dbContext.Devices.FirstOrDefaultAsync(r => r.Id == id) ?? throw new ArgumentException($"Device with ID {id} not found");
     }
 
@@ -45,11 +46,14 @@ public class PgDeviceRepository : IDeviceRepository
 
     public async Task<bool> ExistsAsync(Guid id)
     {
+        if (id == Guid.Empty) throw new ArgumentException("Device ID cannot be empty", nameof(id));
         return await _dbContext.Devices.AnyAsync(d => d.Id == id);
     }
 
     public async Task<bool> UpdateLastSeenAsync(Guid id, DateTime lastSeenTime)
     {
+        if (id == Guid.Empty) throw new ArgumentException("Device ID cannot be empty", nameof(id));
+        
         var rowsAffected = await _dbContext.Devices
             .Where(d => d.Id == id)
             .ExecuteUpdateAsync(setters => setters
@@ -60,6 +64,8 @@ public class PgDeviceRepository : IDeviceRepository
 
     public async Task<bool> DisableAsync(Guid id)
     {
+        if (id == Guid.Empty) throw new ArgumentException("Device ID cannot be empty", nameof(id));
+        
         var rowsAffected = await _dbContext.Devices
             .Where(d => d.Id == id)
             .ExecuteUpdateAsync(setters => setters

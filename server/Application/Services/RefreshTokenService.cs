@@ -36,16 +36,14 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task<(bool isValid, Guid tokenId)> TryValidateAsync(string token)
     {
-        if (string.IsNullOrEmpty(token))
-            return (false, Guid.Empty);
+        if (string.IsNullOrEmpty(token)) return (false, Guid.Empty);
 
         return await _repository.TryValidateAsync(token);
     }
 
     public async Task<bool> RevokeAsync(string token)
     {
-        if (string.IsNullOrEmpty(token))
-            return false;
+        ArgumentException.ThrowIfNullOrWhiteSpace(token);
 
         var validationResult = await TryValidateAsync(token);
         if (!validationResult.isValid)
@@ -56,10 +54,9 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task<(string token, Guid tokenId)> RotateAsync(string token)
     {
-        if (string.IsNullOrEmpty(token)) return (string.Empty, Guid.Empty);
+        ArgumentException.ThrowIfNullOrWhiteSpace(token);
 
         var validationResult = await TryValidateAsync(token);
-        
         if (!validationResult.isValid) return (string.Empty, Guid.Empty);
 
         try

@@ -1,6 +1,7 @@
 ﻿using Application.Interfaces.Data.Repositories;
 using Core.Entities;
 using Core.Extensions;
+using Core.Validation;
 using Infrastructure.Data.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,8 @@ public class PgUserIdentityRepository : IUserIdentityRepository
 
     public async Task<Guid> SaveAsync(string email)
     {
+        if (!ValidationRules.IsValidEmail(email)) throw new ArgumentException("Invalid email format", nameof(email));
+        
         var now = _timeProvider.Now();
         var user = new User
         {
@@ -33,21 +36,25 @@ public class PgUserIdentityRepository : IUserIdentityRepository
 
     public async Task<bool> ExistsAsync(Guid id)
     {
+        if (id == Guid.Empty) throw new ArgumentException("User ID cannot be empty", nameof(id));
         return await _dbContext.Users.AnyAsync(u => u.Id == id);
     }
 
     public async Task<bool> ExistsAsync(string email)
     {
+        if (!ValidationRules.IsValidEmail(email)) throw new ArgumentException("Invalid email format", nameof(email));
         return await _dbContext.Users.AnyAsync(u => EF.Functions.ILike(u.Email, email.Trim()));
     }
 
     public async Task<User?> GetAsync(Guid id)
     {
+        if (id == Guid.Empty) throw new ArgumentException("User ID cannot be empty", nameof(id));
         return await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
     }
 
     public async Task<User?> GetAsync(string email)
     {
+        if (!ValidationRules.IsValidEmail(email)) throw new ArgumentException("Invalid email format", nameof(email));
         return await _dbContext.Users.FirstOrDefaultAsync(u => EF.Functions.ILike(u.Email, email.Trim()));
     }
 }

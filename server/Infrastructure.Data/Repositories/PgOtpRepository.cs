@@ -36,6 +36,8 @@ public class PgOtpRepository : IOtpRepository
 
     public async Task<bool> IsValidAsync(Guid id, int code)
     {
+        if (id == Guid.Empty) throw new ArgumentException("OTP ID cannot be empty", nameof(id));
+        
         var now = _timeProvider.Now();
 
         var otp = await _dbContext.OneTimePasswords.FirstOrDefaultAsync(otp => otp.Id == id && otp.Code == code);
@@ -50,16 +52,13 @@ public class PgOtpRepository : IOtpRepository
             return false;
         }
 
-        if (otp.ExpiresAt < now)
-        {
-            return false;
-        }
-
-        return true;
+        return otp.ExpiresAt >= now;
     }
 
     public async Task<bool> MarkAsUsedAsync(Guid id)
     {
+        if (id == Guid.Empty) throw new ArgumentException("OTP ID cannot be empty", nameof(id));
+        
         int rowsAffected = await _dbContext.OneTimePasswords
             .Where(otp => otp.Id == id)
             .ExecuteUpdateAsync(setters => setters
