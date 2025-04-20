@@ -31,9 +31,7 @@ public class OtpService : IOtpService
 
     public async Task<bool> IsValidAsync(Guid id, int code)
     {
-        if (id == Guid.Empty) throw new ArgumentException("OTP ID cannot be empty", nameof(id));
-        
-        if (code is < 100000 or > 999999)
+        if (code < 100000 || code > 999999)
         {
             return false;
         }
@@ -43,8 +41,6 @@ public class OtpService : IOtpService
 
     public async Task<bool> MarkAsUsedAsync(Guid id)
     {
-        if (id == Guid.Empty) throw new ArgumentException("OTP ID cannot be empty", nameof(id));
-        
         return await _otpRepository.MarkAsUsedAsync(id);
     }
 }

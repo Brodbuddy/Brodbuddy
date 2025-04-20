@@ -23,10 +23,6 @@ public class DeviceRegistryService : IDeviceRegistryService
 
     public async Task<Guid> AssociateDeviceAsync(Guid userId, string browser, string os)
     {
-        if (userId == Guid.Empty) throw new ArgumentException("User ID cannot be empty", nameof(userId));
-        ArgumentException.ThrowIfNullOrWhiteSpace(browser);
-        ArgumentException.ThrowIfNullOrWhiteSpace(os);
-        
         if (!await _userIdentityService.ExistsAsync(userId))
         {
             throw new ArgumentException($"User with ID {userId} does not exist", nameof(userId));

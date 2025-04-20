@@ -20,9 +20,6 @@ public class PgIdentityVerificationRepository : IIdentityVerificationRepository
 
     public async Task<Guid> CreateAsync(Guid userId, Guid otpId)
     {
-        if (userId == Guid.Empty) throw new ArgumentException("User ID cannot be empty", nameof(userId));
-        if (otpId == Guid.Empty) throw new ArgumentException("OTP ID cannot be empty", nameof(otpId));
-        
         var verificationContext = new VerificationContext
         {
             UserId = userId,
@@ -38,8 +35,6 @@ public class PgIdentityVerificationRepository : IIdentityVerificationRepository
 
     public async Task<VerificationContext?> GetLatestAsync(Guid userId)
     {
-        if (userId == Guid.Empty) throw new ArgumentException("User ID cannot be empty", nameof(userId));
-        
         var context = await _dbContext.VerificationContexts
             .Include(vc => vc.Otp)
             .Include(vc => vc.User)

@@ -1,7 +1,6 @@
 ﻿using System.Net.Mail;
 using Application.Interfaces.Data.Repositories;
 using Core.Entities;
-using Core.Validation;
 
 namespace Application.Services;
 
@@ -25,7 +24,10 @@ public class UserIdentityService : IUserIdentityService
 
     public async Task<Guid> CreateAsync(string email)
     {
-        if (!ValidationRules.IsValidEmail(email)) throw new ArgumentException("Invalid email format", nameof(email));
+        if (!IsValidEmail(email))
+        {
+            throw new ArgumentException("Invalid email format", nameof(email));
+        }
 
         email = email.Trim().ToLowerInvariant();
 
@@ -37,20 +39,20 @@ public class UserIdentityService : IUserIdentityService
     
     public Task<bool> ExistsAsync(Guid id)
     {
-        if (id == Guid.Empty) throw new ArgumentException("User ID cannot be empty", nameof(id));
         return _repository.ExistsAsync(id);
     }
 
     public Task<bool> ExistsAsync(string email)
     {
-        if (!ValidationRules.IsValidEmail(email)) throw new ArgumentException("Invalid email format", nameof(email));
-        
         return _repository.ExistsAsync(email);
     }
 
     public async Task<User> GetAsync(Guid id)
     {
-        if (id == Guid.Empty) throw new ArgumentException("User ID cannot be empty", nameof(id));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("User ID cannot be empty", nameof(id));
+        }
 
         var user = await _repository.GetAsync(id);
         if (user == null)
@@ -63,7 +65,10 @@ public class UserIdentityService : IUserIdentityService
 
     public async Task<User> GetAsync(string email)
     {
-        if (!ValidationRules.IsValidEmail(email)) throw new ArgumentException("Invalid email format", nameof(email));
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email cannot be null or empty", nameof(email));
+        }
 
         email = email.Trim().ToLowerInvariant();
 
@@ -74,5 +79,25 @@ public class UserIdentityService : IUserIdentityService
         }
 
         return user;
+    }
+    
+    private static bool IsValidEmail(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email cannot be null or empty", nameof(email));
+        }
+
+        if (!MailAddress.TryCreate(email, out var _))
+            return false;
+
+        if (!email.Contains('@') || !email.Contains('.'))
+            return false;
+
+        var parts = email.Split('@');
+        if (parts.Length != 2 || string.IsNullOrEmpty(parts[0]) || string.IsNullOrEmpty(parts[1]))
+            return false;
+        
+        return parts[1].Contains('.');
     }
 }

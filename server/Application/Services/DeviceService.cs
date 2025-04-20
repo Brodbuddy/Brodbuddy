@@ -46,13 +46,17 @@ public class DeviceService : IDeviceService
 
     public async Task<Device> GetByIdAsync(Guid id)
     {
-        if (id == Guid.Empty) throw new ArgumentException("Device ID cannot be empty", nameof(id));
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Device ID cannot be empty", nameof(id));
+        }
 
         return await _repository.GetAsync(id);
     }
 
     public async Task<IEnumerable<Device>> GetByIdsAsync(IEnumerable<Guid> ids)
     {
+        // Stryker disable once statement: gider ikke teste for hvad beskeden indeholder 
         ArgumentNullException.ThrowIfNull(ids);
 
         var validIds = ids.Where(id => id != Guid.Empty).ToList();

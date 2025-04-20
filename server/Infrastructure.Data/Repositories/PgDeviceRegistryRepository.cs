@@ -18,9 +18,6 @@ public class PgDeviceRegistryRepository : IDeviceRegistryRepository
 
     public async Task<Guid> SaveAsync(Guid userId, Guid deviceId)
     {
-        if (userId == Guid.Empty) throw new ArgumentException("User ID cannot be empty", nameof(userId));
-        if (deviceId == Guid.Empty) throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
-        
         var deviceRegistry = new DeviceRegistry
         {
             DeviceId = deviceId,

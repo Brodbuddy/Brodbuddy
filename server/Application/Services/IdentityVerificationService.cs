@@ -1,6 +1,5 @@
 using Application.Interfaces.Communication.Mail;
 using Application.Interfaces.Data.Repositories;
-using Core.Validation;
 
 namespace Application.Services;
 
@@ -31,8 +30,6 @@ public class IdentityVerificationService : IIdentityVerificationService
     
     public async Task<bool> SendCodeAsync(string email)
     {
-        if (!ValidationRules.IsValidEmail(email)) throw new ArgumentException("Invalid email format", nameof(email));
-        
         var userId = await _userIdentityService.CreateAsync(email);
 
         var (otpId, code) = await _otpService.GenerateAsync();
@@ -45,9 +42,6 @@ public class IdentityVerificationService : IIdentityVerificationService
 
     public async Task<(bool verified, Guid userId)> TryVerifyCodeAsync(string email, int code)
     {
-        if (!ValidationRules.IsValidEmail(email)) return (false, Guid.Empty);
-        if (!ValidationRules.IsValidOtpCodeFormat(code)) return (false, Guid.Empty);
-        
         var user = await _userIdentityService.GetAsync(email);
 
         var verificationContext = await _identityVerificationRepository.GetLatestAsync(user.Id);

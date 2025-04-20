@@ -17,19 +17,14 @@ public class PgRefreshTokenRepository : IRefreshTokenRepository
         _dbContext = dbContext;
         _timeProvider = timeProvider;
     }
-
-
+    
+    
     public async Task<(string token, Guid tokenId)> CreateAsync(string token, DateTime expiresAt)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(token);
-        
-        var now = _timeProvider.Now();
-        if (expiresAt <= now) throw new ArgumentOutOfRangeException(nameof(expiresAt), "Expiration date must be in the future");
-        
         var refreshToken = new RefreshToken
         {
             Token = token,
-            CreatedAt = now,
+            CreatedAt = _timeProvider.Now(),
             ExpiresAt = expiresAt
         };
 
@@ -41,8 +36,6 @@ public class PgRefreshTokenRepository : IRefreshTokenRepository
 
     public async Task<(bool isValid, Guid tokenId)> TryValidateAsync(string token)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(token);
-        
         var now = _timeProvider.Now();
 
         var refreshToken = await _dbContext.RefreshTokens.FirstOrDefaultAsync(rt => rt.Token == token);
@@ -58,7 +51,6 @@ public class PgRefreshTokenRepository : IRefreshTokenRepository
 
     public async Task<bool> RevokeAsync(Guid tokenId)
     {
-        if (tokenId == Guid.Empty) throw new ArgumentException("Token ID must not be empty", nameof(tokenId));
         var now = _timeProvider.Now(); 
 
         int rowsAffected = await _dbContext.RefreshTokens
@@ -71,7 +63,6 @@ public class PgRefreshTokenRepository : IRefreshTokenRepository
 
     public async Task<(string token, Guid tokenId)> RotateAsync(Guid oldTokenId)
     {
-        if (oldTokenId == Guid.Empty) throw new ArgumentException("Token ID must not be empty", nameof(oldTokenId));
         var oldToken = await _dbContext.RefreshTokens.FirstOrDefaultAsync(rt => rt.Id == oldTokenId);
 
         if (oldToken == null) throw new InvalidOperationException("Old token not found");

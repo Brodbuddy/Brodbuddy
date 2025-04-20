@@ -54,8 +54,6 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
 
     public async Task<(string accessToken, string refreshToken)> RefreshIdentityAsync(string refreshToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(refreshToken);
-        
         var validateResult = await _refreshTokenService.TryValidateAsync(refreshToken);
         if (!validateResult.isValid) throw new InvalidOperationException("Token context not found or revoked");
 

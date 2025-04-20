@@ -49,14 +49,23 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         }
 
         [Fact]
-        public async Task CreateAsync_WithPastExpiryDate_ShouldThrowArgumentOutOfRangeException()
+        public async Task CreateAsync_WithPastExpiryDate_SavesTokenWhichThenFailsValidation()
         {
             // Arrange
             string token = "alreadyExpiredToken";
             DateTime expiresAt = _timeProvider.Yesterday();
 
-            // Act & Assert
-            await Should.ThrowAsync<ArgumentOutOfRangeException>(() => _repository.CreateAsync(token, expiresAt));
+            // Act
+            var result = await _repository.CreateAsync(token, expiresAt);
+
+            // Assert
+            var savedToken = await DbContext.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(rt => rt.Id == result.tokenId);
+            savedToken.ShouldNotBeNull();
+            savedToken.Token.ShouldBe(token);
+            savedToken.ExpiresAt.ShouldBeWithinTolerance(expiresAt);
+
+            var validationResult = await _repository.TryValidateAsync(token);
+            validationResult.isValid.ShouldBeFalse();
         }
 
         [Fact]
@@ -79,17 +88,14 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         }
 
 
-        [Theory]
-        [InlineData(null)]
-        [InlineData("")]
-        [InlineData("   ")]
-        public async Task CreateAsync_WithInvalidTokenString_ShouldThrowArgumentException(string? token)
+        [Fact]
+        public async Task CreateAsync_WithInvalidTokenString_ShouldThrowDbUpdateException()
         {
             // Arrange
             DateTime expiresAt = _timeProvider.Tomorrow();
 
             // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() => _repository.CreateAsync(token!, expiresAt));
+            await Should.ThrowAsync<DbUpdateException>(() => _repository.CreateAsync(null!, expiresAt));
         }
     }
 
@@ -283,14 +289,17 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         }
 
         [Fact]
-        public async Task RevokeAsync_WithEmptyId_ShouldThrowArgumentException()
+        public async Task RevokeAsync_WithEmptyId_ShouldReturnFalse()
         {
             // Arrange
             var emptyId = Guid.Empty;
             await DbContext.SeedRefreshTokenAsync(_timeProvider);
 
-            // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() => _repository.RevokeAsync(emptyId));
+            // Act
+            bool result = await _repository.RevokeAsync(emptyId);
+
+            // Assert
+            result.ShouldBeFalse();
         }
     }
 
@@ -341,14 +350,14 @@ public class RefreshTokenRepositoryTests : RepositoryTestBase
         }
         
         [Fact]
-        public async Task RotateAsync_WithEmptyTokenId_ShouldThrowArgumentException()
+        public async Task RotateAsync_WithEmptyTokenId_ShouldThrowInvalidOperationException()
         {
             // Arrange
             var emptyId = Guid.Empty;
             await DbContext.SeedRefreshTokenAsync(_timeProvider);
 
             // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() => _repository.RotateAsync(emptyId));
+            await Should.ThrowAsync<InvalidOperationException>(() => _repository.RotateAsync(emptyId));
         }
     }
 }

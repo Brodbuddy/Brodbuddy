@@ -227,14 +227,17 @@ public class MultiDeviceIdentityRepositoryTests : RepositoryTestBase
         }
         
         [Fact]
-        public async Task GetAsync_WithEmptyTokenId_ThrowsArgumentException()
+        public async Task GetAsync_WithEmptyTokenId_ReturnsNull()
         {
             // Arrange
-            var emptyId = Guid.Empty;
+            var emptyRefreshTokenId = Guid.Empty;
             await DbContext.SeedTokenContextAsync(_timeProvider); 
 
-            // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() => _repository.GetAsync(emptyId));
+            // Act
+            var result = await _repository.GetAsync(emptyRefreshTokenId);
+
+            // Assert
+            result.ShouldBeNull();
         }
     }
 }

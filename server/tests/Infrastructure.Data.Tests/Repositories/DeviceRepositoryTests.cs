@@ -224,14 +224,17 @@ public class DeviceRepositoryTests : RepositoryTestBase
         }
         
         [Fact]
-        public async Task ExistsAsync_WithEmptyId_ThrowsArgumentException()
+        public async Task ExistsAsync_WithEmptyId_ReturnsFalse()
         {
             // Arrange
             var emptyId = Guid.Empty;
-            await DbContext.SeedDeviceAsync(_timeProvider); 
+            await DbContext.SeedDeviceAsync(_timeProvider);
 
-            // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() => _repository.ExistsAsync(emptyId));
+            // Act
+            var exists = await _repository.ExistsAsync(emptyId);
+
+            // Assert
+            exists.ShouldBeFalse();
         }
     }
 

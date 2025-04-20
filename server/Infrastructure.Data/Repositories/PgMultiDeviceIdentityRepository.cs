@@ -19,10 +19,6 @@ public class PgMultiDeviceIdentityRepository : IMultiDeviceIdentityRepository
 
     public async Task<Guid> SaveIdentityAsync(Guid userId, Guid deviceId, Guid refreshTokenId)
     {
-        if (userId == Guid.Empty) throw new ArgumentException("User ID cannot be empty", nameof(userId));
-        if (deviceId == Guid.Empty) throw new ArgumentException("Device ID cannot be empty", nameof(deviceId));
-        if (refreshTokenId == Guid.Empty) throw new ArgumentException("Refresh Token ID cannot be empty", nameof(refreshTokenId));
-        
         var tokenContext = new TokenContext
         {
             UserId = userId,
@@ -40,8 +36,6 @@ public class PgMultiDeviceIdentityRepository : IMultiDeviceIdentityRepository
 
     public async Task<bool> RevokeTokenContextAsync(Guid refreshTokenId)
     {
-        if (refreshTokenId == Guid.Empty) throw new ArgumentException("Refresh token ID cannot be empty", nameof(refreshTokenId));
-        
         int rowsAffected = await _dbContext.TokenContexts
             .Where(tc => tc.RefreshTokenId == refreshTokenId)
             .ExecuteUpdateAsync(setters => setters
@@ -53,8 +47,6 @@ public class PgMultiDeviceIdentityRepository : IMultiDeviceIdentityRepository
 
     public async Task<TokenContext?> GetAsync(Guid refreshTokenId)
     {
-        if (refreshTokenId == Guid.Empty) throw new ArgumentException("Refresh token ID cannot be empty", nameof(refreshTokenId));
-        
         return await _dbContext.TokenContexts
             .Include(tc => tc.User)
             .Include(tc => tc.Device)
