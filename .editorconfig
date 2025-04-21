@@ -1,0 +1,24 @@
+root = true
+
+[*.cs]
+dotnet_diagnostic.CA1848.severity = none # Deaktiver advarsel om at bruge LoggerMessage.Define() - for verbose til simpel logning
+dotnet_diagnostic.CA2201.severity = none # Tillad at kaste Exception type - burde måske være mere specifik
+
+[*Test*.cs]
+dotnet_diagnostic.S4487.severity = none # Tillad metoder uden assertions i test klasser
+dotnet_diagnostic.CA1707.severity = none # Tillad underscores i test metodenavne for læsbarhed (fx Method_Scenario_Result)
+
+[*TestCollection.cs]
+dotnet_diagnostic.CA1711.severity = none # Tillad at klassenavne slutter på 'Collection' hvilket er xUnit konventionen
+
+[PostgresFixture.cs]
+dotnet_diagnostic.CA2201.severity = none # Tillad at kaste generiske exceptions i test infrastruktur
+
+[*DbContext.cs]
+dotnet_diagnostic.S3251.severity = none # Ignorer advarsler om uimplementerede partial metoder i genereret DbContext
+
+# Deaktiver forskellige kategorier af regler for scaffolded DbContext filer
+dotnet_analyzer_diagnostic.category-Security.severity = none
+dotnet_analyzer_diagnostic.category-Maintainability.severity = none
+dotnet_analyzer_diagnostic.category-Reliability.severity = none
+dotnet_analyzer_diagnostic.category-Design.severity = none

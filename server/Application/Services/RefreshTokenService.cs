@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
-using Application.Interfaces;
+using Application.Interfaces.Data.Repositories;
 using Core.Extensions;
+
 
 namespace Application.Services;
 
@@ -35,7 +36,7 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task<(bool isValid, Guid tokenId)> TryValidateAsync(string token)
     {
-        if (string.IsNullOrEmpty(token))
+        if (string.IsNullOrWhiteSpace(token))
             return (false, Guid.Empty);
 
         return await _repository.TryValidateAsync(token);
@@ -43,7 +44,7 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task<bool> RevokeAsync(string token)
     {
-        if (string.IsNullOrEmpty(token))
+        if (string.IsNullOrWhiteSpace(token))
             return false;
 
         var validationResult = await TryValidateAsync(token);
@@ -55,7 +56,7 @@ public class RefreshTokenService : IRefreshTokenService
 
     public async Task<(string token, Guid tokenId)> RotateAsync(string token)
     {
-        if (string.IsNullOrEmpty(token)) return (string.Empty, Guid.Empty);
+        if (string.IsNullOrWhiteSpace(token)) return (string.Empty, Guid.Empty);
 
         var validationResult = await TryValidateAsync(token);
         
@@ -65,7 +66,7 @@ public class RefreshTokenService : IRefreshTokenService
         {
             return await _repository.RotateAsync(validationResult.tokenId);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
             return (string.Empty, Guid.Empty);
         }

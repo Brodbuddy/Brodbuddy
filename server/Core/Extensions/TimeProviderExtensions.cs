@@ -6,4 +6,14 @@ public static class TimeProviderExtensions
     {
         return timeProvider.GetUtcNow().UtcDateTime;
     }
+
+    public static DateTime Tomorrow(this TimeProvider timeProvider)
+    {
+        return timeProvider.Now().AddDays(1);
+    }
+
+    public static DateTime Yesterday(this TimeProvider timeProvider)
+    {
+        return timeProvider.Now().AddDays(-1);
+    }
 }

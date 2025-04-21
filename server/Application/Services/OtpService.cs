@@ -1,5 +1,5 @@
 ﻿using System.Security.Cryptography;
-using Application.Interfaces;
+using Application.Interfaces.Data.Repositories;
 
 namespace Application.Services;
 

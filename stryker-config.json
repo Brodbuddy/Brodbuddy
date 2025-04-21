@@ -1,0 +1,21 @@
+{
+  "stryker-config": {
+    "solution": "Brodbuddy.sln",
+    "ignore-methods": [
+      "Log*", 
+      "Console.Write*",
+      "*Exception.ctor"
+    ],
+    "mutate": [
+      "/**/*.cs",
+      "!/**/*.g.cs",
+      "!/**/*.generated.cs",
+      "!/**/PgDbContext.cs",
+      "!/**/tests/**/*",
+      "!/**/Extensions.cs",
+      "!/**/AppOptions.cs"
+    ],
+    "reporters": ["html", "progress"],
+    "coverage-analysis": "perTest"
+  }
+}

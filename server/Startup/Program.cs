@@ -1,14 +1,12 @@
 using Api.Http;
 using Application;
-using Application.Interfaces;
-using Infrastructure.Communication.Mail;
 using Infrastructure.Communication;
 using Infrastructure.Data;
 using Microsoft.Extensions.Options;
 
 namespace Startup;
 
-public class Program
+public static class Program
 {
     private static void ConfigureServices(IServiceCollection services)
     {
