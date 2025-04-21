@@ -2,6 +2,10 @@ name: CI/CD Pipeline
 
 on:
   push:
+    paths:
+      - 'server/**'
+      - 'Directory.Build.props'
+      - '.github/**'
     branches:
       - '**'
 
