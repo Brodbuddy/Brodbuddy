@@ -3,6 +3,7 @@
 public class AppOptions
 {
     public int HttpPort { get; set; } = 5001;
+    public int WebSocketPort { get; set; } = 8181;
     public EmailOptions Email { get; init; } = new();
     public PostgresOptions Postgres { get; init; } = new();
     public JwtOptions Jwt { get; init; } = new();

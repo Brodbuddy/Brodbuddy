@@ -2,6 +2,17 @@
   "version": 1,
   "dependencies": {
     "net8.0": {
+      "Brodbuddy.WebSocket": {
+        "type": "Direct",
+        "requested": "[0.0.6-build0, )",
+        "resolved": "0.0.6-build0",
+        "contentHash": "vQW/270rzzeC23yGgXPiT4zUaHsYB9zRvaGdLVQPaNtbCvNRCE5yyM7gWDRsLM+q5a+qZ+m5iHgWYZNr/DGtmA==",
+        "dependencies": {
+          "Fleck": "1.2.0",
+          "FluentValidation": "11.11.0",
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.2"
+        }
+      },
       "FluentEmail.MailKit": {
         "type": "Direct",
         "requested": "[3.0.2, )",
@@ -37,6 +48,11 @@
         "resolved": "10.8.0.113526",
         "contentHash": "2+Gk4w467coeL9ozQlAN9y0mwMj3XmlacFYZE0Ptz4LC4EkmMPwY5ygYPkwg9/xJ1SIShmoAC+5Sinb3khHDng=="
       },
+      "Fleck": {
+        "type": "Transitive",
+        "resolved": "1.2.0",
+        "contentHash": "bPLXn6QbLAFoviur6XbrKB0Zn6x04E8VibHXyHZeJsoC7bkUl5DVtzM5cZgDuqHkIrBqAXJyTNJwSNIc6wBJ2Q=="
+      },
       "FluentEmail.Core": {
         "type": "Transitive",
         "resolved": "3.0.2",
@@ -44,6 +60,11 @@
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "5.0.0"
         }
+      },
+      "FluentValidation": {
+        "type": "Transitive",
+        "resolved": "11.11.0",
+        "contentHash": "cyIVdQBwSipxWG8MA3Rqox7iNbUNUTK5bfJi9tIdm4CAfH71Oo5ABLP4/QyrUwuakqpUEPGtE43BDddvEehuYw=="
       },
       "JWT": {
         "type": "Transitive",
