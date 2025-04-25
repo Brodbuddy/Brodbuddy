@@ -1,10 +1,8 @@
 ﻿using Application;
 using Application.Interfaces.Communication.Mail;
-using Application.Interfaces.Websocket;
 using FluentEmail.Core;
 using FluentEmail.MailKitSmtp;
 using Infrastructure.Communication.Mail;
-using Infrastructure.Communication.Websocket;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -27,7 +25,6 @@ public static class Extensions
         });
 
         services.AddScoped<IEmailSender, FluentEmailSender>();
-        services.AddSingleton<IConnectionManager, DictionaryConnectionManager>();
 
         return services;
     }

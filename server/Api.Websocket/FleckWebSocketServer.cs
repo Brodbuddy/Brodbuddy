@@ -1,8 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Web;
 using Application;
-using Application.Interfaces.Websocket;
 using Brodbuddy.WebSocket.Core;
 using Fleck;
 using Microsoft.Extensions.Hosting;
@@ -11,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace Api.Websocket;
 
-public class FleckWebSocketServer(WebSocketDispatcher dispatcher, IConnectionManager connectionManager, IOptions<AppOptions> options, ILogger<FleckWebSocketServer> logger) : IHostedService , IAsyncDisposable
+public class FleckWebSocketServer(WebSocketDispatcher dispatcher, IOptions<AppOptions> options, ILogger<FleckWebSocketServer> logger) : IHostedService , IAsyncDisposable
 {
     private WebSocketServer? _server;
     
@@ -43,15 +41,6 @@ public class FleckWebSocketServer(WebSocketDispatcher dispatcher, IConnectionMan
     {
         server.Start(ws => 
         {
-            var queryString = ws.ConnectionInfo.Path.Split('?').Length > 1
-                ? ws.ConnectionInfo.Path.Split('?')[1]
-                : "";
-
-            var id = HttpUtility.ParseQueryString(queryString)["id"] ??
-                     throw new Exception("Please specify ID query param for websocket connection");
-            
-            ws.OnOpen = () => connectionManager.OnOpen(ws, id);
-            ws.OnClose = () => connectionManager.OnClose(ws, id);
             ws.OnMessage = async message => await dispatcher.DispatchAsync(ws, message);
         });
     } 

@@ -1,7 +1,7 @@
 <Project>
     <PropertyGroup>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <Nullable>enable</Nullable>
         <AnalysisMode>Recommended</AnalysisMode>
         <ImplicitUsings>enable</ImplicitUsings>
