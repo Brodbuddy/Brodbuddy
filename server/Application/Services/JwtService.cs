@@ -20,25 +20,42 @@ public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider
 {
     public string Generate(string subject, string email, string role)
     {
-        var jwtOptions = optionsMonitor.CurrentValue.Jwt;
-        var now = timeProvider.GetUtcNow();
+        if (string.IsNullOrEmpty(subject))
+            throw new ArgumentException("Subject cannot be null or empty", nameof(subject));
+    
+        if (string.IsNullOrEmpty(email))
+            throw new ArgumentException("Email cannot be null or empty", nameof(email));
+    
+        if (string.IsNullOrEmpty(role))
+            throw new ArgumentException("Role cannot be null or empty", nameof(role));
+    
+        try
+        {
+            var jwtOptions = optionsMonitor.CurrentValue.Jwt;
+            var now = timeProvider.GetUtcNow();
 
-        var tokenBuilder = new JwtBuilder()
-            .WithAlgorithm(new HMACSHA512Algorithm())
-            .WithSecret(jwtOptions.Secret)
-            .WithUrlEncoder(new JwtBase64UrlEncoder())
-            .WithJsonSerializer(new JsonNetSerializer())
-            .AddClaim("iss", jwtOptions.Issuer)
-            .AddClaim("aud", jwtOptions.Audience)
-            .AddClaim("iat", now.ToUnixTimeSeconds())
-            .AddClaim("exp", now.AddMinutes(jwtOptions.ExpirationMinutes).ToUnixTimeSeconds())
-            .AddClaim("jti", Guid.NewGuid().ToString())
-            .AddClaim("sub", subject)
-            .AddClaim("email", email)
-            .AddClaim("role", role)
-            .AddHeader(HeaderName.Type, "JWT");
+            var tokenBuilder = new JwtBuilder()
+                .WithAlgorithm(new HMACSHA512Algorithm())
+                .WithSecret(jwtOptions.Secret)
+                .WithUrlEncoder(new JwtBase64UrlEncoder())
+                .WithJsonSerializer(new JsonNetSerializer())
+                .AddClaim("iss", jwtOptions.Issuer)
+                .AddClaim("aud", jwtOptions.Audience)
+                .AddClaim("iat", now.ToUnixTimeSeconds())
+                .AddClaim("exp", now.AddMinutes(jwtOptions.ExpirationMinutes).ToUnixTimeSeconds())
+                .AddClaim("jti", Guid.NewGuid().ToString())
+                .AddClaim("sub", subject)
+                .AddClaim("email", email)
+                .AddClaim("role", role)
+                .AddHeader(HeaderName.Type, "JWT");
 
-        return tokenBuilder.Encode();
+            return tokenBuilder.Encode();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to generate JWT token");
+            throw new AuthenticationException("Failed to generate authentication token", "TokenGenerationFailed", ex);
+        }
     }
 
     public bool TryValidate(string jwt, out JwtClaims validatedClaims)
@@ -66,7 +83,8 @@ public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider
                 .Decode<JwtClaims>(jwt);
 
             if (decoded.Iss != jwtOptions.Issuer || decoded.Aud != jwtOptions.Audience)
-                return false;
+                throw new AuthenticationException("Invalid token issuer or audience", 
+                    "TokenValidationFailed");
 
             validatedClaims = decoded;
             return true;
@@ -74,18 +92,21 @@ public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider
         catch (TokenExpiredException ex)
         {
             logger.LogWarning(ex, "Token expired: {Message}", ex.Message);
-
-            return false;
+            throw new AuthenticationException("Token has expired", "TokenExpired", ex);
         }
         catch (SignatureVerificationException ex)
         {
             logger.LogWarning(ex, "Signature verification failed: {Message}", ex.Message);
-            return false;
+            throw new AuthenticationException("Token signature verification failed", "InvalidSignature", ex);
+        }
+        catch (AuthenticationException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "An error occurred: {Message}", ex.Message);
-            return false;
+            throw new AuthenticationException("Token validation failed", "UnknownValidationError", ex);
         }
     }
 

@@ -1,11 +1,10 @@
 namespace Core.Exceptions;
 
 /// <summary>
-/// Thrown when a requested entity cannot be found in the database.
-/// More specific than the generic ObjectNotFoundException.
-/// Useful for REST APIs where 404 Not Found can be returned.
+/// Entity cannot be found in the database.
+/// 404 Not Found can be returned.
 /// </summary>
-public sealed class EntityNotFoundException : ApplicationException
+public sealed class EntityNotFoundException : Exception
 {
     public string EntityName { get; }
     public object? EntityId { get; }

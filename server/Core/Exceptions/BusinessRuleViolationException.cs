@@ -5,7 +5,7 @@ namespace Core.Exceptions;
 /// Contains information about which rule was broken and why.
 /// Useful for domain-driven design.
 /// </summary>
-public sealed class BusinessRuleViolationException : ApplicationException
+public sealed class BusinessRuleViolationException : Exception
 {
     public string RuleName { get; }
 

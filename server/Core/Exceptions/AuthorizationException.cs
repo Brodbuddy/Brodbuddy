@@ -5,7 +5,7 @@ namespace Core.Exceptions;
 /// More business-specific than the generic SecurityException.
 /// Used in authorization layers in the application.
 /// </summary>
-public sealed class AuthorizationException : ApplicationException
+public sealed class AuthorizationException : Exception
 {
     public string? RequiredPermission { get; }
 
