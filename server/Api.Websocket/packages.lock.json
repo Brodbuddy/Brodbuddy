@@ -4,9 +4,9 @@
     "net8.0": {
       "Brodbuddy.WebSocket": {
         "type": "Direct",
-        "requested": "[0.0.6-build0, )",
-        "resolved": "0.0.6-build0",
-        "contentHash": "vQW/270rzzeC23yGgXPiT4zUaHsYB9zRvaGdLVQPaNtbCvNRCE5yyM7gWDRsLM+q5a+qZ+m5iHgWYZNr/DGtmA==",
+        "requested": "[0.0.14, )",
+        "resolved": "0.0.14",
+        "contentHash": "HPFRGkMuG9npt8A0e281VTKRVaRaFVFa8OW+7mpg2PfvagEe3wz4LBpb9QgNGgzFDHgCFGxLWqE3WBlwi3X8zA==",
         "dependencies": {
           "Fleck": "1.2.0",
           "FluentValidation": "11.11.0",
