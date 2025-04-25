@@ -1,4 +1,5 @@
 using Application.Models;
+using Core.Exceptions;
 using JWT;
 using JWT.Algorithms;
 using JWT.Builder;
@@ -43,10 +44,16 @@ public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider
     public bool TryValidate(string jwt, out JwtClaims validatedClaims)
     {
         validatedClaims = null!;
+        
+        if (string.IsNullOrEmpty(jwt))
+        {
+            throw new ArgumentException("JWT cannot be null or empty", nameof(jwt));
+        }
 
         try
         {
             var jwtOptions = optionsMonitor.CurrentValue.Jwt;
+            
             var timeAdapter = new TimeProviderAdapter(timeProvider);
 
             var decoded = new JwtBuilder()
@@ -58,15 +65,8 @@ public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider
                 .MustVerifySignature()
                 .Decode<JwtClaims>(jwt);
 
-            if (decoded.Iss != jwtOptions.Issuer)
-            {
+            if (decoded.Iss != jwtOptions.Issuer || decoded.Aud != jwtOptions.Audience)
                 return false;
-            }
-
-            if (decoded.Aud != jwtOptions.Audience)
-            {
-                return false;
-            }
 
             validatedClaims = decoded;
             return true;
