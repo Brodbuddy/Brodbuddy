@@ -6,6 +6,7 @@ public class AppOptions
     public int WebSocketPort { get; set; } = 8181;
     public EmailOptions Email { get; init; } = new();
     public PostgresOptions Postgres { get; init; } = new();
+    public DragonflyOptions Dragonfly { get; set; } = new();
     public JwtOptions Jwt { get; init; } = new();
 }
 
@@ -26,6 +27,13 @@ public class PostgresOptions
     public string Password { get; set; } = "pass";
 
     public string ConnectionString => $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password}";
+}
+
+public class DragonflyOptions
+{
+    public string ConnectionString { get; set; } = "localhost:6379";
+    public bool AllowAdmin { get; set; } = true;
+    public bool AbortOnConnectFail { get; set; }
 }
 
 public class JwtOptions

@@ -542,10 +542,27 @@
           "NSwag.Generation": "14.3.0"
         }
       },
+      "Pipelines.Sockets.Unofficial": {
+        "type": "Transitive",
+        "resolved": "2.2.8",
+        "contentHash": "zG2FApP5zxSx6OcdJQLbZDk2AVlN2BNQD6MorwIfV6gVj0RRxWPEp2LXAxqDGZqeNV1Zp0BNPcNaey/GXmTdvQ==",
+        "dependencies": {
+          "System.IO.Pipelines": "5.0.1"
+        }
+      },
       "Portable.BouncyCastle": {
         "type": "Transitive",
         "resolved": "1.8.8",
         "contentHash": "1rxdf8NfyAxLlqIEciCl/yNhmz1YiLkmp6rrF8p3/NVmyHHzPWLx8djtDvSAwhPLg64BXvsRcM3+5bP1HAUdYg=="
+      },
+      "StackExchange.Redis": {
+        "type": "Transitive",
+        "resolved": "2.8.31",
+        "contentHash": "RCHVQa9Zke8k0oBgJn1Yl6BuYy8i6kv+sdMObiH60nOwD6QvWAjxdDwOm+LO78E8WsGiPqgOuItkz98fPS6haQ==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
+          "Pipelines.Sockets.Unofficial": "2.2.8"
+        }
       },
       "System.Buffers": {
         "type": "Transitive",
@@ -659,7 +676,9 @@
           "Application": "[1.0.0, )",
           "FluentEmail.MailKit": "[3.0.2, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.3, )",
+          "Microsoft.Extensions.Hosting": "[9.0.3, )",
           "Microsoft.Extensions.Options": "[9.0.3, )",
+          "StackExchange.Redis": "[2.8.31, )",
           "brodbuddy.websocket": "[0.0.14, )"
         }
       },

@@ -24,6 +24,15 @@ services:
     volumes:
       - ./db/migrations:/flyway/sql
     command: migrate
+    
+  dragonfly:
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    ulimits:
+      memlock: -1
+    ports:
+      - '${APPOPTIONS__DRAGONFLY__PORT:-6379}:6379'
+    volumes:
+      - dragonflydata:/data
   
   mailhog:
     image: mailhog/mailhog
@@ -34,3 +43,4 @@ services:
 
 volumes:
   postgres_data:
+  dragonflydata:

@@ -1,16 +1,26 @@
 ﻿using Application;
 using Application.Interfaces.Communication.Mail;
+using Brodbuddy.WebSocket.State;
 using FluentEmail.Core;
 using FluentEmail.MailKitSmtp;
 using Infrastructure.Communication.Mail;
+using Infrastructure.Communication.Websocket;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 
 namespace Infrastructure.Communication;
 
 public static class Extensions
 {
     public static IServiceCollection AddCommunicationInfrastructure(this IServiceCollection services)
+    {
+        services.AddMail();
+        services.AddSocketManager();
+        return services;
+    }
+
+    private static IServiceCollection AddMail(this IServiceCollection services)
     {
         services.AddSingleton<IFluentEmail>(provider =>
         {
@@ -25,7 +35,24 @@ public static class Extensions
         });
 
         services.AddScoped<IEmailSender, FluentEmailSender>();
+        return services;
+    }
 
+    private static IServiceCollection AddSocketManager(this IServiceCollection services)
+    {
+        var serviceProvider = services.BuildServiceProvider();
+        var appOptions = serviceProvider.GetRequiredService<IOptions<AppOptions>>().Value;
+
+        var redisConfig = new ConfigurationOptions
+        {
+            EndPoints = { appOptions.Dragonfly.ConnectionString },
+            AllowAdmin = appOptions.Dragonfly.AllowAdmin,
+            AbortOnConnectFail = appOptions.Dragonfly.AbortOnConnectFail
+        };
+            
+        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConfig));
+        services.AddSingleton<ISocketManager, RedisSocketManager>();
+        services.AddHostedService<RedisSubscriptionListener>();
         return services;
     }
 }
