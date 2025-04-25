@@ -38,51 +38,89 @@ def extract_project_names(output):
 
 
 def rename_test_files():
-    """
-    Renames test files by examining their content to determine which project they belong to.
-    """
     os.chdir("TestResults")
 
     trx_files = glob.glob("test-results_net8.0_*.trx")
     html_files = glob.glob("test-results_net8.0_*.html")
     
-    project_mapping = {}
+    timestamp_to_project = {}
     
     for trx_file in trx_files:
         try:
+            timestamp = re.search(r'test-results_net8\.0_(\d+)\.trx', trx_file).group(1)
+            
             tree = ET.parse(trx_file)
             root = tree.getroot()
             
-            for test_element in root.findall(".//{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}UnitTest"):
-                class_name = test_element.get("className", "")
-                if class_name:
-                    project_name = class_name.split('.')[0]
-                    project_mapping[trx_file] = project_name
-                    break
+            namespace = "{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}"
+            test_elements = root.findall(f".//{namespace}UnitTest")
+            
+            if test_elements:
+                for test in test_elements:
+                    storage_node = test.find(f".//{namespace}TestMethod")
+                    if storage_node is not None:
+                        class_name = storage_node.get("className", "")
+                        if class_name:
+                            parts = class_name.split('.')
+                            if len(parts) >= 3 and parts[1] == "Tests":
+                                project_name = ".".join(parts[:3])
+                            elif len(parts) >= 2 and parts[1] == "Tests":
+                                project_name = ".".join(parts[:2])
+                            else:
+                                project_name = parts[0]
+                                
+                            timestamp_to_project[timestamp] = project_name
+                            print(f"Timestamp {timestamp} mapped to project {project_name}")
+                            break
+            
+            if timestamp not in timestamp_to_project:
+                for test in test_elements:
+                    for elem in test.iter():
+                        class_attr = elem.get("className")
+                        if class_attr:
+
+                            parts = class_attr.split('.')
+                            if len(parts) >= 3 and parts[1] == "Tests":
+                                project_name = ".".join(parts[:3])
+                            elif len(parts) >= 2 and parts[1] == "Tests":
+                                project_name = ".".join(parts[:2])
+                            else:
+                                project_name = parts[0]
+                                
+                            timestamp_to_project[timestamp] = project_name
+                            print(f"Fallback: Timestamp {timestamp} mapped to project {project_name}")
+                            break
+                    if timestamp in timestamp_to_project:
+                        break
+            
         except Exception as e:
-            print(f"Error processing {trx_file}: {e}")
+            print(f"Error processing TRX file {trx_file}: {e}")
     
-    for trx_file, project_name in project_mapping.items():
+    for trx_file in trx_files:
         try:
-            new_name = f"{project_name}.trx"
-            print(f"Renaming {trx_file} to {new_name}")
-            os.rename(trx_file, new_name)
+            timestamp = re.search(r'test-results_net8\.0_(\d+)\.trx', trx_file).group(1)
+            if timestamp in timestamp_to_project:
+                project_name = timestamp_to_project[timestamp]
+                new_name = f"{project_name}.trx"
+                print(f"Renaming {trx_file} to {new_name}")
+                os.rename(trx_file, new_name)
+            else:
+                print(f"Warning: Could not determine project for {trx_file}")
         except Exception as e:
-            print(f"Error renaming {trx_file}: {e}")
+            print(f"Error renaming TRX file {trx_file}: {e}")
     
     for html_file in html_files:
         try:
-            with open(html_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-                
-            for project_name in set(project_mapping.values()):
-                if project_name in content:
-                    new_name = f"{project_name}.html"
-                    print(f"Renaming {html_file} to {new_name}")
-                    os.rename(html_file, new_name)
-                    break
+            timestamp = re.search(r'test-results_net8\.0_(\d+)\.html', html_file).group(1)
+            if timestamp in timestamp_to_project:
+                project_name = timestamp_to_project[timestamp]
+                new_name = f"{project_name}.html"
+                print(f"Renaming {html_file} to {new_name}")
+                os.rename(html_file, new_name)
+            else:
+                print(f"Warning: Could not determine project for {html_file}")
         except Exception as e:
-            print(f"Error processing HTML file {html_file}: {e}")
+            print(f"Error renaming HTML file {html_file}: {e}")
 
 
 def main():
