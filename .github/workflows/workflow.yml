@@ -118,7 +118,7 @@ jobs:
       matrix:
         project: [
           'server/Infrastructure.Data/Infrastructure.Data.csproj',
-          'server/Infrastructure.Communication/Infrastructure.Communication.csproj'
+          'server/Infrastructure.Communication/Infrastructure.Communication.csproj',
           'server/Application/Application.csproj',
           'server/Core/Core.csproj'
         ]
