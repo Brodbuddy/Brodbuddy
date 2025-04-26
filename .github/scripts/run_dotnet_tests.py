@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # .github/scripts/run_dotnet_tests.py
 
+
 import os
 import subprocess
 import glob
@@ -33,47 +34,46 @@ def run_tests():
 def rename_test_files(output):
     os.chdir("TestResults")
     
-    trx_files = glob.glob("test-results_net8.0_*.trx")
-    html_files = glob.glob("test-results_net8.0_*.html")
-    
     timestamp_to_project = {}
     
-    lines = output.splitlines()
-    current_timestamp = None
+    lines = output.split('\n')
+    timestamp = None
     
     for line in lines:
         if "Results File:" in line and "test-results_net8.0_" in line:
             match = re.search(r"test-results_net8\.0_(\d+)\.trx", line)
             if match:
-                current_timestamp = match.group(1)
+                timestamp = match.group(1)
         
-        if current_timestamp and "Passed!" in line and ".dll (net" in line:
-            match = re.search(r"- (.*?)\.dll \(net", line)
+        elif timestamp and ".dll (net" in line:
+            match = re.search(r"- ([\w\.]+)\.dll", line)
             if match:
-                project_name = match.group(1)
-                timestamp_to_project[current_timestamp] = project_name
-                print(f"Mapped timestamp {current_timestamp} to project {project_name}")
-                current_timestamp = None
+                dll_name = match.group(1)
+                timestamp_to_project[timestamp] = dll_name
+                print(f"Mapped timestamp {timestamp} to project {dll_name}")
+                timestamp = None
     
-    for trx_file in trx_files:
-        timestamp = re.search(r'test-results_net8\.0_(\d+)\.trx', trx_file).group(1)
-        if timestamp in timestamp_to_project:
-            project_name = timestamp_to_project[timestamp]
-            new_name = f"{project_name}.trx"
-            print(f"Renaming {trx_file} to {new_name}")
-            os.rename(trx_file, new_name)
-        else:
-            print(f"Warning: Could not determine project for {trx_file}")
+    for trx_file in glob.glob("test-results_net8.0_*.trx"):
+        try:
+            timestamp = re.search(r"test-results_net8\.0_(\d+)\.trx", trx_file).group(1)
+            if timestamp in timestamp_to_project:
+                project_name = timestamp_to_project[timestamp]
+                new_name = f"{project_name}.trx"
+                print(f"Renaming {trx_file} to {new_name}")
+                os.rename(trx_file, new_name)
+        except Exception as e:
+            print(f"Error renaming TRX file: {e}")
     
-    for html_file in html_files:
-        timestamp = re.search(r'test-results_net8\.0_(\d+)\.html', html_file).group(1)
-        if timestamp in timestamp_to_project:
-            project_name = timestamp_to_project[timestamp]
-            new_name = f"{project_name}.html"
-            print(f"Renaming {html_file} to {new_name}")
-            os.rename(html_file, new_name)
-        else:
-            print(f"Warning: Could not determine project for {html_file}")
+    for html_file in glob.glob("test-results_net8.0_*.html"):
+        try:
+            timestamp = re.search(r"test-results_net8\.0_(\d+)\.html", html_file).group(1)
+            if timestamp in timestamp_to_project:
+                project_name = timestamp_to_project[timestamp]
+                new_name = f"{project_name}.html"
+                print(f"Renaming {html_file} to {new_name}")
+                os.rename(html_file, new_name)
+        except Exception as e:
+            print(f"Error renaming HTML file: {e}")
 
 
 def main():
