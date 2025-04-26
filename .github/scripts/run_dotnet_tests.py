@@ -38,15 +38,22 @@ def rename_test_files(output):
     
     timestamp_to_project = {}
     
-    pattern = r"Results File: .*?test-results_net8\.0_(\d+)\.trx[\s\S]*?Passed!.*?- (.*?)\.dll \(net"
-    matches = re.finditer(pattern, output)
+    lines = output.splitlines()
+    current_timestamp = None
     
-    for match in matches:
-        timestamp = match.group(1)
-        dll_name = match.group(2)
-        project_name = dll_name
-        timestamp_to_project[timestamp] = project_name
-        print(f"Mapped timestamp {timestamp} to {project_name}")
+    for line in lines:
+        if "Results File:" in line and "test-results_net8.0_" in line:
+            match = re.search(r"test-results_net8\.0_(\d+)\.trx", line)
+            if match:
+                current_timestamp = match.group(1)
+        
+        if current_timestamp and "Passed!" in line and ".dll (net" in line:
+            match = re.search(r"- (.*?)\.dll \(net", line)
+            if match:
+                project_name = match.group(1)
+                timestamp_to_project[current_timestamp] = project_name
+                print(f"Mapped timestamp {current_timestamp} to project {project_name}")
+                current_timestamp = None
     
     for trx_file in trx_files:
         timestamp = re.search(r'test-results_net8\.0_(\d+)\.trx', trx_file).group(1)
