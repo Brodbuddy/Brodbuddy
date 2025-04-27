@@ -8,6 +8,7 @@
         <ProjectReference Include="..\Infrastructure.Communication\Infrastructure.Communication.csproj"/>
         <ProjectReference Include="..\Infrastructure.Auth\Infrastructure.Auth.csproj"/>
         <ProjectReference Include="..\Application\Application.csproj"/>
+        <ProjectReference Include="..\Infrastructure.Monitoring\Infrastructure.Monitoring.csproj" />
     </ItemGroup>
 
     <PropertyGroup>

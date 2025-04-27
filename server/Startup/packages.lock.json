@@ -403,6 +403,12 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.3, )",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "[9.0.3, )"
         }
+      },
+      "infrastructure.monitoring": {
+        "type": "Project",
+        "dependencies": {
+          "Application": "[1.0.0, )"
+        }
       }
     }
   }
