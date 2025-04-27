@@ -1,18 +1,25 @@
 #include <Arduino.h>
 
-// put function declarations here:
-int myFunction(int, int);
+const int ledPin = D9;
+const int blinkIntervalMs = 1000;
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+  Serial.begin(115200);
+  Serial.println("--- FireBeetle ESP32-E Blink Example ---");
+  Serial.print("Configuring onboard LED on pin: ");
+  Serial.println(ledPin);
+
+  pinMode(ledPin, OUTPUT);
+
+  Serial.println("Setup complete. Starting loop...");
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+  digitalWrite(ledPin, HIGH);
+  Serial.println("LED ON");
+  delay(blinkIntervalMs);
+  
+  digitalWrite(ledPin, LOW);
+  Serial.println("LED OFF"); 
+  delay(blinkIntervalMs);
 }
