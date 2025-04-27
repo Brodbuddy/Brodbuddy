@@ -1,5 +1,6 @@
 using Api.Http;
 using Application;
+using Infrastructure.Auth;
 using Infrastructure.Communication;
 using Infrastructure.Data;
 using Microsoft.Extensions.Options;
@@ -16,6 +17,7 @@ public static class Program
             .ValidateOnStart();
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
+        services.AddAuthInfrastructure();
         services.AddHttpApi();
         services.AddApplicationServices();
     }
