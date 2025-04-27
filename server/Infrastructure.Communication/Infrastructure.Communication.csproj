@@ -5,6 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="HiveMQtt" Version="0.26.1"/>
         <PackageReference Include="FluentEmail.MailKit" Version="3.0.2"/>
         <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.3"/>
         <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.3"/>

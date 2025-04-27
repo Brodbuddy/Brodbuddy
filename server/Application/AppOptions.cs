@@ -5,6 +5,7 @@ public class AppOptions
     public int HttpPort { get; set; } = 5001;
     public EmailOptions Email { get; init; } = new();
     public PostgresOptions Postgres { get; init; } = new();
+    public MqttOptions Mqtt { get; set; } = new();
     public JwtOptions Jwt { get; init; } = new();
 }
 
@@ -25,6 +26,15 @@ public class PostgresOptions
     public string Password { get; set; } = "pass";
 
     public string ConnectionString => $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password}";
+}
+
+public class MqttOptions
+{
+    public string Host { get; set; } = "localhost";
+    public int MqttPort { get; set; } = 1883;
+    public int WebSocketPort { get; set; } = 8080;
+    public string Username { get; set; } = "user";
+    public string Password { get; set; } = "pass";
 }
 
 public class JwtOptions

@@ -1,4 +1,5 @@
 using Api.Http;
+using Api.Mqtt;
 using Application;
 using Infrastructure.Communication;
 using Infrastructure.Data;
@@ -17,6 +18,7 @@ public static class Program
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
         services.AddHttpApi();
+        services.AddMqttApi();
         services.AddApplicationServices();
     }
 
@@ -24,6 +26,7 @@ public static class Program
     {
         var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
         app.ConfigureHttpApi(appOptions.HttpPort);
+        app.ConfigureMqttApi();
     }
 
     public static async Task Main(string[] args)

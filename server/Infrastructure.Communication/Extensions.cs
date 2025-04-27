@@ -1,8 +1,11 @@
 ﻿using Application;
 using Application.Interfaces.Communication.Mail;
+using Application.Interfaces.Communication.Publishers;
 using FluentEmail.Core;
 using FluentEmail.MailKitSmtp;
 using Infrastructure.Communication.Mail;
+using Infrastructure.Communication.Mqtt;
+using Infrastructure.Communication.Publishers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -25,7 +28,15 @@ public static class Extensions
         });
 
         services.AddScoped<IEmailSender, FluentEmailSender>();
+        services.AddMqttPublisher();
 
+        return services;
+    }
+    
+    private static IServiceCollection AddMqttPublisher(this IServiceCollection services)
+    {
+        services.AddScoped<IMqttPublisher, HiveMqttPublisher>();
+        services.AddScoped<IDevicePublisher, MqttDevicePublisher>();
         return services;
     }
 }
