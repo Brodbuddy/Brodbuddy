@@ -2,10 +2,22 @@
 
 public class AppOptions
 {
-    public int HttpPort { get; set; } = 5001;
+    public int PublicPort { get; set; } = 8080;
+    public HttpOptions Http { get; init; } = new();
+    public WebsocketOptions Websocket { get; init; } = new();
     public EmailOptions Email { get; init; } = new();
     public PostgresOptions Postgres { get; init; } = new();
     public JwtOptions Jwt { get; init; } = new();
+}
+
+public class HttpOptions
+{
+    public int Port { get; set; } = 5001;
+}
+
+public class WebsocketOptions
+{
+    public int Port { get; set; } = 8181;
 }
 
 public class EmailOptions
