@@ -15,11 +15,11 @@ public static class Program
             .BindConfiguration(nameof(AppOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
+        services.AddApplicationServices();
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
         services.AddHttpApi();
         services.AddWebsocketApi();
-        services.AddApplicationServices();
     }
 
     private static void ConfigureMiddleware(WebApplication app)
