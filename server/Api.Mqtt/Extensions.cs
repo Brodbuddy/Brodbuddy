@@ -1,6 +1,5 @@
 using System.Reflection;
 using Application;
-using FluentValidation;
 using HiveMQtt.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -45,35 +44,16 @@ public static class Extensions
         services.AddSingleton<MqttDispatcher>();
 
         services.AddHostedService<MqttHostedService>();
-        RegisterMqttHandlersAndValidators(services, typeof(Extensions).Assembly);
+        RegisterMqttHandlersAndValidators(services, typeof(MqttHostedService).Assembly);
 
         return services;
     }
     
     private static void RegisterMqttHandlersAndValidators(IServiceCollection services, Assembly assembly)
     {
-        // Register alle message handlers
-        var handlerTypes = assembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false } &&
-                        t.GetInterfaces().Any(i => i == typeof(IMqttMessageHandler) ||
-                                                   (i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMqttMessageHandler<>))))
-            .ToList();
-
-        foreach (var handlerType in handlerTypes)
+        foreach (var handlerType in HandlerTypeHelpers.GetMqttMessageHandlers(assembly))
         {
             services.AddScoped(handlerType);
-        }
-
-        // Register validators
-        var validatorTypes = assembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false, BaseType.IsGenericType: true } && t.BaseType.GetGenericTypeDefinition() == typeof(AbstractValidator<>))
-            .ToList();
-
-        foreach (var validatorType in validatorTypes)
-        {
-            var entityType = validatorType.BaseType!.GetGenericArguments()[0];
-            var validatorInterface = typeof(IValidator<>).MakeGenericType(entityType);
-            services.AddScoped(validatorInterface, validatorType);
         }
     }
     

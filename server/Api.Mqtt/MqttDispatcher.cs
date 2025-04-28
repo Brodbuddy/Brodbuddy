@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Text.Json;
-using FluentValidation;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,12 +11,8 @@ public class MqttDispatcher
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<MqttDispatcher> _logger;
-    private readonly Dictionary<string, (Type HandlerType, Type? MessageType, IValidator? Validator)> _handlerRegistry = new();
-
-    private readonly JsonSerializerOptions _jsonOptions = new() 
-    { 
-        PropertyNameCaseInsensitive = true 
-    };
+    private readonly Dictionary<string, (Type HandlerType, Type MessageType)> _handlerRegistry = new();
+    private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     
     public MqttDispatcher(IServiceProvider serviceProvider, ILogger<MqttDispatcher> logger)
     {
@@ -28,58 +23,38 @@ public class MqttDispatcher
     public void RegisterHandlers(Assembly assembly)
     {
         ArgumentNullException.ThrowIfNull(assembly);
-
-        var handlerTypes = assembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false } && t.GetInterfaces().Any(i => i == typeof(IMqttMessageHandler) || (i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMqttMessageHandler<>))))
-            .ToList();
-
+        
         using var scope = _serviceProvider.CreateScope();
 
-        foreach (var handlerType in handlerTypes)
+        foreach (var handlerType in HandlerTypeHelpers.GetMqttMessageHandlers(assembly))
         {
             try
             {
-                var handler = (IMqttMessageHandler) ActivatorUtilities.CreateInstance(scope.ServiceProvider, handlerType);
-                var topicFilter = handler.TopicFilter;
-
-                var genericInterface = handlerType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMqttMessageHandler<>));
-
-                if (genericInterface != null)
+                var handlerInterface = handlerType.GetInterfaces()
+                    .First(i => i.IsGenericType && 
+                                i.GetGenericTypeDefinition() == typeof(IMqttMessageHandler<>));
+                
+                var messageType = handlerInterface.GetGenericArguments()[0];
+                
+                var handler = ActivatorUtilities.CreateInstance(scope.ServiceProvider, handlerType);
+                var topicFilter = ((dynamic)handler).TopicFilter as string;
+                
+                if (string.IsNullOrEmpty(topicFilter))
                 {
-                    var messageType = genericInterface.GetGenericArguments()[0];
-
-
-                    var validatorType = typeof(IValidator<>).MakeGenericType(messageType);
-                    var validator = scope.ServiceProvider.GetService(validatorType) as IValidator;
-
-                    _handlerRegistry[topicFilter] = (handlerType, messageType, validator);
-
-                    if (validator != null)
-                    {
-                        _logger.LogDebug(
-                            "Registered handler {HandlerType} for topic filter {TopicFilter} with message type {MessageType} and validator",
-                            handlerType.Name, topicFilter, messageType.Name);
-                    }
-                    else
-                    {
-                        _logger.LogDebug(
-                            "Registered handler {HandlerType} for topic filter {TopicFilter} with message type {MessageType} (no validator)",
-                            handlerType.Name, topicFilter, messageType.Name);
-                    }
+                    _logger.LogWarning("Handler {HandlerType} has null or empty TopicFilter", handlerType.Name);
+                    continue;
                 }
-                else
-                {
-                    _handlerRegistry[topicFilter] = (handlerType, null, null);
-                    _logger.LogDebug("Registered handler {HandlerType} for topic filter {TopicFilter} (non-generic)",
-                        handlerType.Name, topicFilter);
-                }
+                
+                _handlerRegistry[topicFilter] = (handlerType, messageType);
+                
+                _logger.LogDebug("Registered handler {HandlerType} for topic {TopicFilter}", handlerType.Name, topicFilter);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to register handler {HandlerType}", handlerType.Name);
             }
         }
-
+        
         _logger.LogInformation("Registered {Count} MQTT message handlers", _handlerRegistry.Count);
     }
     
@@ -106,14 +81,24 @@ public class MqttDispatcher
     
     public async Task DispatchAsync(OnMessageReceivedEventArgs args)
     {
-        var incomingTopic = args.PublishMessage.Topic;
-        _logger.LogDebug("Received MQTT message on topic: {Topic}", incomingTopic);
+        ArgumentNullException.ThrowIfNull(args);
         
-        var matchingHandlers = _handlerRegistry.Where(kvp => MqttTopicMatcher.Matches(kvp.Key, incomingTopic!)).ToList();
-
+        var topic = args.PublishMessage.Topic;
+        
+        if (string.IsNullOrEmpty(topic))
+        {
+            _logger.LogWarning("Received MQTT message with null or empty topic");
+            return;
+        }
+        
+        _logger.LogDebug("Received MQTT message on topic: {Topic}", topic);
+        
+        var matchingHandlers = _handlerRegistry.Where(kvp => MqttTopicMatcher.Matches(kvp.Key, topic))
+                                               .ToList();
+            
         if (matchingHandlers.Count == 0)
         {
-            _logger.LogWarning("No handlers found for topic: {Topic}", incomingTopic);
+            _logger.LogWarning("No handlers found for topic: {Topic}", topic);
             return;
         }
         
@@ -122,60 +107,26 @@ public class MqttDispatcher
             using var scope = _serviceProvider.CreateScope();
             try
             {
-                var handler = (IMqttMessageHandler)ActivatorUtilities.CreateInstance(
-                    scope.ServiceProvider, handlerInfo.HandlerType);
-
-                if (handlerInfo.MessageType != null)
+                
+                var message = JsonSerializer.Deserialize(args.PublishMessage.PayloadAsString, handlerInfo.MessageType, _jsonOptions);
+                
+                if (message == null)
                 {
-                    var payloadString = args.PublishMessage.PayloadAsString;
-                    
-                    try
-                    {
-                        var message = JsonSerializer.Deserialize(payloadString, handlerInfo.MessageType, _jsonOptions);
-
-                        if (message == null)
-                        {
-                            _logger.LogWarning("Failed to deserialize message for topic {Topic} - null result", incomingTopic);
-                            continue;
-                        }
-
-                        if (handlerInfo.Validator != null)
-                        {
-                            var validationContext = Activator.CreateInstance(typeof(ValidationContext<>).MakeGenericType(handlerInfo.MessageType), message);
-                            
-                            var validationResult = await handlerInfo.Validator.ValidateAsync((IValidationContext) validationContext!);
-
-                            if (!validationResult.IsValid)
-                            {
-                                var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
-                                _logger.LogWarning("Validation failed for message on topic {Topic}: {Errors}", incomingTopic, errors);
-                                continue;
-                            }
-                        }
-
-                        await ((dynamic)handler).HandleAsync((dynamic)message, incomingTopic);
-                        _logger.LogDebug("Successfully handled message for topic {Topic} with handler {HandlerType}", incomingTopic, handlerInfo.HandlerType.Name);
-                    }
-                    catch (JsonException ex)
-                    {
-                        _logger.LogError(ex, "Failed to deserialize message for topic {Topic}", incomingTopic);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Error calling generic handler for topic {Topic}", incomingTopic);
-                    }
+                    _logger.LogWarning("Failed to deserialize message for topic {Topic}", topic);
+                    continue;
                 }
-                else
-                {
-                    await handler.HandleAsync(args);
-                    _logger.LogDebug("Successfully handled message for topic {Topic} with non-generic handler {HandlerType}",
-                        incomingTopic, handlerInfo.HandlerType.Name);
-                }
+                
+                var handler = ActivatorUtilities.CreateInstance(scope.ServiceProvider, handlerInfo.HandlerType);
+                await ((dynamic) handler).HandleAsync((dynamic) message, args);
+                _logger.LogDebug("Successfully handled message for topic {Topic} with handler {HandlerType}", topic, handlerInfo.HandlerType.Name);
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "Failed to deserialize message for topic {Topic}", topic);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing MQTT message for topic {Topic} with handler {HandlerType}",
-                    incomingTopic, handlerInfo.HandlerType.Name);
+                _logger.LogError(ex, "Error processing message for topic {Topic} with handler {HandlerType}", topic, handlerInfo.HandlerType.Name);
             }
         }
     }

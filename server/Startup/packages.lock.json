@@ -25,11 +25,6 @@
           "MailKit": "2.10.1"
         }
       },
-      "FluentValidation": {
-        "type": "Transitive",
-        "resolved": "11.11.0",
-        "contentHash": "cyIVdQBwSipxWG8MA3Rqox7iNbUNUTK5bfJi9tIdm4CAfH71Oo5ABLP4/QyrUwuakqpUEPGtE43BDddvEehuYw=="
-      },
       "HiveMQtt": {
         "type": "Transitive",
         "resolved": "0.26.1",
@@ -650,7 +645,6 @@
         "type": "Project",
         "dependencies": {
           "Application": "[1.0.0, )",
-          "FluentValidation": "[11.11.0, )",
           "HiveMQtt": "[0.26.1, )",
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.3, )",
