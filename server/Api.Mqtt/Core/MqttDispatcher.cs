@@ -1,11 +1,12 @@
 using System.Reflection;
 using System.Text.Json;
+using Api.Mqtt.Routing;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Api.Mqtt;
+namespace Api.Mqtt.Core;
 
 public class MqttDispatcher
 {

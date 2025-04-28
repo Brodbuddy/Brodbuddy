@@ -1,9 +1,10 @@
+using Api.Mqtt.Core;
 using HiveMQtt.Client;
 using HiveMQtt.Client.Events;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace Api.Mqtt;
+namespace Api.Mqtt.Service;
 
 public class MqttHostedService : IHostedService, IAsyncDisposable
 {

@@ -1,6 +1,7 @@
 using System.Reflection;
+using Api.Mqtt.Core;
 
-namespace Api.Mqtt;
+namespace Api.Mqtt.Routing;
 
 public static class HandlerTypeHelpers
 {

@@ -1,4 +1,7 @@
 using System.Reflection;
+using Api.Mqtt.Core;
+using Api.Mqtt.Routing;
+using Api.Mqtt.Service;
 using Application;
 using HiveMQtt.Client;
 using Microsoft.AspNetCore.Builder;

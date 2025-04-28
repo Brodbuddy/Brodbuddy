@@ -1,7 +1,7 @@
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
 
-namespace Api.Mqtt;
+namespace Api.Mqtt.Core;
 
 public interface IMqttMessageHandler
 {

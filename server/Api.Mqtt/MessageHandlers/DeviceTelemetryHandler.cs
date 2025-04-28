@@ -1,3 +1,4 @@
+using Api.Mqtt.Core;
 using Application.Services;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;

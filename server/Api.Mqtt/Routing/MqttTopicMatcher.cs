@@ -1,4 +1,4 @@
-namespace Api.Mqtt;
+namespace Api.Mqtt.Routing;
 
 public static class MqttTopicMatcher
 {
