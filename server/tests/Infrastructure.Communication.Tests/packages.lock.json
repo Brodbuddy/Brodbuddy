@@ -122,6 +122,17 @@
         "resolved": "11.11.0",
         "contentHash": "cyIVdQBwSipxWG8MA3Rqox7iNbUNUTK5bfJi9tIdm4CAfH71Oo5ABLP4/QyrUwuakqpUEPGtE43BDddvEehuYw=="
       },
+      "HiveMQtt": {
+        "type": "Transitive",
+        "resolved": "0.26.1",
+        "contentHash": "pbF6sMVu9vMR9+tv/s55PRq4mle8QIJMkP79KV2G/ahiv/6eUL++Y1fAsKErRJyz+rOtgkw/9gEl5Kwdm5A+lg==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.1",
+          "NLog": "5.2.3",
+          "System.IO.Pipelines": "7.0.0",
+          "Websocket.Client": "5.1.2"
+        }
+      },
       "JWT": {
         "type": "Transitive",
         "resolved": "11.0.0",
@@ -570,6 +581,11 @@
           "System.Security.Cryptography.Cng": "4.5.0"
         }
       },
+      "Microsoft.IO.RecyclableMemoryStream": {
+        "type": "Transitive",
+        "resolved": "3.0.0",
+        "contentHash": "irv0HuqoH8Ig5i2fO+8dmDNdFdsrO+DoQcedwIlb810qpZHBNQHZLW7C/AHBQDgLLpw2T96vmMAy/aE4Yj55Sg=="
+      },
       "Microsoft.NET.Test.Sdk": {
         "type": "Transitive",
         "resolved": "17.8.0",
@@ -648,6 +664,11 @@
         "type": "Transitive",
         "resolved": "13.0.3",
         "contentHash": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ=="
+      },
+      "NLog": {
+        "type": "Transitive",
+        "resolved": "5.2.3",
+        "contentHash": "rHTNRtQF5qYqLutSR9ldUWXglKym/KA1R6GKw4JtDvza8i5+kgfmeKH75Ccn1noeJIOjHLXorphMxKk3EiN2tg=="
       },
       "Npgsql": {
         "type": "Transitive",
@@ -810,6 +831,11 @@
         "resolved": "4.5.0",
         "contentHash": "QQTlPTl06J/iiDbJCiepZ4H//BVraReU4O4EoRw1U02H5TLUIT7xn3GnDp9AXPSlJUDyFs4uWjWafNX6WrAojQ=="
       },
+      "System.Reactive": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "31kfaW4ZupZzPsI5PVe77VhnvFF55qgma7KZr/E0iFTs6fmdhhG8j0mgEx620iLTey1EynOkEfnyTjtNEpJzGw=="
+      },
       "System.Reflection": {
         "type": "Transitive",
         "resolved": "4.3.0",
@@ -947,6 +973,11 @@
           "System.Text.Encodings.Web": "9.0.3"
         }
       },
+      "System.Threading.Channels": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "CMaFr7v+57RW7uZfZkPExsPB6ljwzhjACWW1gfU35Y56rk72B/Wu+sTqxVmGSk4SFUlPc3cjeKND0zktziyjBA=="
+      },
       "System.Threading.Tasks": {
         "type": "Transitive",
         "resolved": "4.3.0",
@@ -1005,6 +1036,17 @@
         "dependencies": {
           "Testcontainers": "4.3.0",
           "xunit.extensibility.execution": "2.9.3"
+        }
+      },
+      "Websocket.Client": {
+        "type": "Transitive",
+        "resolved": "5.1.2",
+        "contentHash": "ZE5VoUCIYbfACGmXxgfD96i4W0wyBk0JEwIViyPpvxdk/pNfzh2SX9BgEj8fTqNaxlFl0bUTWq1UUvR/c18BTQ==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.0",
+          "Microsoft.IO.RecyclableMemoryStream": "3.0.0",
+          "System.Reactive": "6.0.0",
+          "System.Threading.Channels": "8.0.0"
         }
       },
       "xunit": {
@@ -1080,6 +1122,7 @@
         "dependencies": {
           "Application": "[1.0.0, )",
           "FluentEmail.MailKit": "[3.0.2, )",
+          "HiveMQtt": "[0.26.1, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[9.0.3, )",
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
           "Microsoft.Extensions.Options": "[9.0.3, )",

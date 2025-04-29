@@ -18,11 +18,11 @@ public class FleckWebSocketServer(WebSocketDispatcher dispatcher, ISocketManager
     public Task StartAsync(CancellationToken cancellationToken)
     {
         logger.LogInformation("Starting WebSocket server");
-        var port = options.Value.WebSocketPort;
+        var port = options.Value.Websocket.Port;
         
         if (port <= 0)
         {
-            port = FindAvailablePort(options.Value.WebSocketPort);
+            port = FindAvailablePort(options.Value.Websocket.Port);
             logger.LogInformation("No valid port configured, using dynamically assigned port");
         }
 

@@ -5,6 +5,9 @@ using FluentEmail.Core;
 using FluentEmail.MailKitSmtp;
 using Infrastructure.Communication.Mail;
 using Infrastructure.Communication.Websocket;
+using Application.Interfaces.Communication.Publishers;
+using Infrastructure.Communication.Mqtt;
+using Infrastructure.Communication.Publishers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
@@ -17,6 +20,7 @@ public static class Extensions
     {
         services.AddMail();
         services.AddSocketManager();
+        services.AddMqttPublisher();
         return services;
     }
 
@@ -35,8 +39,10 @@ public static class Extensions
         });
 
         services.AddScoped<IEmailSender, FluentEmailSender>();
+   
         return services;
     }
+
 
     private static IServiceCollection AddSocketManager(this IServiceCollection services)
     {
@@ -53,6 +59,13 @@ public static class Extensions
         services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConfig));
         services.AddSingleton<ISocketManager, RedisSocketManager>();
         services.AddHostedService<RedisSubscriptionListener>();
+        return services;
+    }
+    
+    private static IServiceCollection AddMqttPublisher(this IServiceCollection services)
+    {
+        services.AddScoped<IMqttPublisher, HiveMqttPublisher>();
+        services.AddScoped<IDevicePublisher, MqttDevicePublisher>();
         return services;
     }
 }

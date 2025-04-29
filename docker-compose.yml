@@ -40,7 +40,32 @@ services:
       - '1025:1025'
       - '8025:8025'
     restart: always
+    
+  seq:
+    image: datalust/seq
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - '5341:80'
+    volumes:
+      - seq_data:/data
+    restart: unless-stopped
+    
+  vernemq:
+    image: vernemq/vernemq
+    ports:
+      - "${APPOPTIONS__MQTT__MQTTPORT:-1883}:1883"      # Standard MQTT port for ESP32
+      - "${APPOPTIONS__MQTT__WEBSOCKETPORT:-8080}:8080" # MQTT over WebSockets for browser klienter, f.eks. HiveMQTT .NET client
+    environment:
+      - DOCKER_VERNEMQ_ACCEPT_EULA=yes        # Accepterer 'End User License Agreement' (EULA) ligesom for Seq
+      - DOCKER_VERNEMQ_ALLOW_ANONYMOUS=off    # Gør sådan at man skal autentificere sig
+      - DOCKER_VERNEMQ_USER_${APPOPTIONS__MQTT__USERNAME:-user}=${APPOPTIONS__MQTT__PASSWORD:-pass}
+    volumes:
+      - vernemq-data:/var/lib/vernemq # Behøves ikke, men gør sådan at vi kan opbevare data
+    restart: unless-stopped # Gør sådan at broker genstarter på system reboot
 
 volumes:
   postgres_data:
   dragonflydata:
+  vernemq-data:
+  seq_data:
