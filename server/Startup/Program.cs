@@ -1,11 +1,13 @@
 using Api.Http;
 using Application;
+using Infrastructure.Auth;
 using Infrastructure.Communication;
 using Infrastructure.Data;
 using Infrastructure.Monitoring;
 using Microsoft.Extensions.Options;
 using Serilog;
 using LoggerFactory = Infrastructure.Monitoring.LoggerFactory;
+using Startup.TcpProxy;
 
 namespace Startup;
 
@@ -27,15 +29,20 @@ public static class Program
         
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
+        services.AddAuthInfrastructure();
         services.AddHttpApi();
         services.AddApplicationServices();
+        
+        services.AddTcpProxyService();
     }
 
     private static void ConfigureMiddleware(WebApplication app)
     {
         var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
         app.UseMonitoringInfrastructure();
-        app.ConfigureHttpApi(appOptions.HttpPort);
+        app.ConfigureHttpApi(appOptions.Http.Port);
+        app.MapGet("/", () => "Hej, nu med multi API :)");
+
     }
 
     public static async Task Main(string[] args)
