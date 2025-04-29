@@ -4,6 +4,13 @@
         <ProjectReference Include="..\Application\Application.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="HiveMQtt" Version="0.26.1"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3"/>
+        <PackageReference Include="NSwag.AspNetCore" Version="14.3.0"/> <!-- Bare lige så vi kan tilgå WebApplication finder bedre løsning senere -->
+    </ItemGroup>
+
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>

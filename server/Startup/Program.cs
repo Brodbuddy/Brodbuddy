@@ -1,4 +1,5 @@
 using Api.Http;
+using Api.Mqtt;
 using Application;
 using Infrastructure.Auth;
 using Infrastructure.Communication;
@@ -31,6 +32,7 @@ public static class Program
         services.AddDataInfrastructure();
         services.AddAuthInfrastructure();
         services.AddHttpApi();
+        services.AddMqttApi();
         services.AddApplicationServices();
         
         services.AddTcpProxyService();
@@ -39,10 +41,10 @@ public static class Program
     private static void ConfigureMiddleware(WebApplication app)
     {
         var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
+        app.ConfigureMqttApi();
         app.UseMonitoringInfrastructure();
         app.ConfigureHttpApi(appOptions.Http.Port);
         app.MapGet("/", () => "Hej, nu med multi API :)");
-
     }
 
     public static async Task Main(string[] args)
