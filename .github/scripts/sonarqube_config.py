@@ -32,6 +32,10 @@ def configure_sonarqube():
         "**/scaffold.py",
         "**/.github/scripts/**/*",
         "**/TestController.cs",
+        "**/websocket-client-template.ts",
+        "**/Extensions.cs",
+        "**/LoggerFactory.cs",
+        "**/SerilogConstants.cs"
     ]
 
     cmd = [
