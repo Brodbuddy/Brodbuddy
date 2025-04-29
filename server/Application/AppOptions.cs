@@ -2,11 +2,24 @@
 
 public class AppOptions
 {
-    public int HttpPort { get; set; } = 5001;
+    public int PublicPort { get; set; } = 8080;
+    public HttpOptions Http { get; init; } = new();
+    public WebsocketOptions Websocket { get; init; } = new();
     public EmailOptions Email { get; init; } = new();
     public PostgresOptions Postgres { get; init; } = new();
     public MqttOptions Mqtt { get; set; } = new();
     public JwtOptions Jwt { get; init; } = new();
+    public SeqOptions Seq { get; set; } = new(); 
+}
+
+public class HttpOptions
+{
+    public int Port { get; set; } = 5001;
+}
+
+public class WebsocketOptions
+{
+    public int Port { get; set; } = 8181;
 }
 
 public class EmailOptions
@@ -43,4 +56,10 @@ public class JwtOptions
     public int ExpirationMinutes { get; set; } = 15;
     public string Issuer { get; set; } = "localhost:5001";
     public string Audience { get; set; } = "localhost:5173";
+}
+
+public class SeqOptions
+{
+    public string ServerUrl { get; set; } = "http://localhost:5341";
+    public string? ApiKey { get; set; }
 }

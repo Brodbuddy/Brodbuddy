@@ -32,6 +32,16 @@ services:
       - '8025:8025'
     restart: always
     
+  seq:
+    image: datalust/seq
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - '5341:80'
+    volumes:
+      - seq_data:/data
+    restart: unless-stopped
+    
   vernemq:
     image: vernemq/vernemq
     ports:
@@ -48,3 +58,4 @@ services:
 volumes:
   postgres_data:
   vernemq-data:
+  seq_data:
