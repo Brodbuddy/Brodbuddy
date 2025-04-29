@@ -71,7 +71,7 @@ public static class MonitoringExtensions
         );
     }
 
-    public static IApplicationBuilder UseMonitoringInfrastructure(this IApplicationBuilder app)
+    public static IApplicationBuilder ConfigureMonitoringInfrastructure(this IApplicationBuilder app)
     {
         app.UseSerilogRequestLogging(options =>
         {

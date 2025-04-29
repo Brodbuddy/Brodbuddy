@@ -25,7 +25,7 @@ public class TcpProxyHostedService : IHostedService
         _proxy = new TcpProxyBuilder()
             .WithPublicEndpoint(_options.PublicPort)
             .WithHttpEndpoint(Localhost, _options.Http.Port)
-            .WithLogger(_logger)
+            .WithWebSocketEndpoint(Localhost, _options.Websocket.Port)
             .Build();
 
         return _proxy.StartAsync(cancellationToken);

@@ -2,14 +2,15 @@
 
 public class AppOptions
 {
-    public int PublicPort { get; set; } = 8080;
+    public int PublicPort { get; set; } = 9999;
     public HttpOptions Http { get; init; } = new();
     public WebsocketOptions Websocket { get; init; } = new();
     public EmailOptions Email { get; init; } = new();
     public PostgresOptions Postgres { get; init; } = new();
-    public MqttOptions Mqtt { get; set; } = new();
+    public DragonflyOptions Dragonfly { get; init; } = new();
+    public MqttOptions Mqtt { get; init; } = new();
     public JwtOptions Jwt { get; init; } = new();
-    public SeqOptions Seq { get; set; } = new(); 
+    public SeqOptions Seq { get; init; } = new(); 
 }
 
 public class HttpOptions
@@ -39,6 +40,13 @@ public class PostgresOptions
     public string Password { get; set; } = "pass";
 
     public string ConnectionString => $"Host={Host};Port={Port};Database={Database};Username={Username};Password={Password}";
+}
+
+public class DragonflyOptions
+{
+    public string ConnectionString { get; set; } = "localhost:6379";
+    public bool AllowAdmin { get; set; } = true;
+    public bool AbortOnConnectFail { get; set; }
 }
 
 public class MqttOptions

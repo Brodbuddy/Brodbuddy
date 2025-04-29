@@ -368,6 +368,14 @@
         "resolved": "6.5.0",
         "contentHash": "QWINE2x3MbTODsWT1Gh71GaGb5icBz4chS8VYvTgsBnsi8esgN6wtHhydd7fvToWECYGq7T4cgBBDiKD/363fg=="
       },
+      "Pipelines.Sockets.Unofficial": {
+        "type": "Transitive",
+        "resolved": "2.2.8",
+        "contentHash": "zG2FApP5zxSx6OcdJQLbZDk2AVlN2BNQD6MorwIfV6gVj0RRxWPEp2LXAxqDGZqeNV1Zp0BNPcNaey/GXmTdvQ==",
+        "dependencies": {
+          "System.IO.Pipelines": "5.0.1"
+        }
+      },
       "Respawn": {
         "type": "Transitive",
         "resolved": "6.2.1",
@@ -396,6 +404,15 @@
         "contentHash": "9r+4UF2P51lTztpd+H7SJywk7WgmlWB//Cm2o96c6uGVZU5r58ys2/cD9pCgTk0zCdSkfflWL1WtqQ9I4IVO9Q==",
         "dependencies": {
           "BouncyCastle.Cryptography": "2.4.0"
+        }
+      },
+      "StackExchange.Redis": {
+        "type": "Transitive",
+        "resolved": "2.8.31",
+        "contentHash": "RCHVQa9Zke8k0oBgJn1Yl6BuYy8i6kv+sdMObiH60nOwD6QvWAjxdDwOm+LO78E8WsGiPqgOuItkz98fPS6haQ==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
+          "Pipelines.Sockets.Unofficial": "2.2.8"
         }
       },
       "System.Buffers": {
@@ -657,6 +674,14 @@
           "Testcontainers": "4.3.0"
         }
       },
+      "Testcontainers.Redis": {
+        "type": "Transitive",
+        "resolved": "4.3.0",
+        "contentHash": "Gq5EEoxpKjP6nHnHfwAqgBXWwKkXtmmZR3wJtCo1XXl7k1jzB7sbOYM16yFlVbaBaSD1T5vvObARS4SnQ+v7/A==",
+        "dependencies": {
+          "Testcontainers": "4.3.0"
+        }
+      },
       "Testcontainers.Xunit": {
         "type": "Transitive",
         "resolved": "4.3.0",
@@ -743,7 +768,9 @@
           "Npgsql": "[9.0.3, )",
           "Respawn": "[6.2.1, )",
           "Shouldly": "[4.3.0, )",
+          "StackExchange.Redis": "[2.8.31, )",
           "Testcontainers.PostgreSql": "[4.3.0, )",
+          "Testcontainers.Redis": "[4.3.0, )",
           "Testcontainers.Xunit": "[4.3.0, )",
           "coverlet.collector": "[6.0.0, )",
           "xunit": "[2.9.3, )",

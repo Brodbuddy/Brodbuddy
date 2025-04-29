@@ -31,6 +31,7 @@ def configure_sonarqube():
         "**/PgDbContext.cs",
         "**/scaffold.py",
         "**/.github/scripts/**/*",
+        "**/TestController.cs",
     ]
 
     cmd = [

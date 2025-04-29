@@ -1,4 +1,5 @@
 using Api.Http;
+using Api.Websocket;
 using Api.Mqtt;
 using Application;
 using Infrastructure.Auth;
@@ -15,35 +16,37 @@ namespace Startup;
 public static class Program
 {
     private const string ApplicationName = "Brodbuddy";
-
-    private static void ConfigureHost(IHostBuilder host)
-    {
-        host.AddMonitoringInfrastructure(ApplicationName);
-    }
-
+    
     private static void ConfigureServices(IServiceCollection services)
     {
         services.AddOptions<AppOptions>()
             .BindConfiguration(nameof(AppOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        
+        services.AddApplicationServices();
+
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
         services.AddAuthInfrastructure();
         services.AddHttpApi();
+        services.AddWebsocketApi();
         services.AddMqttApi();
         services.AddApplicationServices();
-        
         services.AddTcpProxyService();
+    }
+    
+    private static void ConfigureHost(IHostBuilder host)
+    {
+        host.AddMonitoringInfrastructure(ApplicationName);
     }
 
     private static void ConfigureMiddleware(WebApplication app)
     {
         var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
-        app.ConfigureMqttApi();
-        app.UseMonitoringInfrastructure();
         app.ConfigureHttpApi(appOptions.Http.Port);
+        app.ConfigureWebsocketApi();
+        app.ConfigureMqttApi();
+        app.ConfigureMonitoringInfrastructure();
         app.MapGet("/", () => "Hej, nu med multi API :)");
     }
 
@@ -55,8 +58,8 @@ public static class Program
         try
         {
             var builder = WebApplication.CreateBuilder(args);
-            ConfigureHost(builder.Host);
             ConfigureServices(builder.Services);
+            ConfigureHost(builder.Host);
 
             var app = builder.Build();
             ConfigureMiddleware(app);

@@ -9,7 +9,7 @@ using NSwag.Generation.Processors.Security;
 
 namespace Api.Http;
 
-public static class ApiStartup
+public static class Extensions
 {
     private const string ApiTitle = "Brodbuddy API";
     private const string ApiVersion = "v1";
