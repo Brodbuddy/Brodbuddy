@@ -1,18 +1,27 @@
 namespace Core.Exceptions;
 
-/// <summary>
-/// Thrown when a business rule is violated.
-/// Contains information about which rule was broken and why.
-/// Useful for domain-driven design.
-/// </summary>
+
+
 public sealed class BusinessRuleViolationException : Exception
 {
-    public string RuleName { get; }
+    public string? RuleName { get; }
+
+    public BusinessRuleViolationException(string message) 
+        : base(message)
+    {
+        RuleName = null;
+    }
 
     public BusinessRuleViolationException(string message, string ruleName) 
         : base(message)
     {
         RuleName = ruleName;
+    }
+    
+    public BusinessRuleViolationException(string message, Exception? innerException) 
+        : base(message, innerException)
+    {
+        RuleName = null;
     }
     
     public BusinessRuleViolationException(string message, string ruleName, Exception? innerException) 

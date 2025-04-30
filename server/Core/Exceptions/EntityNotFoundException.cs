@@ -1,9 +1,6 @@
 namespace Core.Exceptions;
 
-/// <summary>
-/// Entity cannot be found in the database.
-/// 404 Not Found can be returned.
-/// </summary>
+
 public sealed class EntityNotFoundException : Exception
 {
     public string EntityName { get; }
