@@ -8,11 +8,11 @@ using HiveMQtt.MQTT5.Types;
 
 namespace Api.Mqtt.Tests.MockHandlers;
 
-public class TestMessageHandler : IMqttMessageHandler<MockMqttPublishMessage>
+public class SensorsMessageHandler : IMqttMessageHandler<MockMqttPublishMessage>
 {
     private readonly IMqttTestService _testService;
     
-    public TestMessageHandler(IMqttTestService testService)
+    public SensorsMessageHandler(IMqttTestService testService)
     {
         _testService = testService;
     }
