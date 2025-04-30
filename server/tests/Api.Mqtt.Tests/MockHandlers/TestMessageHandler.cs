@@ -1,5 +1,8 @@
-﻿using Api.Mqtt.Core;
+﻿using System.Text.Json;
+using Api.Mqtt.Core;
+using Api.Mqtt.MessageHandlers;
 using Api.Mqtt.Tests.TestUtils;
+using Application.Services;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
 
@@ -7,11 +10,32 @@ namespace Api.Mqtt.Tests.MockHandlers;
 
 public class TestMessageHandler : IMqttMessageHandler<MockMqttPublishMessage>
 {
-    public string TopicFilter => "test/message";
+    private readonly IMqttTestService _testService;
+    
+    public TestMessageHandler(IMqttTestService testService)
+    {
+        _testService = testService;
+    }
+
+    public string TopicFilter => "sensors/+/telemetry";
     public QualityOfService QoS => QualityOfService.AtMostOnceDelivery;
 
-    public Task HandleAsync(MockMqttPublishMessage message, OnMessageReceivedEventArgs args)
+    public async Task HandleAsync(MockMqttPublishMessage message, OnMessageReceivedEventArgs args)
     {
-        return Task.CompletedTask;
+        string payload = args.PublishMessage.PayloadAsString;
+        var telemetry = JsonSerializer.Deserialize<DeviceTelemetry>(
+            payload,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+        );
+        
+        if (telemetry != null)
+        {
+            await _testService.ProcessTelemetryAsync(
+                telemetry.DeviceId,
+                telemetry.Temperature,
+                telemetry.Humidity,
+                telemetry.Timestamp
+            );
+        }
     }
 }
