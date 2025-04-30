@@ -17,20 +17,22 @@ public static class Program
 {
     private const string ApplicationName = "Brodbuddy";
     
-    private static void ConfigureServices(IServiceCollection services)
+    private static void ConfigureServices(IServiceCollection services, IHostEnvironment environment)
     {
         services.AddOptions<AppOptions>()
             .BindConfiguration(nameof(AppOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        services.AddApplicationServices();
-
+        
+        services.AddMonitoringInfrastructure(ApplicationName, environment);
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
         services.AddAuthInfrastructure();
+        
         services.AddHttpApi();
         services.AddWebsocketApi();
         services.AddMqttApi();
+        
         services.AddApplicationServices();
         services.AddTcpProxyService();
     }
@@ -58,7 +60,7 @@ public static class Program
         try
         {
             var builder = WebApplication.CreateBuilder(args);
-            ConfigureServices(builder.Services);
+            ConfigureServices(builder.Services, builder.Environment);
             ConfigureHost(builder.Host);
 
             var app = builder.Build();
