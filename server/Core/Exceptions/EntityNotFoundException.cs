@@ -1,6 +1,5 @@
 namespace Core.Exceptions;
 
-
 public sealed class EntityNotFoundException : Exception
 {
     public string EntityName { get; }
@@ -12,8 +11,9 @@ public sealed class EntityNotFoundException : Exception
         EntityName = entityName;
         EntityId = entityId;
     }
-    
-    public EntityNotFoundException(string message, string entityName, object? entityId = null, Exception? innerException = null)
+
+    public EntityNotFoundException(string message, string entityName, object? entityId = null,
+        Exception? innerException = null)
         : base(message, innerException)
     {
         EntityName = entityName;

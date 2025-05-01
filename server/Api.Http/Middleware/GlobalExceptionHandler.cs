@@ -6,7 +6,8 @@ namespace Api.Http.Middleware;
 
 public class GlobalExceptionHandler(IProblemDetailsService problemDetailsService) : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception,
+        CancellationToken cancellationToken)
     {
         httpContext.Response.StatusCode = exception switch
         {
@@ -14,7 +15,7 @@ public class GlobalExceptionHandler(IProblemDetailsService problemDetailsService
             EntityNotFoundException => StatusCodes.Status404NotFound,
             AuthenticationException => StatusCodes.Status401Unauthorized,
             AuthorizationException => StatusCodes.Status403Forbidden,
-            
+
             _ => StatusCodes.Status500InternalServerError
         };
 
@@ -30,7 +31,7 @@ public class GlobalExceptionHandler(IProblemDetailsService problemDetailsService
             Exception = exception
         };
 
-       
+
         switch (exception)
         {
             case EntityNotFoundException entityNotFoundException:
@@ -41,7 +42,8 @@ public class GlobalExceptionHandler(IProblemDetailsService problemDetailsService
                 problemDetailsContext.ProblemDetails.Extensions["failureReason"] = authException.FailureReason;
                 break;
             case AuthorizationException authzException when !string.IsNullOrEmpty(authzException.RequiredPermission):
-                problemDetailsContext.ProblemDetails.Extensions["requiredPermission"] = authzException.RequiredPermission;
+                problemDetailsContext.ProblemDetails.Extensions["requiredPermission"] =
+                    authzException.RequiredPermission;
                 break;
             case BusinessRuleViolationException businessRuleViolation:
                 problemDetailsContext.ProblemDetails.Extensions["ruleViolated"] = businessRuleViolation.RuleName;
