@@ -23,8 +23,7 @@ public static class Program
             .BindConfiguration(nameof(AppOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
-        services.AddApplicationServices();
-
+        
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
         services.AddAuthInfrastructure();

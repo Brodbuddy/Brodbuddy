@@ -166,7 +166,7 @@ public class DeviceServiceTests
         }
 
         [Fact]
-        public async Task ExistsAsync_WithValidIdThatDoesNotExist_ReturnsFalse()
+            public async Task ExistsAsync_WithValidIdThatDoesNotExist_ReturnsFalse()
         {
             // Arrange
             var deviceId = Guid.NewGuid();

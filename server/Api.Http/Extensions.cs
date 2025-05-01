@@ -1,4 +1,5 @@
 ﻿using Api.Http.Auth;
+using Api.Http.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -91,12 +92,16 @@ public static class Extensions
             settings.DocumentTitle = ApiTitle;
             settings.DocExpansion = "list";
         });
-        
+        app.UseFeatureToggles(); 
         app.UseAuthentication();
         app.UseAuthorization();
-        
         app.MapControllers();
         app.Urls.Add($"http://0.0.0.0:{port}");
         return app;
+    }
+    
+    public static IApplicationBuilder UseFeatureToggles(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<FeatureToggleMiddleware>();
     }
 }
