@@ -79,6 +79,8 @@ public static class Extensions
             options.LowercaseUrls = true;
         });
         
+        services.AddHttpContextAccessor();
+        
         return services;
     }
 
