@@ -36,6 +36,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Monitoring",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Mqtt.Tests", "server\tests\Api.Mqtt.Tests\Api.Mqtt.Tests.csproj", "{A41B29DA-5ADE-4745-B0C5-A05024195D4A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Http.Tests", "server\tests\Api.Http.Tests\Api.Http.Tests.csproj", "{552EBDA4-DEDE-46AE-9D32-107437000378}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -109,6 +111,10 @@ Global
 		{A41B29DA-5ADE-4745-B0C5-A05024195D4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A41B29DA-5ADE-4745-B0C5-A05024195D4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A41B29DA-5ADE-4745-B0C5-A05024195D4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{552EBDA4-DEDE-46AE-9D32-107437000378}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{552EBDA4-DEDE-46AE-9D32-107437000378}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{552EBDA4-DEDE-46AE-9D32-107437000378}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{552EBDA4-DEDE-46AE-9D32-107437000378}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{00DCAEB2-0510-411B-AACA-4CA09FFEF990} = {0011B983-CB61-450A-A1CC-38612B08B540}
