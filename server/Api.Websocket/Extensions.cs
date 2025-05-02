@@ -1,4 +1,6 @@
+using Api.Websocket.Auth;
 using Api.Websocket.Spec;
+using Brodbuddy.WebSocket.Auth;
 using Brodbuddy.WebSocket.Core;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +13,10 @@ public static class Extensions
     {
         services.AddWebSocketHandlers(typeof(FleckWebSocketServer).Assembly);
         services.AddHostedService<FleckWebSocketServer>();
+        
+        services.AddSingleton<IWebSocketAuthHandler, JwtWebSocketAuthHandler>();
+        
+        
         services.GenerateClientApi();
         
         return services;
