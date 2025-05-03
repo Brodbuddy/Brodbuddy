@@ -1,4 +1,6 @@
 ﻿using Api.Http.Auth;
+using Api.Http.Middleware;
+using Application.Interfaces.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -37,6 +39,18 @@ public static class Extensions
             configure.OperationProcessors.Add(new AspNetCoreOperationSecurityScopeProcessor("JWT"));
         });
 
+        services.AddScoped<ICookieService, CookieService>();
+        services.AddCors(options =>
+        {
+            options.AddPolicy("CookiePolicy", builder =>
+            {
+                builder.WithOrigins("http://localhost:5173")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials(); 
+            });
+        });
+        
         services
             .AddAuthentication(options =>
             {
@@ -62,9 +76,12 @@ public static class Extensions
                     // Tillad swagger og root
                     if (httpContext.Request.Path.StartsWithSegments("/swagger") ||
                         httpContext.Request.Path.StartsWithSegments("/swagger-ui") ||
+                        httpContext.Request.Path.StartsWithSegments("/api/passwordlessauth/initiate") ||
+                        httpContext.Request.Path.StartsWithSegments("/api/passwordlessauth/verify") ||
+                        httpContext.Request.Path.StartsWithSegments("/api/passwordlessauth/refresh") ||
                         httpContext.Request.Path.Equals("/"))
                         return true;
-
+                    
                     // Kræv autentificering for alt andet
                     return context.User.Identity?.IsAuthenticated ?? false;
                 })
@@ -93,7 +110,10 @@ public static class Extensions
             settings.DocumentTitle = ApiTitle;
             settings.DocExpansion = "list";
         });
-        
+
+        app.UseCors("CookiePolicy");
+
+        app.UseTokenRefresh();
         app.UseAuthentication();
         app.UseAuthorization();
         

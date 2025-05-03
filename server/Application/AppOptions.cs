@@ -10,7 +10,8 @@ public class AppOptions
     public DragonflyOptions Dragonfly { get; init; } = new();
     public MqttOptions Mqtt { get; init; } = new();
     public JwtOptions Jwt { get; init; } = new();
-    public SeqOptions Seq { get; init; } = new(); 
+    public SeqOptions Seq { get; init; } = new();
+    public TokenOptions Token { get; init; } = new();
 }
 
 public class HttpOptions
@@ -70,4 +71,10 @@ public class SeqOptions
 {
     public string ServerUrl { get; set; } = "http://localhost:5341";
     public string? ApiKey { get; set; }
+}
+
+public class TokenOptions
+{
+    public int AccessTokenLifeTimeMinutes { get; set; } = 15;
+    public int RefreshTokenLifeTimeDays { get; set; } = 30;
 }

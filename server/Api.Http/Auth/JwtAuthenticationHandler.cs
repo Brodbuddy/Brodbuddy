@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using Application.Interfaces.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Logging;
@@ -11,28 +12,42 @@ namespace Api.Http.Auth;
 public class JwtAuthenticationHandler : AuthenticationHandler<JwtBearerOptions>
 {
     private readonly IAuthenticationService _authenticationService;
+    private readonly ICookieService _cookieService;
 
     public JwtAuthenticationHandler(
         IOptionsMonitor<JwtBearerOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        IAuthenticationService authenticationService) 
+        IAuthenticationService authenticationService,
+        ICookieService cookieService) 
         : base(options, logger, encoder) 
     {
         _authenticationService = authenticationService;
+        _cookieService = cookieService;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        if (!Request.Headers.TryGetValue("Authorization", out var authHeader)) return AuthenticateResult.NoResult();
-
-        var headerValue = authHeader.ToString();
-        if (!headerValue.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        string? token = null;
+        if (!Request.Headers.TryGetValue("Authorization", out var authHeader))
         {
-            return AuthenticateResult.NoResult();
+            var headerValue = authHeader.ToString();
+            if (headerValue.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                token = headerValue["Bearer ".Length..].Trim();
+            }
         }
 
-        var token = headerValue["Bearer ".Length..].Trim();
+        if (string.IsNullOrEmpty(token))
+        {
+            token = _cookieService.GetAccessTokenFromCookies(Request.Cookies);
+
+            if (string.IsNullOrEmpty(token))
+            {
+                return AuthenticateResult.NoResult();
+            }
+        }
+
         var authResult = await _authenticationService.ValidateTokenAsync(token);
         if (!authResult.IsAuthenticated) return AuthenticateResult.Fail("Invalid token");
 
