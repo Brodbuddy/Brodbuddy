@@ -1,8 +1,12 @@
+using Api.Http.Auth;
+using Application;
 using Application.Interfaces.Auth;
 using Application.Models.Dto;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Api.Http.Controllers;
 
@@ -12,16 +16,20 @@ public class PasswordlessAuthController : ControllerBase
 {
     private readonly IPasswordlessAuthService _authService;
     private readonly IDeviceDetectionService _deviceDetectionService;
-    private readonly ICookieService _cookieService;
+    private readonly TimeProvider _timeProvider;
+    private readonly IOptions<AppOptions> _appOptions;
+    private const string RefreshTokenCookieName = "refreshToken";
 
     public PasswordlessAuthController(
         IPasswordlessAuthService passwordlessAuthService,
         IDeviceDetectionService deviceDetectionService,
-        ICookieService cookieService)
+        TimeProvider timeProvider,
+        IOptions<AppOptions> appOptions)
     {
         _authService = passwordlessAuthService;
         _deviceDetectionService = deviceDetectionService;
-        _cookieService = cookieService;
+        _timeProvider = timeProvider;
+        _appOptions = appOptions;
     }
 
     [HttpPost("initiate")]
@@ -51,10 +59,9 @@ public class PasswordlessAuthController : ControllerBase
                 browser,
                 os);
 
-            _cookieService.SetAccessTokenCookie(Response.Cookies, accessToken);
-            _cookieService.SetRefreshTokenCookie(Response.Cookies, refreshToken);
+            Response.Cookies.Append(RefreshTokenCookieName, refreshToken, GetRefreshTokenCookieOptions());
             
-            return Ok(new { accessToken, refreshToken });
+            return Ok(new { accessToken });
         }
         catch (UnauthorizedAccessException)
         {
@@ -68,7 +75,7 @@ public class PasswordlessAuthController : ControllerBase
     {
         try
         {
-            var refreshToken = _cookieService.GetRefreshTokenFromCookies(Request.Cookies);
+            var refreshToken = Request.Cookies[RefreshTokenCookieName];
             if (string.IsNullOrEmpty(refreshToken))
             {
                 return Unauthorized(new { message = "No refresh token provided" });
@@ -76,9 +83,8 @@ public class PasswordlessAuthController : ControllerBase
             
             var (accessToken, newRefreshToken) = await _authService.RefreshTokenAsync(refreshToken);
             
-            _cookieService.SetAccessTokenCookie(Response.Cookies, accessToken);
-            _cookieService.SetRefreshTokenCookie(Response.Cookies, newRefreshToken);
-            return Ok(new { accessToken, newRefreshToken });
+            Response.Cookies.Append(RefreshTokenCookieName, newRefreshToken, GetRefreshTokenCookieOptions());
+            return Ok(new { accessToken });
         }
         catch (Exception)
         {
@@ -89,7 +95,15 @@ public class PasswordlessAuthController : ControllerBase
     [HttpPost("logout")]
     public IActionResult Logout()
     {
-        _cookieService.RemoveTokenCookies(Response.Cookies);
+        Response.Cookies.Delete(RefreshTokenCookieName, GetRefreshTokenCookieOptions());
         return Ok(new { message = "Logged out succesfully" });
     }
+    
+    private CookieOptions GetRefreshTokenCookieOptions() => new()
+    {
+        HttpOnly = true,
+        Secure = true,
+        SameSite = SameSiteMode.Strict,
+        Expires = _timeProvider.GetUtcNow().UtcDateTime.AddDays(_appOptions.Value.Token.RefreshTokenLifeTimeDays)
+    };
 }

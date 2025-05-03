@@ -12,42 +12,28 @@ namespace Api.Http.Auth;
 public class JwtAuthenticationHandler : AuthenticationHandler<JwtBearerOptions>
 {
     private readonly IAuthenticationService _authenticationService;
-    private readonly ICookieService _cookieService;
 
     public JwtAuthenticationHandler(
         IOptionsMonitor<JwtBearerOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        IAuthenticationService authenticationService,
-        ICookieService cookieService) 
+        IAuthenticationService authenticationService) 
         : base(options, logger, encoder) 
     {
         _authenticationService = authenticationService;
-        _cookieService = cookieService;
     }
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        string? token = null;
-        if (!Request.Headers.TryGetValue("Authorization", out var authHeader))
+        if (!Request.Headers.TryGetValue("Authorization", out var authHeader)) return AuthenticateResult.NoResult();
+
+        var headerValue = authHeader.ToString();
+        if (!headerValue.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            var headerValue = authHeader.ToString();
-            if (headerValue.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-            {
-                token = headerValue["Bearer ".Length..].Trim();
-            }
+            return AuthenticateResult.NoResult();
         }
 
-        if (string.IsNullOrEmpty(token))
-        {
-            token = _cookieService.GetAccessTokenFromCookies(Request.Cookies);
-
-            if (string.IsNullOrEmpty(token))
-            {
-                return AuthenticateResult.NoResult();
-            }
-        }
-
+        var token = headerValue["Bearer ".Length..].Trim();
         var authResult = await _authenticationService.ValidateTokenAsync(token);
         if (!authResult.IsAuthenticated) return AuthenticateResult.Fail("Invalid token");
 
