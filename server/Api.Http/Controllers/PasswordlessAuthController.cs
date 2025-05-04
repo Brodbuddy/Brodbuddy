@@ -1,23 +1,23 @@
-using Application.Models.Dto;
+using Api.Http.Models.Dto.Request;
+using Api.Http.Models.Dto.Response;
+using Api.Http.Utils;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Http.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/passwordless-auth")]
 [ApiController]
 public class PasswordlessAuthController : ControllerBase
 {
     private readonly IPasswordlessAuthService _authService;
-    private readonly IDeviceDetectionService _deviceDetectionService;
+
 
     public PasswordlessAuthController(
-        IPasswordlessAuthService passwordlessAuthService,
-        IDeviceDetectionService deviceDetectionService)
+        IPasswordlessAuthService passwordlessAuthService)
     {
         _authService = passwordlessAuthService;
-        _deviceDetectionService = deviceDetectionService;
     }
 
     [HttpPost("initiate")]
@@ -34,39 +34,25 @@ public class PasswordlessAuthController : ControllerBase
 
     [HttpPost("verify")]
     [AllowAnonymous]
-    public async Task<IActionResult> VerifyCode([FromBody] LoginVerificationRequest request)
+    public async Task<ActionResult<LoginVerificationResponse>> VerifyCode([FromBody] LoginVerificationRequest request)
     {
-        try
-        {
-            var browser = _deviceDetectionService.GetBrowser();
-            var os = _deviceDetectionService.GetOperatingSystem();
+        var browser = UserAgentUtils.GetBrowser(HttpContext);
+        var os = UserAgentUtils.GetOperatingSystem(HttpContext);
 
-            var (accessToken, refreshToken) = await _authService.CompleteLoginAsync(
-                request.Email,
-                request.Code,
-                browser,
-                os);
+        var (accessToken, refreshToken) = await _authService.CompleteLoginAsync(
+            request.Email,
+            request.Code,
+            browser,
+            os);
 
-            return Ok(new { accessToken, refreshToken });
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized(new { message = "Invalid verification code" });
-        }
+        return new LoginVerificationResponse(accessToken, refreshToken);
     }
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+    public async Task<ActionResult<RefreshTokenResponse>> RefreshToken([FromBody] RefreshTokenRequest request)
     {
-        try
-        {
-            var (accessToken, refreshToken) = await _authService.RefreshTokenAsync(request.RefreshToken);
-            return Ok(new { accessToken, refreshToken });
-        }
-        catch (Exception)
-        {
-            return Unauthorized(new { message = "Invalid refresh token" });
-        }
+        var (accessToken, refreshToken) = await _authService.RefreshTokenAsync(request.RefreshToken);
+        return new RefreshTokenResponse(accessToken, refreshToken);
     }
 }

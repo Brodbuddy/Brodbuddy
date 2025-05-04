@@ -1,3 +1,3 @@
-namespace Application.Models.Dto;
+namespace Api.Http.Models.Dto.Request;
 
 public record InitiateLoginRequest(string Email);
