@@ -1,4 +1,4 @@
-using Application.Services;
+﻿using Application.Services;
 using Moq;
 using Xunit;
 using Shouldly;
@@ -9,15 +9,18 @@ public class PasswordlessAuthServiceTests
 {
     private readonly Mock<IIdentityVerificationService> _mockIdentityVerificationService;
     private readonly Mock<IMultiDeviceIdentityService> _mockMultiDeviceIdentityService;
+    private readonly Mock<IUserIdentityService> _mockUserIdentityService;
     private readonly PasswordlessAuthService _service;
 
     public PasswordlessAuthServiceTests()
     {
         _mockIdentityVerificationService = new Mock<IIdentityVerificationService>();
         _mockMultiDeviceIdentityService = new Mock<IMultiDeviceIdentityService>();
+        _mockUserIdentityService = new Mock<IUserIdentityService>();
         _service = new PasswordlessAuthService(
             _mockIdentityVerificationService.Object,
-            _mockMultiDeviceIdentityService.Object);
+            _mockMultiDeviceIdentityService.Object,
+            _mockUserIdentityService.Object);
     }
 
 
