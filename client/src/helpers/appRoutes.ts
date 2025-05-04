@@ -1,3 +1,5 @@
 export const AppRoutes = {
-    Home: "/",
+    home: "/",
+    login: "/login",
+    verifyLogin: "/login/verify",
 } as const;

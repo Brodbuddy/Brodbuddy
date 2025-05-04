@@ -1,6 +1,6 @@
-using Api.Http.Auth;
+using Api.Http.Extensions;
+using Api.Http.Models;
 using Application;
-using Application.Interfaces.Auth;
 using Application.Models.Dto;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -16,20 +16,31 @@ public class PasswordlessAuthController : ControllerBase
 {
     private readonly IPasswordlessAuthService _authService;
     private readonly IDeviceDetectionService _deviceDetectionService;
+    private readonly IJwtService _jwtService;
     private readonly TimeProvider _timeProvider;
     private readonly IOptions<AppOptions> _appOptions;
     private const string RefreshTokenCookieName = "refreshToken";
 
     public PasswordlessAuthController(
-        IPasswordlessAuthService passwordlessAuthService,
+        IPasswordlessAuthService passwordlessAuthService, 
         IDeviceDetectionService deviceDetectionService,
+        IJwtService jwtService,
         TimeProvider timeProvider,
         IOptions<AppOptions> appOptions)
     {
         _authService = passwordlessAuthService;
         _deviceDetectionService = deviceDetectionService;
+        _jwtService = jwtService;
         _timeProvider = timeProvider;
         _appOptions = appOptions;
+    }
+
+    [HttpGet("test-token")]
+    [AllowAnonymous]
+    public TestTokenResponse TestToken()
+    {
+        var accessToken = _jwtService.Generate("kakao", "kakao@mælk.dk", "user");
+        return new TestTokenResponse(AccessToken: accessToken);
     }
 
     [HttpPost("initiate")]
@@ -38,8 +49,7 @@ public class PasswordlessAuthController : ControllerBase
     {
         var success = await _authService.InitiateLoginAsync(request.Email);
 
-        if (!success)
-            return BadRequest(new { message = "Failed to send verification code" });
+        if (!success) return BadRequest(new { message = "Failed to send verification code" });
 
         return Ok();
     }
@@ -97,6 +107,13 @@ public class PasswordlessAuthController : ControllerBase
     {
         Response.Cookies.Delete(RefreshTokenCookieName, GetRefreshTokenCookieOptions());
         return Ok(new { message = "Logged out succesfully" });
+    }
+    
+    [HttpGet("user-info")]
+    public async Task<UserInfoResponse> UserInfo()
+    {
+        var userInfo = await _authService.UserInfoAsync(HttpContext.User.GetUserId());
+        return new UserInfoResponse(Email: userInfo.email, IsAdmin: false);
     }
     
     private CookieOptions GetRefreshTokenCookieOptions() => new()

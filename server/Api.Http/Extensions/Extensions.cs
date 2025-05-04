@@ -4,16 +4,18 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 
-namespace Api.Http;
+namespace Api.Http.Extensions;
 
 public static class Extensions
 {
     private const string ApiTitle = "Brodbuddy API";
     private const string ApiVersion = "v1";
     private const string ApiDescription = "API til Brodbuddy";
+    private const string CorsPolicy = "CorsPolicy";
     
     public static IServiceCollection AddHttpApi(this IServiceCollection services)
     {
@@ -35,11 +37,12 @@ public static class Extensions
             });
         
             configure.OperationProcessors.Add(new AspNetCoreOperationSecurityScopeProcessor("JWT"));
+            configure.DocumentProcessors.Add(new MakeAllPropertiesRequiredProcessor());
         });
 
         services.AddCors(options =>
         {
-            options.AddPolicy("CookiePolicy", builder =>
+            options.AddPolicy(CorsPolicy, builder =>
             {
                 builder.WithOrigins("http://localhost:5173")
                     .AllowAnyMethod()
@@ -56,7 +59,7 @@ public static class Extensions
                 options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             })
             .AddScheme<JwtBearerOptions, JwtAuthenticationHandler>(JwtBearerDefaults.AuthenticationScheme,
-                options => { }
+                _ => { }
             );
 
         services.AddAuthorization(options =>
@@ -104,8 +107,8 @@ public static class Extensions
             settings.DocumentTitle = ApiTitle;
             settings.DocExpansion = "list";
         });
-
-        app.UseCors("CookiePolicy");
+        
+        app.UseCors(CorsPolicy);
 
         app.UseAuthentication();
         app.UseAuthorization();

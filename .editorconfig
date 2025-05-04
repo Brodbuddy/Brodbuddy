@@ -1,6 +1,7 @@
 root = true
 
 [*.cs]
+dotnet_diagnostic.S6960.severity = none
 dotnet_diagnostic.CA1848.severity = none # Deaktiver advarsel om at bruge LoggerMessage.Define() - for verbose til simpel logning
 dotnet_diagnostic.CA2201.severity = none # Tillad at kaste Exception type - burde måske være mere specifik
 dotnet_diagnostic.CA1869.severity = none # iConnectionManager  

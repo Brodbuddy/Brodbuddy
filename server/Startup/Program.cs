@@ -1,4 +1,5 @@
 using Api.Http;
+using Api.Http.Extensions;
 using Api.Websocket;
 using Api.Mqtt;
 using Application;
@@ -63,6 +64,16 @@ public static class Program
 
             var app = builder.Build();
             ConfigureMiddleware(app);
+            
+            if (app.Environment.IsDevelopment()) { app.Lifetime.ApplicationStarted.Register(() =>
+                {
+                    var addresses = app.Urls;
+                    if (addresses.Count != 0)
+                    {
+                        Log.Information("Swagger UI available at: {SwaggerUrl}/swagger", addresses.First());
+                    }
+                });
+            }
 
             await app.RunAsync();
             Log.Information("{ApplicationName} stopped cleanly", ApplicationName);
