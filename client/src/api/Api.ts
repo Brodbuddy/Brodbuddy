@@ -24,6 +24,10 @@ export interface LoginVerificationRequest {
   code: number;
 }
 
+export interface RefreshTokenResponse {
+  accessToken: string;
+}
+
 export interface UserInfoResponse {
   email: string;
   isAdmin: boolean;
@@ -292,10 +296,11 @@ export class Api<
      * @secure
      */
     refreshToken: (params: RequestParams = {}) =>
-      this.request<File, any>({
+      this.request<RefreshTokenResponse, any>({
         path: `/api/passwordlessauth/refresh`,
         method: "POST",
         secure: true,
+        format: "json",
         ...params,
       }),
 

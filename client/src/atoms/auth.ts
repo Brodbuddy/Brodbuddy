@@ -14,9 +14,10 @@ export const accessTokenAtom = atomWithStorage<string | null>(ACCESS_TOKEN_KEY, 
 
 export const userInfoAtom = atom(
     async (get) => {
+        console.log("efter get")
         const token = get(accessTokenAtom);
         if (!token) return null;
-
+        console.log("efter if statement" + token)
         try {
             const response = await api.passwordlessauth.userInfo();
             return response.data;
@@ -81,6 +82,7 @@ export const verifyCodeAtom = atom(
                 set(accessTokenAtom, token);
                 return true;
             }
+            console.log("det må du gerne" + token)
             return false;
         } catch (error) {
             console.error('Code verification failed:', error);

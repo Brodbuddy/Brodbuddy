@@ -81,25 +81,15 @@ public class PasswordlessAuthController : ControllerBase
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<IActionResult> RefreshToken()
+    public async Task<ActionResult<RefreshTokenResponse>> RefreshToken()
     {
-        try
-        {
-            var refreshToken = Request.Cookies[RefreshTokenCookieName];
-            if (string.IsNullOrEmpty(refreshToken))
-            {
-                return Unauthorized(new { message = "No refresh token provided" });
-            }
+        var refreshToken = Request.Cookies[RefreshTokenCookieName];
+           
+        Console.WriteLine("i refreshtoken");
+        var (accessToken, newRefreshToken) = await _authService.RefreshTokenAsync(refreshToken!);
             
-            var (accessToken, newRefreshToken) = await _authService.RefreshTokenAsync(refreshToken);
-            
-            Response.Cookies.Append(RefreshTokenCookieName, newRefreshToken, GetRefreshTokenCookieOptions());
-            return Ok(new { accessToken });
-        }
-        catch (Exception)
-        {
-            return Unauthorized(new { message = "Invalid refresh token" });
-        }
+        Response.Cookies.Append(RefreshTokenCookieName, newRefreshToken, GetRefreshTokenCookieOptions());
+        return new RefreshTokenResponse(accessToken);
     }
 
     [HttpPost("logout")]
@@ -110,6 +100,7 @@ public class PasswordlessAuthController : ControllerBase
     }
     
     [HttpGet("user-info")]
+    [Authorize(Roles = "user")]
     public async Task<UserInfoResponse> UserInfo()
     {
         var userInfo = await _authService.UserInfoAsync(HttpContext.User.GetUserId());
