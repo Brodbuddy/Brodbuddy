@@ -10,7 +10,13 @@ public static class MqttTopicMatcher
     /// <returns>True hvis actualTopic mathcer topicFilter mønsteret</returns>
     public static bool Matches(string topicFilter, string actualTopic)
     {
-        if (string.IsNullOrEmpty(topicFilter) || string.IsNullOrEmpty(actualTopic)) return false;
+        if (string.IsNullOrEmpty(topicFilter)) return false;
+
+        // Gør at "#" matcher alt inkl. tomme topics.
+        if (topicFilter == "#") return true;
+        
+        if (string.IsNullOrEmpty(actualTopic)) return false;
+        
         if (string.Equals(topicFilter, actualTopic, StringComparison.Ordinal)) return true;
         if (!topicFilter.Contains('+') && !topicFilter.Contains('#')) return false;
 
