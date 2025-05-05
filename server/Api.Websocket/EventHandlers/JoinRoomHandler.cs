@@ -1,3 +1,4 @@
+using Brodbuddy.WebSocket.Auth;
 using Brodbuddy.WebSocket.Core;
 using Brodbuddy.WebSocket.State;
 using Fleck;
@@ -21,10 +22,9 @@ public class JoinRoomValidator : AbstractValidator<JoinRoom>
     }
 }
 
+[Authorize(Roles = "user")]
 public class JoinRoomHandler(ISocketManager manager) : IWebSocketHandler<JoinRoom, UserJoined>
 {
-    public string MessageType => "JoinRoom";
-    
     public async Task<UserJoined> HandleAsync(JoinRoom incoming, string clientId, IWebSocketConnection socket)
     {
         var roomTopic = $"room:{incoming.RoomId}";

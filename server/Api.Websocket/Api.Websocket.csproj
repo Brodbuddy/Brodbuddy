@@ -5,7 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="brodbuddy.websocket" Version="0.0.14" />
+      <PackageReference Include="brodbuddy.websocket" Version="0.0.16" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.3" />
         <PackageReference Include="NSwag.AspNetCore" Version="14.3.0"/>
     </ItemGroup>

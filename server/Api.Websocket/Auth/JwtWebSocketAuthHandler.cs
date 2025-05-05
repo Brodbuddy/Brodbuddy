@@ -32,25 +32,12 @@ namespace Api.Websocket.Auth
                 token = token["Bearer ".Length..].Trim();
             }
 
-            // Create a scope to resolve the scoped service
             using var scope = _serviceProvider.CreateScope();
             var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
             
             var authResult = await authService.ValidateTokenAsync(token);
 
-            if (!authResult.IsAuthenticated)
-            {
-                _logger.LogDebug("Invalid token for message type {MessageType}", messageType);
-                return new WebSocketAuthResult(false);
-            }
-
-            _logger.LogDebug("Successfully authenticated user {UserId} for message type {MessageType}",
-                authResult.UserId, messageType);
-
-            return new WebSocketAuthResult(
-                true,
-                authResult.UserId,
-                authResult.Roles);
+            return new WebSocketAuthResult(authResult.IsAuthenticated, authResult.UserId, authResult.Roles);
         }
     }
 }
