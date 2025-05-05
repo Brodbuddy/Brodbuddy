@@ -25,7 +25,6 @@ export default function Home() {
             Username: username
         })
             .then(response => {
-                console.log('Join response:', response);
                 setIsJoined(true);
                 setJoinedUsers(prev => [...prev, `You joined room ${response.RoomId} with ID ${response.ConnectionId}`]);
             })

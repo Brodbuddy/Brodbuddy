@@ -1,28 +1,27 @@
-import { ReactElement } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { AccessLevel } from '../atoms/auth';
-import { AppRoutes } from '../helpers/appRoutes';
+import { Navigate, RouteProps } from 'react-router-dom';
+import { AppRoutes, AccessLevel, canAccess } from './import';
+import { useAuthContext } from '../AuthContext';
+import { REDIRECT_PATH_KEY } from '../hooks/useHttp';
 
-type RequireAuthProps = {
-    element: ReactElement;
-    accessLevel: AccessLevel;
+type RequireAuthProps = Omit<RouteProps, 'element'> & {
+    element: React.ReactElement;
+    accessLevel?: AccessLevel;
 };
 
-export function RequireAuth({ element, accessLevel }: RequireAuthProps) {
-    const { user, isLoading, canAccess } = useAuth();
+export function RequireAuth({ element, accessLevel = AccessLevel.Protected }: RequireAuthProps) {
+    const { user, isLoading } = useAuthContext();
 
-    if (isLoading) {
-        return <div>Loading...</div>;
+    if (isLoading) return null;
+
+    // Ikke logget ind - får 401 ved endpoints
+    if (!user && accessLevel !== AccessLevel.Anonymous) {
+        localStorage.setItem(REDIRECT_PATH_KEY, window.location.pathname);
+        return <Navigate to={AppRoutes.login} replace />
     }
 
-    if (accessLevel !== AccessLevel.Anonymous && !user) {
-        sessionStorage.setItem('redirectPath', window.location.pathname);
-        return <Navigate to={AppRoutes.login} replace />;
-    }
-
-    if (!canAccess(accessLevel)) {
-        return <Navigate to={AppRoutes.home} replace />;
+    // Er logget ind men ikke rettigheder, f.eks. Player prøver at tilgå Admin side
+    if (user && !canAccess(accessLevel, user)) {
+        return <Navigate to={AppRoutes.forbidden} replace />
     }
 
     return element;

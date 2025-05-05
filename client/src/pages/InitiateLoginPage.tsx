@@ -7,7 +7,7 @@ export default function InitiateLoginPage() {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const { startLogin } = useAuth();
+    const { initiateLogin } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -16,9 +16,8 @@ export default function InitiateLoginPage() {
         setError(null);
 
         try {
-            const success = await startLogin(email);
+            const success = await initiateLogin({ email });
             if (success) {
-                sessionStorage.setItem('loginEmail', email);
                 navigate(AppRoutes.verifyLogin);
             } else {
                 setError('Failed to send verification code. Please try again.');

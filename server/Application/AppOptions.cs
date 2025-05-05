@@ -62,7 +62,7 @@ public class MqttOptions
 public class JwtOptions
 {
     public string Secret { get; set; } = "dfKDL0Rq26AEQhdHBcQkOvMNjj9S8/thdKhTVzm3UDWXfJ0gePCuWyf48VK9/hk1ID4VHqZjXpYhinms1r+Khg==";
-    public int ExpirationMinutes { get; set; } = 1;
+    public int ExpirationMinutes { get; set; } = 15;
     public string Issuer { get; set; } = "localhost:5001";
     public string Audience { get; set; } = "localhost:5173";
 }
@@ -75,6 +75,5 @@ public class SeqOptions
 
 public class TokenOptions
 {
-    public int AccessTokenLifeTimeMinutes { get; set; } = 15;
     public int RefreshTokenLifeTimeDays { get; set; } = 30;
 }

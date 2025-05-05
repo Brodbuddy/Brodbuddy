@@ -1,10 +1,21 @@
-import { getDefaultStore} from 'jotai';
+import { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { Api } from '../api/Api';
-import { accessTokenAtom } from '../atoms/auth';
-import {AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig} from "axios";
+import { tokenStorage, TOKEN_KEY, jwtAtom, userInfoAtom } from "../atoms/auth";
+import { getDefaultStore } from "jotai";
+import { AppRoutes } from '../helpers/appRoutes';
 
 export const baseUrl = import.meta.env.VITE_APP_BASE_API_URL
+export const REDIRECT_PATH_KEY = 'redirectPath';
+
 const store = getDefaultStore();
+
+const handleAuthFailure = (error: any) => {
+    store.set(jwtAtom, null);
+    store.set(userInfoAtom, null);
+    localStorage.setItem(REDIRECT_PATH_KEY, window.location.pathname);
+    window.location.href = AppRoutes.login;
+    return Promise.reject(error);
+};
 
 export const api = new Api({
     baseURL: baseUrl,
@@ -14,76 +25,69 @@ export const api = new Api({
     withCredentials: true
 });
 
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve();
+        }
+    });
+
+    failedQueue = [];
+};
+
 api.instance.interceptors.request.use((config) => {
-    console.log("interceptors")
-    const token = store.get(accessTokenAtom);
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    if (config.url?.endsWith('api/auth/user-info')) {
+        return config;
     }
-    console.log("token" + token)
+
+    const jwt = tokenStorage.getItem(TOKEN_KEY, null);
+    if (jwt) {
+        config.headers.Authorization = `Bearer ${jwt}`;
+    }
     return config;
-})
+});
 
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
     _retry?: boolean;
 }
 
-let isRefreshing = false;
+api.instance.interceptors.response.use((response) => response, async (error: AxiosError) => {
+    const originalRequest = error.config as ExtendedAxiosRequestConfig | undefined;
 
-let refreshQueue: Array<{
-    resolve: (value?: unknown) => void;
-    reject: (reason?: unknown) => void;
-}> = [];
-
-const processQueue = (error: unknown = null) => {
-    refreshQueue.forEach(({resolve, reject}) => {
-        if (error) {
-            reject(error);
-        } else {
-            resolve();
-        }
-    })
-    refreshQueue = [];
-}
-
-api.instance.interceptors.response.use((response) => response, async (error) => {
-    console.log("et eller amndet");
-    const originalRequest = error.config as ExtendedAxiosRequestConfig;
     if (!originalRequest || error.response?.status !== 401) {
         return Promise.reject(error);
     }
 
-    if (originalRequest._retry) {
-        store.set(accessTokenAtom, null);
-        return Promise.reject(error);
+    if (originalRequest.url?.endsWith('api/auth/refresh')) {
+        return handleAuthFailure(error);
     }
 
     if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-            refreshQueue.push({resolve, reject})
-        }).then(() =>  {
-            originalRequest._retry = true;
-            return api.instance(originalRequest);
-        }).catch((error) => Promise.reject(error));
+        return new  Promise((resolve, reject) => { failedQueue.push({ resolve, reject }); } )
+            .then(() => api.instance(originalRequest))
+            .catch((err) => Promise.reject(err));
     }
 
     isRefreshing = true;
-    originalRequest._retry = true;
 
     try {
-        const response = await api.passwordlessauth.refreshToken();
+        const response = await api.auth.refreshToken();
         const newToken = response.data.accessToken;
-        store.set(accessTokenAtom, newToken);
-        processQueue();
+
+        store.set(jwtAtom, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
-        console.log("newtoken" + newToken);
+
+        processQueue();
         return api.instance(originalRequest);
     } catch (refreshError) {
         processQueue(refreshError);
-        store.set(accessTokenAtom, null);
-        console.log(refreshError + "hejdjjasdjsadasj");
-        return Promise.reject(error);
+        return handleAuthFailure(refreshError);
     } finally {
         isRefreshing = false;
     }
-})
+});

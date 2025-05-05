@@ -33,7 +33,7 @@ export default function CompleteLoginPage() {
                 return;
             }
 
-            const success = await completeLogin(email, numericCode);
+            const success = await completeLogin(numericCode);
             if (!success) {
                 setError('Invalid verification code. Please try again.');
             }
