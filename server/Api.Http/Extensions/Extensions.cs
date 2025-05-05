@@ -76,7 +76,6 @@ public static class Extensions
                     // Tillad swagger og root
                     if (httpContext.Request.Path.StartsWithSegments("/swagger") ||
                         httpContext.Request.Path.StartsWithSegments("/swagger-ui") ||
-                        httpContext.Request.Path.StartsWithSegments("/refresh") ||
                         httpContext.Request.Path.Equals("/"))
                         return true;
                     

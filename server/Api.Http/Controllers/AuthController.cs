@@ -75,7 +75,7 @@ public class AuthController : ControllerBase
         var refreshToken = Request.Cookies[RefreshTokenCookieName];
            
         Console.WriteLine("i refreshtoken");
-        var (accessToken, newRefreshToken) = await _authService.RefreshTokenAsync(refreshToken!);
+        var (accessToken, newRefreshToken) = await _authService.RefreshTokenAsync(refreshToken);
             
         Response.Cookies.Append(RefreshTokenCookieName, newRefreshToken, GetRefreshTokenCookieOptions());
         return new RefreshTokenResponse(accessToken);
