@@ -1,4 +1,5 @@
 ﻿using Api.Http.Auth;
+using Api.Http.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -39,6 +40,9 @@ public static class Extensions
             configure.OperationProcessors.Add(new AspNetCoreOperationSecurityScopeProcessor("JWT"));
             configure.DocumentProcessors.Add(new MakeAllPropertiesRequiredProcessor());
         });
+        
+        services.AddProblemDetails();
+        services.AddExceptionHandler<GlobalExceptionHandler>();
 
         services.AddCors(options =>
         {
@@ -100,6 +104,7 @@ public static class Extensions
 
     public static WebApplication ConfigureHttpApi(this WebApplication app, int port)
     {
+        app.UseExceptionHandler();
         app.UseOpenApi();
         
         app.UseSwaggerUi(settings =>
