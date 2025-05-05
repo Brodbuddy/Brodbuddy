@@ -50,6 +50,12 @@ services:
     volumes:
       - seq_data:/data
     restart: unless-stopped
+  
+  zipkin:
+    image: openzipkin/zipkin:latest
+    ports:
+      - '9411:9411'
+    restart: unless-stopped
     
   vernemq:
     image: vernemq/vernemq

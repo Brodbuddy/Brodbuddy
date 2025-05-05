@@ -11,6 +11,7 @@ public class AppOptions
     public MqttOptions Mqtt { get; init; } = new();
     public JwtOptions Jwt { get; init; } = new();
     public SeqOptions Seq { get; init; } = new();
+    public ZipkinOptions Zipkin { get; init; } = new();
     public TokenOptions Token { get; init; } = new();
 }
 
@@ -71,6 +72,12 @@ public class SeqOptions
 {
     public string ServerUrl { get; set; } = "http://localhost:5341";
     public string? ApiKey { get; set; }
+}
+
+public class ZipkinOptions
+{
+    public string? Endpoint { get; set; } = "http://localhost:9411/api/v2/spans"; 
+    public double SamplingRate { get; set; } = 0.1; // 10%
 }
 
 public class TokenOptions
