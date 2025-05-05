@@ -1,7 +1,7 @@
 root = true
 
 [*.cs]
-dotnet_diagnostic.S6960.severity = none # Controllers har for meget ansvar 
+dotnet_diagnostic.S6960.severity = none # Controllers har for meget ansvar, skal vi nok selv styre 
 dotnet_diagnostic.S6964.severity = none # Kræver properties for input for records som er umuligt 
 dotnet_diagnostic.CA1848.severity = none # Deaktiver advarsel om at bruge LoggerMessage.Define() - for verbose til simpel logning
 dotnet_diagnostic.CA2201.severity = none # Tillad at kaste Exception type - burde måske være mere specifik

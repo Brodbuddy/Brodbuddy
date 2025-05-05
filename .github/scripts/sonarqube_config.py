@@ -35,7 +35,13 @@ def configure_sonarqube():
         "**/websocket-client-template.ts",
         "**/Extensions.cs",
         "**/LoggerFactory.cs",
-        "**/SerilogConstants.cs"
+        "**/SerilogConstants.cs",
+        "**/Instrumentation.cs",
+        "**/TcpProxyHostedService.cs",
+        "**/TcpProxyExtensions.cs",
+        "**/SwaggerExtensions.cs",
+        "**/FluentEmailSender.cs",
+        "**/FleckWebSocketServer.cs"
     ]
 
     cmd = [
