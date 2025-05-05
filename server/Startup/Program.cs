@@ -1,4 +1,3 @@
-using Api.Http;
 using Api.Http.Extensions;
 using Api.Websocket;
 using Api.Mqtt;
@@ -26,6 +25,7 @@ public static class Program
             .ValidateOnStart();
         
         services.AddMonitoringInfrastructure(ApplicationName, environment);
+        
         services.AddCommunicationInfrastructure();
         services.AddDataInfrastructure();
         services.AddAuthInfrastructure();

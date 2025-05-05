@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 
@@ -114,12 +113,16 @@ public static class Extensions
         });
         
         app.UseCors(CorsPolicy);
-
+        app.UseFeatureToggles(); 
         app.UseAuthentication();
         app.UseAuthorization();
-        
         app.MapControllers();
         app.Urls.Add($"http://0.0.0.0:{port}");
         return app;
+    }
+    
+    public static IApplicationBuilder UseFeatureToggles(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<FeatureToggleMiddleware>();
     }
 }

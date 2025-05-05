@@ -184,6 +184,17 @@
           "Microsoft.Extensions.Primitives": "9.0.3"
         }
       },
+      "Microsoft.Extensions.Caching.StackExchangeRedis": {
+        "type": "Transitive",
+        "resolved": "9.0.2",
+        "contentHash": "DVIRRhNlSPOcOh01ZjtByHk4PxgQnMEBn+Sy9Nr29Z1NLw0OR7egXqHA/jSGDGs2HOwONhDlTKl7OGZl6wDWsg==",
+        "dependencies": {
+          "Microsoft.Extensions.Caching.Abstractions": "9.0.2",
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.2",
+          "Microsoft.Extensions.Options": "9.0.2",
+          "StackExchange.Redis": "2.7.27"
+        }
+      },
       "Microsoft.Extensions.Configuration": {
         "type": "Transitive",
         "resolved": "9.0.3",
@@ -1131,8 +1142,10 @@
           "Application": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore": "[9.0.3, )",
           "Microsoft.EntityFrameworkCore.Relational": "[9.0.3, )",
+          "Microsoft.Extensions.Caching.StackExchangeRedis": "[9.0.2, )",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.3, )",
-          "Npgsql.EntityFrameworkCore.PostgreSQL": "[9.0.3, )"
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[9.0.3, )",
+          "StackExchange.Redis": "[2.8.31, )"
         }
       },
       "infrastructure.monitoring": {
