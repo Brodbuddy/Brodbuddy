@@ -1,11 +1,12 @@
 root = true
 
 [*.cs]
-dotnet_diagnostic.S6960.severity = none
-dotnet_diagnostic.S6964.severity = none
+dotnet_diagnostic.S6960.severity = none # Controllers har for meget ansvar 
+dotnet_diagnostic.S6964.severity = none # Kræver properties for input for records som er umuligt 
 dotnet_diagnostic.CA1848.severity = none # Deaktiver advarsel om at bruge LoggerMessage.Define() - for verbose til simpel logning
 dotnet_diagnostic.CA2201.severity = none # Tillad at kaste Exception type - burde måske være mere specifik
 dotnet_diagnostic.CA1869.severity = none # iConnectionManager  
+
 [*Test*.cs]
 dotnet_diagnostic.S4487.severity = none # Tillad metoder uden assertions i test klasser
 dotnet_diagnostic.CA1707.severity = none # Tillad underscores i test metodenavne for læsbarhed (fx Method_Scenario_Result)
