@@ -54,17 +54,21 @@ table_params = " ".join(
     [f"--table {table}" for table in table_list]
 )  # Her laver vi så en liste af tabeller vi vil scaffolde, hvilket så bliver alle tabeller undtagen dem vi har ekskluderet
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_dir = os.path.abspath(os.path.join(script_dir, ".."))
+entities_dir = os.path.abspath(os.path.join(project_dir, "..", "Core", "Entities"))
+
 # Her kører vi scaffold kommando som vi kender
 scaffold_command = f"""dotnet ef dbcontext scaffold \
   "{connection_string}" \
   Npgsql.EntityFrameworkCore.PostgreSQL \
-  --output-dir ../Core/Entities \
+  --output-dir {entities_dir} \
   --context-dir Persistence/ \
   --context PgDbContext \
   --no-onconfiguring \
   --namespace Core.Entities \
   --context-namespace Infrastructure.Data.Persistence \
-  --project Infrastructure.Data.csproj \
+  --project {project_dir}/Infrastructure.Data.csproj \
   --force \
   {table_params}"""
 

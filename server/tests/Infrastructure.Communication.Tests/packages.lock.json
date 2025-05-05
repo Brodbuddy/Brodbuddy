@@ -49,8 +49,8 @@
       },
       "Brodbuddy.WebSocket": {
         "type": "Transitive",
-        "resolved": "0.0.14",
-        "contentHash": "HPFRGkMuG9npt8A0e281VTKRVaRaFVFa8OW+7mpg2PfvagEe3wz4LBpb9QgNGgzFDHgCFGxLWqE3WBlwi3X8zA==",
+        "resolved": "0.0.16",
+        "contentHash": "KeSxWHaAkDX2Mnh4Uku7BmFe2PoTRLySibRcymcPnmw0lXs2UsFdbCTh6iKinBwdconFOpCOaZLi1CPhSLKHGw==",
         "dependencies": {
           "Fleck": "1.2.0",
           "FluentValidation": "11.11.0",
@@ -1127,7 +1127,7 @@
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
           "Microsoft.Extensions.Options": "[9.0.3, )",
           "StackExchange.Redis": "[2.8.31, )",
-          "brodbuddy.websocket": "[0.0.14, )"
+          "brodbuddy.websocket": "[0.0.16, )"
         }
       },
       "sharedtestdependencies": {

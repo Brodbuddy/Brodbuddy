@@ -19,6 +19,11 @@ public class JwtService(IOptionsMonitor<AppOptions> optionsMonitor, TimeProvider
 {
     public string Generate(string subject, string email, string role)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+        ArgumentException.ThrowIfNullOrWhiteSpace(email);
+        ArgumentException.ThrowIfNullOrWhiteSpace(role);
+        
+        
         var jwtOptions = optionsMonitor.CurrentValue.Jwt;
         var now = timeProvider.GetUtcNow();
 

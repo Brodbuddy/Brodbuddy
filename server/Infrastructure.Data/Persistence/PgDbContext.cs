@@ -16,6 +16,8 @@ public partial class PgDbContext : DbContext
 
     public virtual DbSet<DeviceRegistry> DeviceRegistries { get; set; }
 
+    public virtual DbSet<Feature> Features { get; set; }
+
     public virtual DbSet<OneTimePassword> OneTimePasswords { get; set; }
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -85,6 +87,32 @@ public partial class PgDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("device_registry_user_id_fkey");
+        });
+
+        modelBuilder.Entity<Feature>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("features_pkey");
+
+            entity.ToTable("features");
+
+            entity.HasIndex(e => e.Name, "features_name_key").IsUnique();
+
+            entity.HasIndex(e => e.Name, "idx_features_name");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.IsEnabled)
+                .HasDefaultValue(false)
+                .HasColumnName("is_enabled");
+            entity.Property(e => e.LastModifiedAt).HasColumnName("last_modified_at");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
         });
 
         modelBuilder.Entity<OneTimePassword>(entity =>

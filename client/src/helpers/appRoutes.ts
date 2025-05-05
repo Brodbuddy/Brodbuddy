@@ -1,3 +1,7 @@
 export const AppRoutes = {
-    Home: "/",
+    notFound: "*",
+    forbidden: "/forbidden",
+    home: "/",
+    login: "/login",
+    verifyLogin: "/login/verify",
 } as const;

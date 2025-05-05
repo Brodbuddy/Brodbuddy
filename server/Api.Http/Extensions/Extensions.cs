@@ -1,4 +1,5 @@
 ﻿using Api.Http.Auth;
+using Api.Http.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -7,13 +8,14 @@ using Microsoft.Extensions.DependencyInjection;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 
-namespace Api.Http;
+namespace Api.Http.Extensions;
 
 public static class Extensions
 {
     private const string ApiTitle = "Brodbuddy API";
     private const string ApiVersion = "v1";
     private const string ApiDescription = "API til Brodbuddy";
+    private const string CorsPolicy = "CorsPolicy";
     
     public static IServiceCollection AddHttpApi(this IServiceCollection services)
     {
@@ -35,8 +37,23 @@ public static class Extensions
             });
         
             configure.OperationProcessors.Add(new AspNetCoreOperationSecurityScopeProcessor("JWT"));
+            configure.DocumentProcessors.Add(new MakeAllPropertiesRequiredProcessor());
         });
+        
+        services.AddProblemDetails();
+        services.AddExceptionHandler<GlobalExceptionHandler>();
 
+        services.AddCors(options =>
+        {
+            options.AddPolicy(CorsPolicy, builder =>
+            {
+                builder.WithOrigins("http://localhost:5173")
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials(); 
+            });
+        });
+        
         services
             .AddAuthentication(options =>
             {
@@ -45,7 +62,7 @@ public static class Extensions
                 options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             })
             .AddScheme<JwtBearerOptions, JwtAuthenticationHandler>(JwtBearerDefaults.AuthenticationScheme,
-                options => { }
+                _ => { }
             );
 
         services.AddAuthorization(options =>
@@ -64,7 +81,7 @@ public static class Extensions
                         httpContext.Request.Path.StartsWithSegments("/swagger-ui") ||
                         httpContext.Request.Path.Equals("/"))
                         return true;
-
+                    
                     // Kræv autentificering for alt andet
                     return context.User.Identity?.IsAuthenticated ?? false;
                 })
@@ -79,11 +96,14 @@ public static class Extensions
             options.LowercaseUrls = true;
         });
         
+        services.AddHttpContextAccessor();
+        
         return services;
     }
 
     public static WebApplication ConfigureHttpApi(this WebApplication app, int port)
     {
+        app.UseExceptionHandler();
         app.UseOpenApi();
         
         app.UseSwaggerUi(settings =>
@@ -92,11 +112,17 @@ public static class Extensions
             settings.DocExpansion = "list";
         });
         
+        app.UseCors(CorsPolicy);
+        app.UseFeatureToggles(); 
         app.UseAuthentication();
         app.UseAuthorization();
-        
         app.MapControllers();
         app.Urls.Add($"http://0.0.0.0:{port}");
         return app;
+    }
+    
+    public static IApplicationBuilder UseFeatureToggles(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<FeatureToggleMiddleware>();
     }
 }

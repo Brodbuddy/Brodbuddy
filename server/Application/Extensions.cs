@@ -1,4 +1,5 @@
-﻿using Application.Services;
+﻿using Application.Interfaces;
+using Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application;
@@ -17,8 +18,10 @@ public static class Extensions
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IIdentityVerificationService, IdentityVerificationService>();
         services.AddScoped<IPasswordlessAuthService, PasswordlessAuthService>();
-
+        
         services.AddScoped<IMqttTestService, MqttTestService>();
+        
+        services.AddScoped<IFeatureToggleService, FeatureToggleService>();
         return services;
     }
 }

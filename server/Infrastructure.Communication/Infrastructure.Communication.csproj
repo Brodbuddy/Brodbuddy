@@ -5,7 +5,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="brodbuddy.websocket" Version="0.0.14" />
+        <PackageReference Include="brodbuddy.websocket" Version="0.0.16" />
         <PackageReference Include="HiveMQtt" Version="0.26.1"/>
         <PackageReference Include="FluentEmail.MailKit" Version="3.0.2"/>
         <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.3"/>

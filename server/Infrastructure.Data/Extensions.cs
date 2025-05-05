@@ -1,4 +1,5 @@
 ﻿using Application;
+using Application.Interfaces;
 using Application.Interfaces.Data.Repositories;
 using Infrastructure.Data.Persistence;
 using Infrastructure.Data.Repositories;
@@ -18,6 +19,12 @@ public static class Extensions
             options.UseNpgsql(provider.GetRequiredService<IOptionsMonitor<AppOptions>>().CurrentValue.Postgres.ConnectionString);
             options.EnableSensitiveDataLogging();
         });
+        
+        var serviceProvider = services.BuildServiceProvider();
+        var appOptions = serviceProvider.GetRequiredService<IOptions<AppOptions>>().Value;
+        services.AddStackExchangeRedisCache(options => {
+            options.Configuration = appOptions.Dragonfly.ConnectionString;
+        });
 
         services.AddScoped<IRefreshTokenRepository, PgRefreshTokenRepository>();
         services.AddScoped<IOtpRepository, PgOtpRepository>();
@@ -26,6 +33,8 @@ public static class Extensions
         services.AddScoped<IDeviceRegistryRepository, PgDeviceRegistryRepository>();
         services.AddScoped<IMultiDeviceIdentityRepository, PgMultiDeviceIdentityRepository>();
         services.AddScoped<IIdentityVerificationRepository, PgIdentityVerificationRepository>();
+        
+        services.AddScoped<IFeatureToggleRepository, PgFeatureToggleRepository>();
         return services;
     }
 }
