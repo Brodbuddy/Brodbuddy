@@ -26,7 +26,7 @@ export const useAuth = (): AuthHook => {
             try {
                 const token = tokenStorage.getItem(TOKEN_KEY, null);
                 if (token) {
-                    const userResponse = await api.auth.userInfo({
+                    const userResponse = await api.passwordlessAuth.userInfo({
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setUser(userResponse.data);
@@ -51,7 +51,7 @@ export const useAuth = (): AuthHook => {
     
     const initiateLogin = async (initiateLoginRequest: InitiateLoginRequest) => {
         try {
-            await api.auth.initiateLogin(initiateLoginRequest);
+            await api.passwordlessAuth.initiateLogin(initiateLoginRequest);
             sessionStorage.setItem('loginEmail', initiateLoginRequest.email);
             return true;
         } catch (error) {
@@ -65,14 +65,14 @@ export const useAuth = (): AuthHook => {
             const email = sessionStorage.getItem('loginEmail');
             if (!email) return false;
             
-            const response = await api.auth.verifyCode({ email, code });
+            const response = await api.passwordlessAuth.verifyCode({ email, code });
             const token = response.data.accessToken;
 
             sessionStorage.removeItem('loginEmail');
             tokenStorage.setItem(TOKEN_KEY, token);
             setJwt(token);
 
-            const userResponse = await api.auth.userInfo({
+            const userResponse = await api.passwordlessAuth.userInfo({
                 headers: { Authorization: `Bearer ${token}` }
             });
             setUser(userResponse.data);
@@ -90,7 +90,7 @@ export const useAuth = (): AuthHook => {
     } 
 
     const logout = async () => {
-        await api.auth.logout();
+        await api.passwordlessAuth.logout();
         setJwt(null);
         setUser(null);
         navigate(AppRoutes.login);

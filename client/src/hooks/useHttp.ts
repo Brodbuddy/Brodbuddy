@@ -41,7 +41,7 @@ const processQueue = (error: any = null) => {
 };
 
 api.instance.interceptors.request.use((config) => {
-    if (config.url?.endsWith('api/auth/user-info')) {
+    if (config.url?.endsWith('api/passwordless-auth/user-info')) {
         return config;
     }
 
@@ -63,7 +63,7 @@ api.instance.interceptors.response.use((response) => response, async (error: Axi
         return Promise.reject(error);
     }
 
-    if (originalRequest.url?.endsWith('api/auth/refresh')) {
+    if (originalRequest.url?.endsWith('api/passwordless-auth/refresh')) {
         return handleAuthFailure(error);
     }
 
@@ -76,7 +76,7 @@ api.instance.interceptors.response.use((response) => response, async (error: Axi
     isRefreshing = true;
 
     try {
-        const response = await api.auth.refreshToken();
+        const response = await api.passwordlessAuth.refreshToken();
         const newToken = response.data.accessToken;
 
         store.set(jwtAtom, newToken);

@@ -12,9 +12,9 @@ using LoginVerificationRequest = Api.Http.Models.LoginVerificationRequest;
 
 namespace Api.Http.Controllers;
 
-[Route("api/[controller]")]
+[Route("api/passwordless-auth")]
 [ApiController]
-public class AuthController : ControllerBase
+public class PasswordlessAuthController : ControllerBase
 {
     private readonly IPasswordlessAuthService _authService;
     private readonly IJwtService _jwtService;
@@ -22,7 +22,7 @@ public class AuthController : ControllerBase
     private readonly IOptions<AppOptions> _appOptions;
     private const string RefreshTokenCookieName = "refreshToken";
 
-    public AuthController(
+    public PasswordlessAuthController(
         IPasswordlessAuthService passwordlessAuthService, 
         IJwtService jwtService,
         TimeProvider timeProvider,

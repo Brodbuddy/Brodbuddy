@@ -75,7 +75,7 @@ public class PasswordlessAuthServiceTests
         }
 
         [Fact]
-        public async Task CompleteLoginAsync_WithInvalidCode_ShouldThrowUnauthorizedException()
+        public async Task CompleteLoginAsync_WithInvalidCode_ShouldThrowArgumentException()
         {
             // Arrange
             string email = "test@example.com";
@@ -88,9 +88,9 @@ public class PasswordlessAuthServiceTests
 
             // Act & Assert
             var exception =
-                await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _service.CompleteLoginAsync(email, code, browser, os));
+                await Assert.ThrowsAsync<ArgumentException>(() => _service.CompleteLoginAsync(email, code, browser, os));
 
-            exception.ShouldBeOfType<UnauthorizedAccessException>();
+            exception.ShouldBeOfType<ArgumentException>();
             _mockIdentityVerificationService.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);
             _mockMultiDeviceIdentityService.Verify(
                 s => s.EstablishIdentityAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
