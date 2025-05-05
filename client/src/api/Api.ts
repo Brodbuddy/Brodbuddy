@@ -18,6 +18,10 @@ export interface InitiateLoginRequest {
   email: string;
 }
 
+export interface LoginVerificationResponse {
+  accessToken: string;
+}
+
 export interface LoginVerificationRequest {
   email: string;
   /** @format int32 */
@@ -233,18 +237,18 @@ export class Api<
       ...params,
     });
 
-  passwordlessauth = {
+  auth = {
     /**
      * No description
      *
-     * @tags PasswordlessAuth
+     * @tags Auth
      * @name TestToken
-     * @request GET:/api/passwordlessauth/test-token
+     * @request GET:/api/auth/test-token
      * @secure
      */
     testToken: (params: RequestParams = {}) =>
       this.request<TestTokenResponse, any>({
-        path: `/api/passwordlessauth/test-token`,
+        path: `/api/auth/test-token`,
         method: "GET",
         secure: true,
         format: "json",
@@ -254,14 +258,14 @@ export class Api<
     /**
      * No description
      *
-     * @tags PasswordlessAuth
+     * @tags Auth
      * @name InitiateLogin
-     * @request POST:/api/passwordlessauth/initiate
+     * @request POST:/api/auth/initiate
      * @secure
      */
     initiateLogin: (data: InitiateLoginRequest, params: RequestParams = {}) =>
       this.request<File, any>({
-        path: `/api/passwordlessauth/initiate`,
+        path: `/api/auth/initiate`,
         method: "POST",
         body: data,
         secure: true,
@@ -272,32 +276,33 @@ export class Api<
     /**
      * No description
      *
-     * @tags PasswordlessAuth
+     * @tags Auth
      * @name VerifyCode
-     * @request POST:/api/passwordlessauth/verify
+     * @request POST:/api/auth/verify
      * @secure
      */
     verifyCode: (data: LoginVerificationRequest, params: RequestParams = {}) =>
-      this.request<File, any>({
-        path: `/api/passwordlessauth/verify`,
+      this.request<LoginVerificationResponse, any>({
+        path: `/api/auth/verify`,
         method: "POST",
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
         ...params,
       }),
 
     /**
      * No description
      *
-     * @tags PasswordlessAuth
+     * @tags Auth
      * @name RefreshToken
-     * @request POST:/api/passwordlessauth/refresh
+     * @request POST:/api/auth/refresh
      * @secure
      */
     refreshToken: (params: RequestParams = {}) =>
       this.request<RefreshTokenResponse, any>({
-        path: `/api/passwordlessauth/refresh`,
+        path: `/api/auth/refresh`,
         method: "POST",
         secure: true,
         format: "json",
@@ -307,14 +312,14 @@ export class Api<
     /**
      * No description
      *
-     * @tags PasswordlessAuth
+     * @tags Auth
      * @name Logout
-     * @request POST:/api/passwordlessauth/logout
+     * @request POST:/api/auth/logout
      * @secure
      */
     logout: (params: RequestParams = {}) =>
       this.request<File, any>({
-        path: `/api/passwordlessauth/logout`,
+        path: `/api/auth/logout`,
         method: "POST",
         secure: true,
         ...params,
@@ -323,14 +328,14 @@ export class Api<
     /**
      * No description
      *
-     * @tags PasswordlessAuth
+     * @tags Auth
      * @name UserInfo
-     * @request GET:/api/passwordlessauth/user-info
+     * @request GET:/api/auth/user-info
      * @secure
      */
     userInfo: (params: RequestParams = {}) =>
       this.request<UserInfoResponse, any>({
-        path: `/api/passwordlessauth/user-info`,
+        path: `/api/auth/user-info`,
         method: "GET",
         secure: true,
         format: "json",

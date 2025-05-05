@@ -19,7 +19,7 @@ export const userInfoAtom = atom(
         if (!token) return null;
         console.log("efter if statement" + token)
         try {
-            const response = await api.passwordlessauth.userInfo();
+            const response = await api.auth.userInfo();
             return response.data;
         } catch (error) {
             return null;
@@ -61,7 +61,7 @@ export const initiateLoginAtom = atom(
     async (_get, _set, email: string) => {
         try {
             const request: InitiateLoginRequest = { email };
-            await api.passwordlessauth.initiateLogin(request);
+            await api.auth.initiateLogin(request);
             return true;
         } catch (error) {
             console.error('Login initiation failed:', error);
@@ -75,7 +75,7 @@ export const verifyCodeAtom = atom(
     async (_get, set, { email, code }: { email: string; code: number }) => {
         try {
             const request: LoginVerificationRequest = { email, code };
-            const response = await api.passwordlessauth.verifyCode(request);
+            const response = await api.auth.verifyCode(request);
             
             const token = response.data.accessToken;
             if (token) {
@@ -95,7 +95,7 @@ export const refreshTokenAtom = atom(
     null,
     async (_get, set) => {
         try {
-            const response = await api.passwordlessauth.refreshToken();
+            const response = await api.auth.refreshToken();
 
             const token = response.data.accessToken;
             if (token) {
@@ -114,7 +114,7 @@ export const logoutAtom = atom(
     null,
     async (_get, set) => {
         try {
-            await api.passwordlessauth.logout();
+            await api.auth.logout();
         } catch (error) {
             console.error('Logout failed:', error);
         } finally {

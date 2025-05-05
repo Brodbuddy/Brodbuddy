@@ -1,35 +1,34 @@
 using Api.Http.Extensions;
 using Api.Http.Models;
+using Api.Http.Utils;
 using Application;
-using Application.Models.Dto;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using InitiateLoginRequest = Api.Http.Models.InitiateLoginRequest;
+using LoginVerificationRequest = Api.Http.Models.LoginVerificationRequest;
 
 namespace Api.Http.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class PasswordlessAuthController : ControllerBase
+public class AuthController : ControllerBase
 {
     private readonly IPasswordlessAuthService _authService;
-    private readonly IDeviceDetectionService _deviceDetectionService;
     private readonly IJwtService _jwtService;
     private readonly TimeProvider _timeProvider;
     private readonly IOptions<AppOptions> _appOptions;
     private const string RefreshTokenCookieName = "refreshToken";
 
-    public PasswordlessAuthController(
+    public AuthController(
         IPasswordlessAuthService passwordlessAuthService, 
-        IDeviceDetectionService deviceDetectionService,
         IJwtService jwtService,
         TimeProvider timeProvider,
         IOptions<AppOptions> appOptions)
     {
         _authService = passwordlessAuthService;
-        _deviceDetectionService = deviceDetectionService;
         _jwtService = jwtService;
         _timeProvider = timeProvider;
         _appOptions = appOptions;
@@ -56,32 +55,22 @@ public class PasswordlessAuthController : ControllerBase
 
     [HttpPost("verify")]
     [AllowAnonymous]
-    public async Task<IActionResult> VerifyCode([FromBody] LoginVerificationRequest request)
+    public async Task<LoginVerificationResponse> VerifyCode([FromBody] LoginVerificationRequest request)
     {
-        try
-        {
-            var browser = _deviceDetectionService.GetBrowser();
-            var os = _deviceDetectionService.GetOperatingSystem();
 
-            var (accessToken, refreshToken) = await _authService.CompleteLoginAsync(
-                request.Email,
-                request.Code,
-                browser,
-                os);
+        var browser = UserAgentUtils.GetBrowser(HttpContext);
+        var os = UserAgentUtils.GetOperatingSystem(HttpContext);
 
-            Response.Cookies.Append(RefreshTokenCookieName, refreshToken, GetRefreshTokenCookieOptions());
-            
-            return Ok(new { accessToken });
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized(new { message = "Invalid verification code" });
-        }
+        var (accessToken, refreshToken) = await _authService.CompleteLoginAsync(request.Email, request.Code, browser, os);
+
+        Response.Cookies.Append(RefreshTokenCookieName, refreshToken, GetRefreshTokenCookieOptions());
+        
+        return new LoginVerificationResponse(accessToken);
     }
 
     [HttpPost("refresh")]
     [AllowAnonymous]
-    public async Task<ActionResult<RefreshTokenResponse>> RefreshToken()
+    public async Task<RefreshTokenResponse> RefreshToken()
     {
         var refreshToken = Request.Cookies[RefreshTokenCookieName];
            

@@ -1,37 +1,24 @@
 using Microsoft.AspNetCore.Http;
 
-namespace Application.Services;
+namespace Api.Http.Utils;
 
-public interface IDeviceDetectionService
+public static class UserAgentUtils
 {
-    string GetBrowser(HttpContext? context = null);
-    string GetOperatingSystem(HttpContext? context = null);
-}
-
-public class DeviceDetectionService : IDeviceDetectionService
-{
-    private readonly IHttpContextAccessor _httpContextAccessor;
-
-    public DeviceDetectionService(IHttpContextAccessor httpContextAccessor)
-    {
-        _httpContextAccessor = httpContextAccessor;
-    }
-
-    public string GetBrowser(HttpContext? context = null)
+    public static string GetBrowser(HttpContext? context)
     {
         var userAgent = GetUserAgent(context);
         if (string.IsNullOrEmpty(userAgent))
             return "Unknown";
 
         if (userAgent.Contains("Chrome")) return "Chrome";
-        if (userAgent.Contains("Firefox")) return "Firefox";
+        if (userAgent.Contains("Firefox")) return "Firefox"; 
         if (userAgent.Contains("Safari") && !userAgent.Contains("Chrome")) return "Safari";
         if (userAgent.Contains("Edge")) return "Edge";
         if (userAgent.Contains("Opera")) return "Opera";
         return "Unknown";
     }
 
-    public string GetOperatingSystem(HttpContext? context = null)
+    public static string GetOperatingSystem(HttpContext? context)
     {
         var userAgent = GetUserAgent(context);
         if (string.IsNullOrEmpty(userAgent))
@@ -45,10 +32,8 @@ public class DeviceDetectionService : IDeviceDetectionService
         return "Unknown";
     }
 
-    private string? GetUserAgent(HttpContext? context = null)
+    private static string? GetUserAgent(HttpContext? context)
     {
-        var ctx = context ?? _httpContextAccessor.HttpContext;
-        
-        return ctx?.Request.Headers["User-Agent"].ToString();
+        return context?.Request.Headers["User-Agent"].ToString();
     }
 }
