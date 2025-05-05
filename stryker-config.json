@@ -13,7 +13,11 @@
       "!/**/PgDbContext.cs",
       "!/**/tests/**/*",
       "!/**/Extensions.cs",
-      "!/**/AppOptions.cs"
+      "!/**/AppOptions.cs",
+      "!/**/FluentEmailSender.cs",
+      "!/**/MessageWrapper.cs",
+      "!/**/RedisSocketKeys.cs"
+      
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest"

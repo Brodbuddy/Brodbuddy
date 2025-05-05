@@ -73,13 +73,25 @@ def extract_directory(file_path_str: str) -> str:
                 "Application",
                 "Infrastructure",
                 "Infrastructure.Data",
+                "Infrastructure.Communication",
+                "Infrastructure.Monitoring",
+                "Api.Websocket",
+                "Api.Http",
+                "Api.Mqtt",
+                "Startup"
             ]:
-                if (
-                    potential_dir == "Infrastructure"
-                    and len(parts) > server_index + 2
-                    and parts[server_index + 2] == "Data"
-                ):
+                if (potential_dir == "Infrastructure" and len(parts) > server_index + 2 and parts[server_index + 2] == "Data"):
                     return "Infrastructure.Data"
+                if (potential_dir == "Infrastructure" and len(parts) > server_index + 2 and parts[server_index + 2] == "Communication"):
+                    return "Infrastructure.Communication"
+                if (potential_dir == "Infrastructure" and len(parts) > server_index + 2 and parts[server_index + 2] == "Monitoring"):
+                    return "Infrastructure.Monitoring"
+                if (potential_dir == "Api" and len(parts) > server_index + 2 and parts[server_index + 2] == "Websocket"):
+                    return "Api.Websocket"
+                if (potential_dir == "Api" and len(parts) > server_index + 2 and parts[server_index + 2] == "Http"):
+                    return "Api.Http"
+                if (potential_dir == "Api" and len(parts) > server_index + 2 and parts[server_index + 2] == "Mqtt"):
+                    return "Api.Mqtt"          
                 return potential_dir
             return (
                 parts[server_index + 1]

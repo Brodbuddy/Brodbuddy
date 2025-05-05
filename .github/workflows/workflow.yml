@@ -45,9 +45,14 @@ jobs:
         id: cache-nuget
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-v1-${{ hashFiles('**/*.csproj') }}
+          key: ${{ runner.os }}-nuget-v1-${{ hashFiles('**/nuget.config', '**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-v1-
+
+      - name: Set up NuGet Authentication for GitHub Packages
+        run: |
+          echo "GITHUB_USERNAME=${{ github.actor }}" >> $GITHUB_ENV
+          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
 
       - name: Restore dependencies
         run: dotnet restore
@@ -113,6 +118,7 @@ jobs:
       matrix:
         project: [
           'server/Infrastructure.Data/Infrastructure.Data.csproj',
+          'server/Infrastructure.Communication/Infrastructure.Communication.csproj',
           'server/Application/Application.csproj',
           'server/Core/Core.csproj'
         ]
@@ -133,9 +139,14 @@ jobs:
         id: cache-nuget
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-v1-${{ hashFiles('**/*.csproj') }}
+          key: ${{ runner.os }}-nuget-v1-${{ hashFiles('**/nuget.config', '**/*.csproj') }}
           restore-keys: |
             ${{ runner.os }}-nuget-v1-
+
+      - name: Set up NuGet Authentication for GitHub Packages
+        run: |
+          echo "GITHUB_USERNAME=${{ github.actor }}" >> $GITHUB_ENV
+          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
 
       - name: Restore dependencies
         run: dotnet restore
