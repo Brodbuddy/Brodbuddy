@@ -21,7 +21,7 @@ public static class Extensions
             var logger = sp.GetRequiredService<ILogger<HiveMQClient>>();
 
             var clientOptions = new HiveMQClientOptionsBuilder()
-                .WithWebSocketServer($"ws://{options.Mqtt.Host}:{options.Mqtt.WebSocketPort}/mqtt")
+                .WithWebSocketServer($"wss://{options.Mqtt.Host}:{options.Mqtt.WebSocketPort}/mqtt")
                 .WithClientId($"backend_{Guid.NewGuid()}")
                 .WithUserName(options.Mqtt.Username)
                 .WithPassword(options.Mqtt.Password)

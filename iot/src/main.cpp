@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <VL53L0X.h>
+//#include <WiFiManager.h>
 
 // Sensor object
 VL53L0X sensor;
@@ -27,8 +28,26 @@ void scanI2C();
 void setup() {
   // Initialize serial communication
   Serial.begin(115200);
+//  Serial.println("WiFiManager Example");
+
   delay(5000); // Wait 5 seconds to ensure serial connection
   
+/* WiFiManager wifiManager;
+
+  wifiManager.setConfigPortalTimeout(180);
+
+
+  if(!wifiManager.autoConnect("ESP32_AP")) {
+    Serial.println("Failed to connect and hit timeout");
+    ESP.restart(); // Restart the ESP32
+    delay(1000);
+  }
+   
+
+  Serial.println("Connected to WiFi!");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+ */
   Serial.println("\n\n=== Sourdough Rise Monitor ===");
   
   // Reset the sensor using XSHUT
