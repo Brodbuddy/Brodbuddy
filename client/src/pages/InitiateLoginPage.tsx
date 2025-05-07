@@ -1,23 +1,44 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { AppRoutes } from '../helpers/appRoutes';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button";
+import * as yup from 'yup';
+import { AppRoutes } from '@/helpers';
 
+// validation schema Yup
+const validationSchema = yup.object({
+    email: yup
+        .string()
+        .required('Email is required')
+        .email('Please enter a valid email')
+});
+
+type FormValues = {
+    email: string;
+};
 
 export default function InitiateLoginPage() {
-    const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { initiateLogin } = useAuth();
     const navigate = useNavigate();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
+        defaultValues: {
+            email: ''
+        },
+        resolver: yupResolver(validationSchema)
+    });
+
+    const onSubmit = async (data: FormValues) => {
         setIsLoading(true);
         setError(null);
 
         try {
-            const success = await initiateLogin({ email });
+            const success = await initiateLogin({ email: data.email });
             if (success) {
                 navigate(AppRoutes.verifyLogin);
             } else {
@@ -51,28 +72,28 @@ export default function InitiateLoginPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit(onSubmit)}>
                         <div className="mb-4">
-
-                            <input
+                            <Input
                                 type="email"
                                 id="email"
                                 placeholder="your@email.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
+                                {...register("email")}
                                 disabled={isLoading}
-                                className="w-full rounded-md border-border-brown p-3 border focus:outline-none focus:ring-1 focus:ring-border-brown"
+                                className="border-border-brown focus:ring-border-brown"
                             />
+                            {errors.email && (
+                                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                            )}
                         </div>
 
-                        <button
+                        <Button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full rounded-md bg-accent p-3 text-primary hover:opacity-90 focus:outline-none disabled:opacity-50"
+                            className="w-full bg-accent text-primary hover:bg-accent/90"
                         >
                             {isLoading ? 'Sending...' : 'Send Verification Code'}
-                        </button>
+                        </Button>
                     </form>
 
                     <div className="mt-6 text-center text-sm text-primary">

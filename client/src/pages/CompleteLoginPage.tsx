@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { AppRoutes } from '../helpers/appRoutes';
+import { useForm } from 'react-hook-form';
+import { AppRoutes } from '@/helpers';
+import { Button } from "@/components/ui/button";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import {
     InputOTP,
     InputOTPGroup,
     InputOTPSlot,
 } from "@/components/ui/input-otp";
+
+type FormValues = {
+    code: string;
+};
 
 export default function CompleteLoginPage() {
     const [code, setCode] = useState('');
@@ -16,6 +22,13 @@ export default function CompleteLoginPage() {
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
     const { completeLogin } = useAuth();
+
+    const { handleSubmit, setValue } = useForm<FormValues>({
+        defaultValues: {
+            code: ''
+        },
+        mode: 'onChange'
+    });
 
     useEffect(() => {
         const storedEmail = sessionStorage.getItem('loginEmail');
@@ -26,13 +39,18 @@ export default function CompleteLoginPage() {
         setEmail(storedEmail);
     }, [navigate]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+
+    const handleCodeChange = (value: string) => {
+        setValue('code', value, { shouldValidate: true });
+        setCode(value);
+    };
+
+    const onSubmit = async (data: FormValues) => {
         setIsLoading(true);
         setError(null);
 
         try {
-            const numericCode = parseInt(code, 10);
+            const numericCode = parseInt(data.code, 10);
             if (isNaN(numericCode)) {
                 setError('Please enter a valid numeric code');
                 setIsLoading(false);
@@ -73,15 +91,14 @@ export default function CompleteLoginPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit(onSubmit)}>
                         <div className="mb-6">
-
                             <div className="flex justify-center">
                                 <InputOTP
                                     maxLength={6}
                                     pattern={REGEXP_ONLY_DIGITS}
                                     value={code}
-                                    onChange={setCode}
+                                    onChange={handleCodeChange}
                                     disabled={isLoading}
                                     className="gap-2 scale-110"
                                 >
@@ -97,21 +114,22 @@ export default function CompleteLoginPage() {
                             </div>
                         </div>
 
-                        <button
+                        <Button
                             type="submit"
                             disabled={isLoading || code.length !== 6}
-                            className="w-full rounded-md bg-accent p-3 text-primary hover:opacity-90 focus:outline-none disabled:opacity-50 mb-2"
+                            className="w-full mb-2 bg-accent text-primary hover:bg-accent/90"
                         >
                             {isLoading ? 'Verifying...' : 'Login'}
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
+                            variant="ghost"
                             type="button"
                             onClick={() => navigate(AppRoutes.login)}
-                            className="w-full text-primary hover:underline focus:outline-none mt-2"
+                            className="w-full mt-2 text-primary hover:bg-accent/0"
                         >
-                            Tilbage til login
-                        </button>
+                            Back to login page
+                        </Button>
                     </form>
 
                     <div className="mt-6 text-center text-sm text-primary">
