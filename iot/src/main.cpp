@@ -1,76 +1,91 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <VL53L0X.h>
-//#include <WiFiManager.h>
+#include <WiFiManager.h>
+#include <PubSubClient.h> 
+#include <WiFiClientSecure.h> 
+#include <ArduinoJson.h> 
 
 // Sensor object
 VL53L0X sensor;
 
+// MQTT Broker settings
+const char* mqtt_server = "15b24181a314453a912a712175056638.s1.eu.hivemq.cloud";
+const int mqtt_port = 8883; 
+const char* mqtt_user = "thom625b"; 
+const char* mqtt_password = "Kakao1!!"; 
+const char* device_id = "sourdough_monitor_01"; 
+const char* mqtt_topic = "devices/sourdough_monitor_01/telemetry"; 
+
 // Constants
-const int MEASUREMENT_INTERVAL_MS = 10000;  // 10 second between measurements
-const int STARTUP_DELAY_MS = 2000;          // Delay before initial measurement
-const int NUM_SAMPLES = 5;                  // Number of samples to average for each reading
-const int XSHUT_PIN = 4;  // XSHUT pin connected to GPIO 4
+const int MEASUREMENT_INTERVAL_MS = 600000;  // 10 minutter mellem hver målibng
+const int STARTUP_DELAY_MS = 2000;          // Forsinkelse før første måling
+const int NUM_SAMPLES = 5;                  // Antal prøver til gennemsnit for hver aflæsning
+const int XSHUT_PIN = 4;  
 
 // Variables
 unsigned long lastMeasurementTime = 0;
 int initialHeight = 0;
 int currentHeight = 0;
 float risePercentage = 0.0;
-float riseRate = 0.0;        // Rise per hour
-unsigned long startTime = 0; // When monitoring began
+float riseRate = 0.0;        // hævning pr. time
+unsigned long startTime = 0; 
 
-// Function prototypes
+// WiFi og MQTT klienter
+WiFiClientSecure espClient;
+PubSubClient mqttClient(espClient);
+
+// Funktionsprototyper
 int takeMeasurement();
 void printMeasurement(int measurement, int rise, float percentage, float hourlyRate);
 void scanI2C();
+void reconnectMqtt();
+void publishMeasurement(int measurement, int rise, float percentage, float hourlyRate);
 
 void setup() {
-  // Initialize serial communication
   Serial.begin(115200);
-//  Serial.println("WiFiManager Example");
+  Serial.println("WiFiManager Eksempel");
 
-  delay(5000); // Wait 5 seconds to ensure serial connection
+  delay(5000); 
   
-/* WiFiManager wifiManager;
-
+  WiFiManager wifiManager;
   wifiManager.setConfigPortalTimeout(180);
-
 
   if(!wifiManager.autoConnect("ESP32_AP")) {
     Serial.println("Failed to connect and hit timeout");
-    ESP.restart(); // Restart the ESP32
+    ESP.restart(); 
     delay(1000);
   }
    
-
   Serial.println("Connected to WiFi!");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
- */
+
+  espClient.setInsecure();
+  
+  mqttClient.setServer(mqtt_server, mqtt_port);
+
   Serial.println("\n\n=== Sourdough Rise Monitor ===");
   
-  // Reset the sensor using XSHUT
   pinMode(XSHUT_PIN, OUTPUT);
-  digitalWrite(XSHUT_PIN, LOW);  // Disable the sensor
+  digitalWrite(XSHUT_PIN, LOW);  // Deaktiver sensoren
   delay(100);
-  digitalWrite(XSHUT_PIN, HIGH); // Enable the sensor
+  digitalWrite(XSHUT_PIN, HIGH); // Aktiver sensoren
   delay(100);
   
-  // Initialize I2C communication
   Wire.begin();
-  Wire.setClock(50000);  // Set I2C clock to 50kHz (slower and more reliable)
+  Wire.setClock(50000);  
   
   // Scan I2C bus for devices
   Serial.println("Scanning I2C bus for devices...");
   scanI2C();
   
-  // Initialize the VL53L0X sensor
+  // Initalisere VL53L0X sensoren
   Serial.println("Initializing sensor...");
   if (!sensor.init()) {
     Serial.println("Failed to initialize VL53L0X sensor!");
     
-    // Try again with default address
+    // Prøver igen med default addressen
     Serial.println("Trying with default address...");
     sensor.setAddress(0x29);
     if (!sensor.init()) {
@@ -81,19 +96,16 @@ void setup() {
     }
   }
   
-  // Configure sensor for better accuracy over short distances
   sensor.setTimeout(500);
   
-  // Configure for high accuracy mode (longer range but slower)
-  sensor.setMeasurementTimingBudget(200000); // 200ms per measurement
+  sensor.setMeasurementTimingBudget(200000); // 200ms per måling
   
   sensor.startContinuous();
   
-  // Wait for sensor to stabilize
+  
   Serial.println("Sensor initialized. Waiting for stabilization...");
   delay(STARTUP_DELAY_MS);
   
-  // Take initial measurement (distance to top of sourdough)
   Serial.println("Taking initial measurement...");
   initialHeight = takeMeasurement();
   
@@ -114,39 +126,81 @@ void setup() {
 }
 
 void loop() {
-  // Check if it's time to take a new measurement
+  if (!mqttClient.connected()) {
+    reconnectMqtt();
+  }
+  mqttClient.loop();
+  
+  // Tjekker om det er tid til at lave en ny måling
   if (millis() - lastMeasurementTime >= MEASUREMENT_INTERVAL_MS) {
-    // Take a new measurement
+    // Laver en ny måling
     currentHeight = takeMeasurement();
     
     if (currentHeight <= 0) {
       Serial.println("Invalid reading. Skipping this measurement.");
     } else {
-      // Calculate rise (the difference between initial and current height)
       int rise = initialHeight - currentHeight;
       
-      // Calculate percentage rise
       risePercentage = (rise * 100.0) / initialHeight;
       
-      // Calculate rise rate per hour
       unsigned long elapsedMinutes = (millis() - startTime) / 60000;
       if (elapsedMinutes > 0) {
-        riseRate = (risePercentage * 60.0) / elapsedMinutes; // % per hour
+        riseRate = (risePercentage * 60.0) / elapsedMinutes;
       }
       
-      // Print results
       printMeasurement(currentHeight, rise, risePercentage, riseRate);
+      
+      // Publish til MQTT
+      publishMeasurement(currentHeight, rise, risePercentage, riseRate);
     }
     
-    // Update last measurement time
+    // Opdater sidste måletidspunkt
     lastMeasurementTime = millis();
   }
   
-  // Small delay to prevent CPU hogging
   delay(100);
 }
 
-// Scan I2C bus for devices
+void reconnectMqtt() {
+  int retries = 0;
+  while (!mqttClient.connected() && retries < 3) {
+    Serial.print("Attempting MQTT connection...");
+    
+    if (mqttClient.connect(device_id, mqtt_user, mqtt_password)) {
+      Serial.println("connected");
+      break;
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" retrying in 5 seconds");
+      retries++;
+      delay(5000);
+    }
+  }
+}
+
+  // Publish måledatat til MQTT
+void publishMeasurement(int measurement, int rise, float percentage, float hourlyRate) {
+  DynamicJsonDocument doc(256);
+  
+  // Tilføj data, så de matcher C# DeviceTelemetry-poststrukturen
+  doc["DeviceId"] = device_id;
+  doc["Temperature"] = measurement; 
+  doc["Humidity"] = risePercentage; 
+  doc["Timestamp"] = millis();     
+  
+  // Serialiser til JSON
+  char buffer[256];
+  serializeJson(doc, buffer);
+  
+  // Publish til MQTT topic
+  if (mqttClient.publish(mqtt_topic, buffer)) {
+    Serial.println("MQTT message published successfully");
+  } else {
+    Serial.println("Failed to publish MQTT message");
+  }
+}
+
 void scanI2C() {
   byte error, address;
   int deviceCount = 0;
@@ -174,7 +228,7 @@ void scanI2C() {
   }
 }
 
-// Take multiple measurements and return the average
+// Foretag flere målinger og returner gennemsnittet (uændret)
 int takeMeasurement() {
   int sum = 0;
   int validReadings = 0;
@@ -185,7 +239,7 @@ int takeMeasurement() {
       sum += reading;
       validReadings++;
     }
-    delay(50); // Short delay between readings
+    delay(50); 
   }
   
   if (validReadings == 0) {
@@ -196,7 +250,6 @@ int takeMeasurement() {
   return sum / validReadings;
 }
 
-// Print formatted measurement data
 void printMeasurement(int measurement, int rise, float percentage, float hourlyRate) {
   unsigned long elapsedMinutes = (millis() - startTime) / 60000;
   unsigned long hours = elapsedMinutes / 60;
@@ -220,11 +273,11 @@ void printMeasurement(int measurement, int rise, float percentage, float hourlyR
   Serial.println(" mm");
   
   Serial.print("Rise percentage: ");
-  Serial.print(percentage, 1); // One decimal place
+  Serial.print(percentage, 1); 
   Serial.println("%");
   
   Serial.print("Rise rate: ");
-  Serial.print(hourlyRate, 1); // One decimal place
+  Serial.print(hourlyRate, 1);
   Serial.println("% per hour");
   Serial.println("==============================");
 }
