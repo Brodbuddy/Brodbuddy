@@ -7,7 +7,7 @@ import { AuthContext } from './AuthContext';
 
 export default function App() {
     const auth = useAuth();
-    
+
     return (
         <AuthContext.Provider value={auth}>
             <Routes>
