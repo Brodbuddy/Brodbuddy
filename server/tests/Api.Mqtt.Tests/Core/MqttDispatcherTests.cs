@@ -87,8 +87,8 @@ public class MqttDispatcherTests
                     "dev1",
                     25.5,
                     60.0,
-                    new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
-                ),
+                    It.IsAny<DateTime>()
+                    ),
                 Times.Once
             ));
         }

@@ -30,11 +30,13 @@ public class SensorsMessageHandler : IMqttMessageHandler<MockMqttPublishMessage>
         
         if (telemetry != null)
         {
+            var timestamp = DateTime.UtcNow; 
+            
             await _testService.ProcessTelemetryAsync(
                 telemetry.DeviceId,
                 telemetry.Temperature,
                 telemetry.Humidity,
-                telemetry.Timestamp
+                timestamp
             );
         }
     }

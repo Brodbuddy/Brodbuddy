@@ -82,11 +82,10 @@ public class MqttDispatcher
     
     public async Task DispatchAsync(OnMessageReceivedEventArgs args)
     {
-        
+        ArgumentNullException.ThrowIfNull(args);
+
         _logger.LogInformation("Raw MQTT message received on topic: {Topic}, payload: {Payload}", 
             args.PublishMessage.Topic, args.PublishMessage.PayloadAsString);
-        
-        ArgumentNullException.ThrowIfNull(args);
         
         var topic = args.PublishMessage.Topic;
         
