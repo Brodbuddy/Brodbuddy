@@ -33,7 +33,8 @@ public static class Extensions
         services.AddScoped<IDeviceRegistryRepository, PgDeviceRegistryRepository>();
         services.AddScoped<IMultiDeviceIdentityRepository, PgMultiDeviceIdentityRepository>();
         services.AddScoped<IIdentityVerificationRepository, PgIdentityVerificationRepository>();
-        
+        services.AddScoped<ITelemetryRepository, PgTelemetryRepository>();
+
         services.AddScoped<IFeatureToggleRepository, PgFeatureToggleRepository>();
         return services;
     }

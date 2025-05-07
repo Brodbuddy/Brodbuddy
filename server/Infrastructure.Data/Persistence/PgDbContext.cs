@@ -16,6 +16,8 @@ public partial class PgDbContext : DbContext
 
     public virtual DbSet<DeviceRegistry> DeviceRegistries { get; set; }
 
+    public virtual DbSet<DeviceTelemetry> DeviceTelemetries { get; set; }
+
     public virtual DbSet<Feature> Features { get; set; }
 
     public virtual DbSet<OneTimePassword> OneTimePasswords { get; set; }
@@ -87,6 +89,26 @@ public partial class PgDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("device_registry_user_id_fkey");
+        });
+
+        modelBuilder.Entity<DeviceTelemetry>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("device_telemetry_pkey");
+
+            entity.ToTable("device_telemetry");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DeviceId)
+                .HasMaxLength(255)
+                .HasColumnName("device_id");
+            entity.Property(e => e.Distance).HasColumnName("distance");
+            entity.Property(e => e.RisePercentage).HasColumnName("rise_percentage");
+            entity.Property(e => e.Timestamp).HasColumnName("timestamp");
         });
 
         modelBuilder.Entity<Feature>(entity =>

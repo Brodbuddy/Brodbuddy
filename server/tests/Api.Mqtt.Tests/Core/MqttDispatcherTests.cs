@@ -57,7 +57,7 @@ public class MqttDispatcherTests
                 DeviceId: "dev1",
                 Temperature: 25.5,
                 Humidity: 60.0,
-                Timestamp: new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                Timestamp: 1704067200000 // Long værdien repræsentere Jan 1, 2024 UTC i millisekunder
             );
 
             var payload = JsonSerializer.Serialize(telemetry);
@@ -101,7 +101,7 @@ public class MqttDispatcherTests
                 DeviceId: "dev1",
                 Temperature: 25.5,
                 Humidity: 60.0,
-                Timestamp: new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                Timestamp: 1704067200000 // Long værdien repræsentere Jan 1, 2024 UTC i millisekunder
             );
 
             var payload = JsonSerializer.Serialize(telemetry);
@@ -136,7 +136,7 @@ public class MqttDispatcherTests
                 DeviceId: "dev1",
                 Temperature: 25.5,
                 Humidity: 60.0,
-                Timestamp: new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                Timestamp: 1704067200000 // Long værdien repræsentere Jan 1, 2024 UTC i millisekunder
             );
 
             var payload = JsonSerializer.Serialize(telemetry);
