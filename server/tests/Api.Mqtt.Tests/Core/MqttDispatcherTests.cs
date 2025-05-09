@@ -80,12 +80,11 @@ public class MqttDispatcherTests
 
             // Assert
             Should.NotThrow(() => _sourdoughTelemetryService.Verify(
-                s => s.ProcessTelemetryAsync(new TelemetryReading(
-                    "dev1",
-                    25.5,
-                    60.0,
-                    It.IsAny<DateTime>()
-                    )),
+                s => s.ProcessTelemetryAsync(It.Is<TelemetryReading>(tr => 
+                    tr.DeviceId == "dev1" && 
+                    Math.Abs(tr.Distance - 25.5) < 0.000001 && 
+                    Math.Abs(tr.RisePercentage - 60.0) < 0.000001
+                )),
                 Times.Once
             ));
         }
