@@ -18,7 +18,7 @@ const char* device_id = "sourdough_monitor_01";
 const char* mqtt_topic = "devices/sourdough_monitor_01/telemetry"; 
 
 // Constants
-const int MEASUREMENT_INTERVAL_MS = 600000;  // 10 minutter mellem hver målibng
+const int MEASUREMENT_INTERVAL_MS = 600000;  // 10 minutter mellem hver måling
 const int STARTUP_DELAY_MS = 2000;          // Forsinkelse før første måling
 const int NUM_SAMPLES = 5;                  // Antal prøver til gennemsnit for hver aflæsning
 const int XSHUT_PIN = 4;  

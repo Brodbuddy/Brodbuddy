@@ -18,14 +18,14 @@ public class PgTelemetryRepository : ITelemetryRepository
         _timeProvider = timeProvider;
     }
 
-    public async Task<Guid> SaveReadingAsync(string deviceId, double distance, double risePercentage, DateTime timestamp)
+    public async Task<Guid> SaveReadingAsync(TelemetryReading telemetryReading)
     {
         var entity = new DeviceTelemetry
         {
-            DeviceId = deviceId,
-            Distance = distance,
-            RisePercentage = risePercentage,
-            Timestamp = timestamp,
+            DeviceId = telemetryReading.DeviceId!,
+            Distance = telemetryReading.Distance,
+            RisePercentage = telemetryReading.RisePercentage,
+            Timestamp = telemetryReading.Timestamp,
             CreatedAt = _timeProvider.Now()
         };
 

@@ -4,6 +4,7 @@ using Api.Mqtt.Core;
 using Api.Mqtt.MessageHandlers;
 using Api.Mqtt.Tests.MockHandlers;
 using Application.Interfaces.Communication.Publishers;
+using Application.Models;
 using Application.Services;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
@@ -71,11 +72,7 @@ public class MqttDispatcherTests
             var publishEventArgs = new OnMessageReceivedEventArgs(publishMessage);
 
             _sourdoughTelemetryService
-                .Setup(s => s.ProcessTelemetryAsync(
-                    It.IsAny<string>(),
-                    It.IsAny<double>(),
-                    It.IsAny<double>(),
-                    It.IsAny<DateTime>()))
+                .Setup(s => s.ProcessTelemetryAsync(It.IsAny<TelemetryReading>()))
                 .Returns(Task.CompletedTask);
 
             // Act
@@ -83,12 +80,12 @@ public class MqttDispatcherTests
 
             // Assert
             Should.NotThrow(() => _sourdoughTelemetryService.Verify(
-                s => s.ProcessTelemetryAsync(
+                s => s.ProcessTelemetryAsync(new TelemetryReading(
                     "dev1",
                     25.5,
                     60.0,
                     It.IsAny<DateTime>()
-                    ),
+                    )),
                 Times.Once
             ));
         }
@@ -119,11 +116,11 @@ public class MqttDispatcherTests
 
             //Assert
             Should.NotThrow(() => _sourdoughTelemetryService.Verify(
-                s => s.ProcessTelemetryAsync(
+                s => s.ProcessTelemetryAsync(new TelemetryReading(
                     It.IsAny<string>(),
                     It.IsAny<double>(),
                     It.IsAny<double>(),
-                    It.IsAny<DateTime>()),
+                    It.IsAny<DateTime>())),
                 Times.Never
             ));
         }
@@ -154,11 +151,11 @@ public class MqttDispatcherTests
 
             // Assert
             Should.NotThrow(() => _sourdoughTelemetryService.Verify(
-                s => s.ProcessTelemetryAsync(
+                s => s.ProcessTelemetryAsync(new TelemetryReading(
                     It.IsAny<string>(),
                     It.IsAny<double>(),
                     It.IsAny<double>(),
-                    It.IsAny<DateTime>()),
+                    It.IsAny<DateTime>())),
                 Times.Never
             ));
         }
@@ -182,11 +179,11 @@ public class MqttDispatcherTests
 
             // Assert
             Should.NotThrow(() => _sourdoughTelemetryService.Verify(
-                s => s.ProcessTelemetryAsync(
+                s => s.ProcessTelemetryAsync(new TelemetryReading(
                     It.IsAny<string>(),
                     It.IsAny<double>(),
                     It.IsAny<double>(),
-                    It.IsAny<DateTime>()),
+                    It.IsAny<DateTime>())),
                 Times.Never
             ));
         }
@@ -210,11 +207,11 @@ public class MqttDispatcherTests
 
             // Assert
             Should.NotThrow(() => _sourdoughTelemetryService.Verify(
-                s => s.ProcessTelemetryAsync(
+                s => s.ProcessTelemetryAsync(new TelemetryReading(
                     It.IsAny<string>(),
                     It.IsAny<double>(),
                     It.IsAny<double>(),
-                    It.IsAny<DateTime>()),
+                    It.IsAny<DateTime>())),
                 Times.Never
             ));
         }
@@ -274,4 +271,4 @@ public class MqttDispatcherTests
             Should.Throw<ArgumentNullException>(() => _dispatcher.RegisterHandlers(null!));
         }
     }
-}
+}  

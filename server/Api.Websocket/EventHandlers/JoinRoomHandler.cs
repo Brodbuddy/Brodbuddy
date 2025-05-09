@@ -27,7 +27,7 @@ public class JoinRoomHandler(ISocketManager manager) : IWebSocketHandler<JoinRoo
 {
     public async Task<UserJoined> HandleAsync(JoinRoom incoming, string clientId, IWebSocketConnection socket)
     {
-        var roomTopic = $"room:{incoming.RoomId}";
+        var roomTopic = $"{incoming.RoomId}";
         await manager.SubscribeAsync(clientId, roomTopic);
         
         var notification = new UserJoined(incoming.RoomId, incoming.Username, socket.ConnectionInfo.Id);

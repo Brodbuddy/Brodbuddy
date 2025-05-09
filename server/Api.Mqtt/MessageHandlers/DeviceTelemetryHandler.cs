@@ -1,6 +1,7 @@
 using Api.Mqtt.Core;
 using Application.Services;
-using Application.Interfaces.Data.Repositories; 
+using Application.Interfaces.Data.Repositories;
+using Application.Models;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
 using Microsoft.Extensions.Logging;
@@ -34,6 +35,7 @@ public class DeviceTelemetryHandler : IMqttMessageHandler<DeviceTelemetry>
         var topic = args.PublishMessage.Topic;
         _logger.LogInformation("Topic: {Topic}", topic);
         
+        
         var timestamp = DateTime.UtcNow;
         _logger.LogInformation(
             "Received telemetry from device {DeviceId}: Distance={Distance}mm, Rise={Rise}%", 
@@ -41,6 +43,7 @@ public class DeviceTelemetryHandler : IMqttMessageHandler<DeviceTelemetry>
             message.Temperature, 
             message.Humidity);
         
-        await _sourdoughTelemetryService.ProcessTelemetryAsync(message.DeviceId, message.Temperature, message.Humidity, timestamp);
+        var telemetryReading = new TelemetryReading(message.DeviceId, message.Temperature, message.Humidity, timestamp);
+        await _sourdoughTelemetryService.ProcessTelemetryAsync(telemetryReading);
     }
 }

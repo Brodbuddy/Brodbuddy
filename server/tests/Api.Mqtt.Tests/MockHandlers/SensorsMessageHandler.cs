@@ -2,6 +2,7 @@
 using Api.Mqtt.Core;
 using Api.Mqtt.MessageHandlers;
 using Api.Mqtt.Tests.TestUtils;
+using Application.Models;
 using Application.Services;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
@@ -32,12 +33,12 @@ public class SensorsMessageHandler : IMqttMessageHandler<MockMqttPublishMessage>
         {
             var timestamp = DateTime.UtcNow; 
             
-            await _sourdoughTelemetryService.ProcessTelemetryAsync(
+            await _sourdoughTelemetryService.ProcessTelemetryAsync(new TelemetryReading(
                 telemetry.DeviceId,
                 telemetry.Temperature,
                 telemetry.Humidity,
                 timestamp
-            );
+            ));
         }
     }
 }
