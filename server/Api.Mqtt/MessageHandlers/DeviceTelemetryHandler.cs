@@ -11,18 +11,17 @@ public record DeviceTelemetry(string DeviceId, double Temperature, double Humidi
 
 public class DeviceTelemetryHandler : IMqttMessageHandler<DeviceTelemetry>
 {
-    private readonly IMqttTestService _service;
+    private readonly ISourdoughTelemetryService _sourdoughTelemetryService;
     private readonly ILogger<DeviceTelemetryHandler> _logger;
-    private readonly ITelemetryRepository _telemetryRepository; 
+   
 
     public DeviceTelemetryHandler(
-        IMqttTestService service,
-        ILogger<DeviceTelemetryHandler> logger, 
-        ITelemetryRepository telemetryRepository)
+        ISourdoughTelemetryService sourdoughTelemetryService,
+        ILogger<DeviceTelemetryHandler> logger
+        )
     {
-        _service = service;
+        _sourdoughTelemetryService = sourdoughTelemetryService;
         _logger = logger;
-        _telemetryRepository = telemetryRepository;
     }
 
     public string TopicFilter => "devices/+/telemetry";
@@ -41,13 +40,7 @@ public class DeviceTelemetryHandler : IMqttMessageHandler<DeviceTelemetry>
             message.DeviceId, 
             message.Temperature, 
             message.Humidity);
-
-        await _telemetryRepository.SaveReadingAsync(
-            message.DeviceId, 
-            message.Temperature, 
-            message.Humidity, 
-            timestamp);
-            
-        await _service.ProcessTelemetryAsync(message.DeviceId, message.Temperature, message.Humidity, timestamp);
+        
+        await _sourdoughTelemetryService.ProcessTelemetryAsync(message.DeviceId, message.Temperature, message.Humidity, timestamp);
     }
 }

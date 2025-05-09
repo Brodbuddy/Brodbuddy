@@ -10,11 +10,11 @@ namespace Api.Mqtt.Tests.MockHandlers;
 
 public class SensorsMessageHandler : IMqttMessageHandler<MockMqttPublishMessage>
 {
-    private readonly IMqttTestService _testService;
+    private readonly ISourdoughTelemetryService _sourdoughTelemetryService;
     
-    public SensorsMessageHandler(IMqttTestService testService)
+    public SensorsMessageHandler(ISourdoughTelemetryService sourdoughTelemetryService)
     {
-        _testService = testService;
+        _sourdoughTelemetryService = sourdoughTelemetryService;
     }
 
     public string TopicFilter => "sensors/+/telemetry";
@@ -32,7 +32,7 @@ public class SensorsMessageHandler : IMqttMessageHandler<MockMqttPublishMessage>
         {
             var timestamp = DateTime.UtcNow; 
             
-            await _testService.ProcessTelemetryAsync(
+            await _sourdoughTelemetryService.ProcessTelemetryAsync(
                 telemetry.DeviceId,
                 telemetry.Temperature,
                 telemetry.Humidity,

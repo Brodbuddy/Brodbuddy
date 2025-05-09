@@ -41,12 +41,12 @@ public class PgTelemetryRepository : ITelemetryRepository
             .OrderByDescending(t => t.Timestamp)
             .Take(limit)
             .Select(t => new TelemetryReading
-            {
-                DeviceId = t.DeviceId,
-                Distance = t.Distance,
-                RisePercentage = t.RisePercentage,
-                Timestamp = t.Timestamp
-            })
+            (
+                t.DeviceId,
+                t.Distance,
+                t.RisePercentage,
+                t.Timestamp
+            ))
             .ToListAsync();
     }
 
@@ -57,12 +57,12 @@ public class PgTelemetryRepository : ITelemetryRepository
             .OrderByDescending(t => t.Timestamp)
             .Take(limit) 
             .Select(t => new TelemetryReading
-            {
-                DeviceId = t.DeviceId,
-                Distance = t.Distance,
-                RisePercentage = t.RisePercentage,
-                Timestamp = t.Timestamp
-            })
+            (
+                t.DeviceId,
+                t.Distance,
+                t.RisePercentage,
+                t.Timestamp
+            ))
             .ToListAsync();
     }
 }

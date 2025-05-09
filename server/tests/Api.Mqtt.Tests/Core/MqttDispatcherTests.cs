@@ -18,18 +18,18 @@ namespace Api.Mqtt.Tests.Core;
 public class MqttDispatcherTests
 {
     private readonly ITestOutputHelper _output;
-    private readonly Mock<IMqttTestService> _mqttTestServiceMock;
+    private readonly Mock<ISourdoughTelemetryService> _sourdoughTelemetryService;
     private readonly MqttDispatcher _dispatcher;
 
     public MqttDispatcherTests(ITestOutputHelper output)
     {
         _output = output;
-        _mqttTestServiceMock = new Mock<IMqttTestService>();
+        _sourdoughTelemetryService = new Mock<ISourdoughTelemetryService>();
         Mock<IDevicePublisher> devicePublisherMock = new();
         var loggerMock = new Mock<ILogger<MqttDispatcher>>();
 
         var services = new ServiceCollection();
-        services.AddSingleton(_mqttTestServiceMock.Object);
+        services.AddSingleton(_sourdoughTelemetryService.Object);
         services.AddSingleton(devicePublisherMock.Object);
 
         services.AddScoped<DeviceTelemetryHandler>();
@@ -70,7 +70,7 @@ public class MqttDispatcherTests
 
             var publishEventArgs = new OnMessageReceivedEventArgs(publishMessage);
 
-            _mqttTestServiceMock
+            _sourdoughTelemetryService
                 .Setup(s => s.ProcessTelemetryAsync(
                     It.IsAny<string>(),
                     It.IsAny<double>(),
@@ -82,7 +82,7 @@ public class MqttDispatcherTests
             await _dispatcher.DispatchAsync(publishEventArgs);
 
             // Assert
-            Should.NotThrow(() => _mqttTestServiceMock.Verify(
+            Should.NotThrow(() => _sourdoughTelemetryService.Verify(
                 s => s.ProcessTelemetryAsync(
                     "dev1",
                     25.5,
@@ -118,7 +118,7 @@ public class MqttDispatcherTests
             await _dispatcher.DispatchAsync(publishEventArgs);
 
             //Assert
-            Should.NotThrow(() => _mqttTestServiceMock.Verify(
+            Should.NotThrow(() => _sourdoughTelemetryService.Verify(
                 s => s.ProcessTelemetryAsync(
                     It.IsAny<string>(),
                     It.IsAny<double>(),
@@ -153,7 +153,7 @@ public class MqttDispatcherTests
             await _dispatcher.DispatchAsync(publishEventArgs);
 
             // Assert
-            Should.NotThrow(() => _mqttTestServiceMock.Verify(
+            Should.NotThrow(() => _sourdoughTelemetryService.Verify(
                 s => s.ProcessTelemetryAsync(
                     It.IsAny<string>(),
                     It.IsAny<double>(),
@@ -181,7 +181,7 @@ public class MqttDispatcherTests
             await _dispatcher.DispatchAsync(publishedEventArgs);
 
             // Assert
-            Should.NotThrow(() => _mqttTestServiceMock.Verify(
+            Should.NotThrow(() => _sourdoughTelemetryService.Verify(
                 s => s.ProcessTelemetryAsync(
                     It.IsAny<string>(),
                     It.IsAny<double>(),
@@ -209,7 +209,7 @@ public class MqttDispatcherTests
             await _dispatcher.DispatchAsync(publishedEventArgs);
 
             // Assert
-            Should.NotThrow(() => _mqttTestServiceMock.Verify(
+            Should.NotThrow(() => _sourdoughTelemetryService.Verify(
                 s => s.ProcessTelemetryAsync(
                     It.IsAny<string>(),
                     It.IsAny<double>(),

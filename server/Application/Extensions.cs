@@ -19,7 +19,7 @@ public static class Extensions
         services.AddScoped<IIdentityVerificationService, IdentityVerificationService>();
         services.AddScoped<IPasswordlessAuthService, PasswordlessAuthService>();
         
-        services.AddScoped<IMqttTestService, MqttTestService>();
+        services.AddScoped<ISourdoughTelemetryService, SourdoughTelemetryService>();
         
         services.AddScoped<IFeatureToggleService, FeatureToggleService>();
         return services;

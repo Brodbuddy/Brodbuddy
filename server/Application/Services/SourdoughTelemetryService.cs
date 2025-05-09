@@ -4,20 +4,20 @@ using Microsoft.Extensions.Logging;
 
 namespace Application.Services;
 
-public interface IMqttTestService
+public interface ISourdoughTelemetryService
 {
     Task ProcessTelemetryAsync(string deviceId, double temperature, double humidity, DateTime timestamp);
 }
-public class MqttTestService : IMqttTestService
+public class SourdoughTelemetryService : ISourdoughTelemetryService
 {
     private readonly IDevicePublisher _publisher;
     private readonly ITelemetryRepository _telemetryRepository;
-    private readonly ILogger<MqttTestService> _logger;
+    private readonly ILogger<SourdoughTelemetryService> _logger;
 
-    public MqttTestService(
+    public SourdoughTelemetryService(
         IDevicePublisher publisher, 
         ITelemetryRepository telemetryRepository,
-        ILogger<MqttTestService> logger)
+        ILogger<SourdoughTelemetryService> logger)
     {
         _publisher = publisher;
         _telemetryRepository = telemetryRepository;
