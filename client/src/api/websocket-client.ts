@@ -28,6 +28,12 @@ export type RequestResponseMap = {
 
 
 
+
+export interface WebSocketError {
+    code: string;
+    message: string;
+}
+
 export class WebSocketClient {
     private socket: WebSocket | null = null;
     private pendingRequests = new Map<string, { resolve: Function; reject: Function; timeout: number; }>();
@@ -135,7 +141,11 @@ export class WebSocketClient {
             this.pendingRequests.delete(RequestId);
 
             if (Type === 'Error') {
-                reject(Payload);
+                const error: WebSocketError = {
+                    code: Payload.Code,
+                    message: Payload.Message
+                };
+                reject(error);
             } else {
                 resolve(Payload);
             }

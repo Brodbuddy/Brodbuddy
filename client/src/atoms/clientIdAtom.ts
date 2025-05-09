@@ -13,6 +13,16 @@ const simpleSyncStorage: SimpleStorage = {
     removeItem: (key: string) => { memoryStorage.delete(key); },                 
 }
 
+const getOrCreateClientId = (): string => {
+    const existingId = getLocalStorage().getItem('websocketDeviceId');
+    if (existingId) {
+        return existingId;
+    }
+    const newId = crypto.randomUUID();
+    getLocalStorage().setItem('websocketDeviceId', newId);
+    return newId;
+};
+
 const getLocalStorage = (): SimpleStorage => {
     try {
         const testKey = 'jotai_storage_test';
@@ -28,8 +38,8 @@ const getLocalStorage = (): SimpleStorage => {
 const localStorageJotai = createJSONStorage<string>(() => getLocalStorage());
 
 export const clientIdAtom = atomWithStorage<string>(
-    'websocketDeviceId',        
-    crypto.randomUUID(),        
+    'websocketDeviceId',
+    getOrCreateClientId(),      
     localStorageJotai,      
     { getOnInit: true }         
 );

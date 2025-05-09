@@ -3,7 +3,7 @@ import { useWebSocket } from '../hooks/useWebsocket.ts';
 import { MessageType } from "../api/websocket-client.ts";
 
 export default function Home() {
-    const { client, connected } = useWebSocket();
+    const { client, connected, saveSessionState, sessionRestored } = useWebSocket();
     const [username, setUsername] = useState('');
     const [roomId, setRoomId] = useState('default');
     const [isJoined, setIsJoined] = useState(false);
@@ -18,6 +18,28 @@ export default function Home() {
         return () => unsubscribe();
     }, [client]);
 
+    useEffect(() => {
+        if (sessionRestored) {
+            const sessionStateJson = localStorage.getItem('ws_session_state');
+            if (!sessionStateJson) return;
+
+            try {
+                const sessionState = JSON.parse(sessionStateJson);
+
+                if (sessionState.username) setUsername(sessionState.username);
+                if (sessionState.roomId) setRoomId(sessionState.roomId);
+                setIsJoined(true);
+                setJoinedUsers(prev =>
+                    prev.length === 0
+                        ? [`You rejoined room ${sessionState.roomId} as ${sessionState.username}`]
+                        : prev
+                );
+            } catch (error) {
+                console.error('Error parsing session state:', error);
+            }
+        }
+    }, [sessionRestored]);
+
     const handleJoinRoom = () => {
         if (!client || !connected || !username.trim() || !roomId.trim()) return;
         client.send.joinRoom({
@@ -25,6 +47,12 @@ export default function Home() {
             Username: username
         })
             .then(response => {
+                saveSessionState({
+                    roomId,
+                    username,
+                    connectionId: response.ConnectionId
+                });
+
                 setIsJoined(true);
                 setJoinedUsers(prev => [...prev, `You joined room ${response.RoomId} with ID ${response.ConnectionId}`]);
             })
