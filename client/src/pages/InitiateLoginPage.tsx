@@ -54,14 +54,14 @@ export default function InitiateLoginPage() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-bg-cream p-4">
             <div className="w-full max-w-md overflow-hidden rounded-lg bg-bg-white shadow-md">
-                <div className="bg-accent p-4 text-center">
-                    <h1 className="text-xl font-medium text-primary">Login</h1>
+                <div className="bg-accent-foreground p-4 text-center">
+                    <h1 className="text-xl font-medium text-primary-foreground">Login</h1>
                 </div>
 
                 <div className="p-6">
                     <div className="mb-6 text-center">
-                        <h2 className="mb-2 text-lg font-medium text-primary">Email Verification</h2>
-                        <p className="text-center text-primary">
+                        <h2 className="mb-2 text-lg font-medium text-accent-foreground">Email Verification</h2>
+                        <p className="text-center text-foreground">
                             Enter your email address to receive a verification code
                         </p>
                     </div>
@@ -80,7 +80,7 @@ export default function InitiateLoginPage() {
                                 placeholder="your@email.com"
                                 {...register("email")}
                                 disabled={isLoading}
-                                className="border-border-brown focus:ring-border-brown"
+                                className="border-border-brown focus:ring-accent-foreground"
                             />
                             {errors.email && (
                                 <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
@@ -90,13 +90,13 @@ export default function InitiateLoginPage() {
                         <Button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-accent text-primary hover:bg-accent/90"
+                            className="w-full bg-accent-foreground text-primary-foreground hover:bg-accent-foreground/90"
                         >
                             {isLoading ? 'Sending...' : 'Send Verification Code'}
                         </Button>
                     </form>
 
-                    <div className="mt-6 text-center text-sm text-primary">
+                    <div className="mt-6 text-center text-sm text-foreground">
                         If you experience any issues, please contact support.
                     </div>
                 </div>

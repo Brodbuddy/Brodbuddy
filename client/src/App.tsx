@@ -1,20 +1,41 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { AppRoutes, AccessLevel } from "./helpers";
-import { Home, InitiateLoginPage, CompleteLoginPage } from "./pages";
-import { RequireAuth } from "./components/RequireAuth";
+import { HomeDashboard, InitiateLoginPage, CompleteLoginPage } from "./pages";
 import { useAuth } from "./hooks/useAuth";
 import { AuthContext } from './AuthContext';
+import { useSidebar } from "./components/ui/sidebar";
+import { RequireAuth } from "./components/RequireAuth";
 
 export default function App() {
     const auth = useAuth();
+    const { open } = useSidebar();
+
+
+    const sidebarClass = auth.isAuthenticated
+        ? `w-full transition-all duration-300 ${open ? 'lg:pl-80' : ''}`
+        : "w-full";
 
     return (
         <AuthContext.Provider value={auth}>
-            <Routes>
-                <Route path={AppRoutes.home} element={<RequireAuth accessLevel={AccessLevel.User} element={<Home />}/>}/>
-                <Route path={AppRoutes.login} element={<InitiateLoginPage />} />
-                <Route path={AppRoutes.verifyLogin} element={<CompleteLoginPage />} />
-            </Routes>
+            <div className={sidebarClass}>
+                <div className="p-4">
+                    <Routes>
+                        <Route path={AppRoutes.homeDashboard} element={
+                            <RequireAuth accessLevel={AccessLevel.User} element={<HomeDashboard />}/>
+                        }/>
+                        <Route path={AppRoutes.login} element={
+                            auth.isAuthenticated?
+                                <Navigate to={AppRoutes.homeDashboard} replace /> :
+                                <InitiateLoginPage />
+                        } />
+                        <Route path={AppRoutes.verifyLogin} element={<CompleteLoginPage />} />
+                        <Route path="/" element={
+                            <Navigate to={auth.isAuthenticated? AppRoutes.homeDashboard : AppRoutes.login} replace />
+                        } />
+                        <Route path="*" element={<Navigate to={AppRoutes.login} replace />} />
+                    </Routes>
+                </div>
+            </div>
         </AuthContext.Provider>
     )
 }

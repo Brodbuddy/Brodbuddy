@@ -4,4 +4,5 @@ export const AppRoutes = {
     home: "/",
     login: "/login",
     verifyLogin: "/login/verify",
+    homeDashboard: "/home",
 } as const;

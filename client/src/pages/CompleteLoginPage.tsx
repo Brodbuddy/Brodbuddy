@@ -71,16 +71,16 @@ export default function CompleteLoginPage() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-bg-cream p-4">
             <div className="w-full max-w-md overflow-hidden rounded-lg bg-bg-white shadow-md">
-                <div className="bg-accent p-4 text-center">
-                    <h1 className="text-xl font-medium text-primary">Enter Verification Code</h1>
+                <div className="bg-accent-foreground p-4 text-center">
+                    <h1 className="text-xl font-medium text-primary-foreground">Enter Verification Code</h1>
                 </div>
 
                 <div className="p-6">
                     <div className="mb-6 text-center">
-                        <p className="text-center text-primary">
+                        <p className="text-center text-foreground">
                             We sent a code to {email}.
                         </p>
-                        <p className="text-center text-primary">
+                        <p className="text-center text-foreground">
                             Please enter it below to complete login.
                         </p>
                     </div>
@@ -103,12 +103,12 @@ export default function CompleteLoginPage() {
                                     className="gap-2 scale-110"
                                 >
                                     <InputOTPGroup className="">
-                                        <InputOTPSlot index={0} className="w-10 h-12 text-lg" />
-                                        <InputOTPSlot index={1} className="w-10 h-12 text-lg" />
-                                        <InputOTPSlot index={2} className="w-10 h-12 text-lg" />
-                                        <InputOTPSlot index={3} className="w-10 h-12 text-lg" />
-                                        <InputOTPSlot index={4} className="w-10 h-12 text-lg" />
-                                        <InputOTPSlot index={5} className="w-10 h-12 text-lg" />
+                                        <InputOTPSlot index={0} className="w-10 h-12 text-lg border-border-brown" />
+                                        <InputOTPSlot index={1} className="w-10 h-12 text-lg border-border-brown" />
+                                        <InputOTPSlot index={2} className="w-10 h-12 text-lg border-border-brown" />
+                                        <InputOTPSlot index={3} className="w-10 h-12 text-lg border-border-brown" />
+                                        <InputOTPSlot index={4} className="w-10 h-12 text-lg border-border-brown" />
+                                        <InputOTPSlot index={5} className="w-10 h-12 text-lg border-border-brown" />
                                     </InputOTPGroup>
                                 </InputOTP>
                             </div>
@@ -117,7 +117,7 @@ export default function CompleteLoginPage() {
                         <Button
                             type="submit"
                             disabled={isLoading || code.length !== 6}
-                            className="w-full mb-2 bg-accent text-primary hover:bg-accent/90"
+                            className="w-full mb-2 bg-accent-foreground text-primary-foreground hover:bg-accent-foreground/90"
                         >
                             {isLoading ? 'Verifying...' : 'Login'}
                         </Button>
@@ -126,13 +126,13 @@ export default function CompleteLoginPage() {
                             variant="ghost"
                             type="button"
                             onClick={() => navigate(AppRoutes.login)}
-                            className="w-full mt-2 text-primary hover:bg-accent/0"
+                            className="w-full mt-2 text-accent-foreground hover:bg-secondary/50"
                         >
                             Back to login page
                         </Button>
                     </form>
 
-                    <div className="mt-6 text-center text-sm text-primary">
+                    <div className="mt-6 text-center text-sm text-foreground">
                         If you experience any issues, please contact support.
                     </div>
                 </div>
