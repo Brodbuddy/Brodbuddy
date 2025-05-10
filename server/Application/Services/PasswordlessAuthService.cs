@@ -52,13 +52,19 @@ public class PasswordlessAuthService : IPasswordlessAuthService
 
     public async Task<(string accessToken, string refreshToken)> RefreshTokenAsync(string? refreshToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(refreshToken);
-        return await _multiDeviceIdentityService.RefreshIdentityAsync(refreshToken);
+        return await _transactionManager.ExecuteInTransactionAsync(async () =>
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(refreshToken);
+            return await _multiDeviceIdentityService.RefreshIdentityAsync(refreshToken);
+        });
     }
 
     public async Task<(string email, string role)> UserInfoAsync(Guid userId)
     {
-        var user = await _userIdentityService.GetAsync(userId);
-        return (user.Email, "user");
+        return await _transactionManager.ExecuteInTransactionAsync(async () =>
+        {
+            var user = await _userIdentityService.GetAsync(userId);
+            return (user.Email, "user");
+        });
     }
 }
