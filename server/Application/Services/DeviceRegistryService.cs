@@ -1,4 +1,5 @@
-﻿using Application.Interfaces.Data.Repositories;
+﻿using Application.Interfaces;
+using Application.Interfaces.Data.Repositories;
 
 namespace Application.Services;
 
@@ -12,26 +13,31 @@ public class DeviceRegistryService : IDeviceRegistryService
     private readonly IDeviceRegistryRepository _repository;
     private readonly IDeviceService _deviceService;
     private readonly IUserIdentityService _userIdentityService;
+    private readonly ITransactionManager _transactionManager;
 
     public DeviceRegistryService(IDeviceRegistryRepository repository, IDeviceService deviceService,
-        IUserIdentityService userIdentityService)
+        IUserIdentityService userIdentityService, ITransactionManager transactionManager)
     {
         _repository = repository;
         _deviceService = deviceService;
         _userIdentityService = userIdentityService;
+        _transactionManager = transactionManager;
     }
 
     public async Task<Guid> AssociateDeviceAsync(Guid userId, string browser, string os)
     {
-        if (!await _userIdentityService.ExistsAsync(userId))
+        return await _transactionManager.ExecuteInTransactionAsync(async () =>
         {
-            throw new ArgumentException($"User with ID {userId} does not exist", nameof(userId));
-        }
+            if (!await _userIdentityService.ExistsAsync(userId))
+            {
+                throw new ArgumentException($"User with ID {userId} does not exist");
+            }
 
-        var deviceId = await _deviceService.CreateAsync(browser, os);
+            var deviceId = await _deviceService.CreateAsync(browser, os);
 
-        await _repository.SaveAsync(userId, deviceId);
+            await _repository.SaveAsync(userId, deviceId);
 
-        return deviceId;
+            return deviceId;
+        });
     }
 }

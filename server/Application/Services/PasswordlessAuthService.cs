@@ -1,3 +1,5 @@
+using Application.Interfaces;
+
 namespace Application.Services;
 
 public interface IPasswordlessAuthService
@@ -13,12 +15,18 @@ public class PasswordlessAuthService : IPasswordlessAuthService
     private readonly IIdentityVerificationService _identityVerificationService;
     private readonly IMultiDeviceIdentityService _multiDeviceIdentityService;
     private readonly IUserIdentityService _userIdentityService;
+    private readonly ITransactionManager _transactionManager;
 
-    public PasswordlessAuthService(IIdentityVerificationService identityVerificationService, IMultiDeviceIdentityService multiDeviceIdentityService, IUserIdentityService userIdentityService)
+    public PasswordlessAuthService(
+        IIdentityVerificationService identityVerificationService,
+        IMultiDeviceIdentityService multiDeviceIdentityService, 
+        IUserIdentityService userIdentityService,
+        ITransactionManager transactionManager)
     {
         _identityVerificationService = identityVerificationService;
         _multiDeviceIdentityService = multiDeviceIdentityService;
         _userIdentityService = userIdentityService;
+        _transactionManager = transactionManager;
     }
 
     public async Task<bool> InitiateLoginAsync(string email)
@@ -28,14 +36,17 @@ public class PasswordlessAuthService : IPasswordlessAuthService
 
     public async Task<(string accessToken, string refreshToken)> CompleteLoginAsync(string email, int code, string browser, string os)
     {
-        var (verified, userId) = await _identityVerificationService.TryVerifyCodeAsync(email, code);
-
-        if (!verified)
+        return await _transactionManager.ExecuteInTransactionAsync(async () =>
         {
-            throw new ArgumentException("Invalid verification code");
-        }
+            var (verified, userId) = await _identityVerificationService.TryVerifyCodeAsync(email, code);
 
-        return await _multiDeviceIdentityService.EstablishIdentityAsync(userId, browser, os);
+            if (!verified)
+            {
+                throw new ArgumentException("Invalid verification code");
+            }
+
+            return await _multiDeviceIdentityService.EstablishIdentityAsync(userId, browser, os);
+        });
     }
 
 
