@@ -1,4 +1,5 @@
-﻿using Application.Services;
+﻿using Application.Interfaces;
+using Application.Services;
 using Moq;
 using Xunit;
 using Shouldly;
@@ -7,20 +8,23 @@ namespace Application.Tests;
 
 public class PasswordlessAuthServiceTests
 {
-    private readonly Mock<IIdentityVerificationService> _mockIdentityVerificationService;
-    private readonly Mock<IMultiDeviceIdentityService> _mockMultiDeviceIdentityService;
-    private readonly Mock<IUserIdentityService> _mockUserIdentityService;
-    private readonly PasswordlessAuthService _service;
+    private readonly Mock<IIdentityVerificationService> _identityVerificationServiceMock;
+    private readonly Mock<IMultiDeviceIdentityService> _multiDeviceIdentityServiceMock;
+    private readonly Mock<IUserIdentityService> _userIdentityServiceMock;
+    private readonly Mock<ITransactionManager> _transactionManagerMock;
+    private readonly PasswordlessAuthService _passwordlessAuthService;
 
     public PasswordlessAuthServiceTests()
     {
-        _mockIdentityVerificationService = new Mock<IIdentityVerificationService>();
-        _mockMultiDeviceIdentityService = new Mock<IMultiDeviceIdentityService>();
-        _mockUserIdentityService = new Mock<IUserIdentityService>();
-        _service = new PasswordlessAuthService(
-            _mockIdentityVerificationService.Object,
-            _mockMultiDeviceIdentityService.Object,
-            _mockUserIdentityService.Object);
+        _identityVerificationServiceMock = new Mock<IIdentityVerificationService>();
+        _multiDeviceIdentityServiceMock = new Mock<IMultiDeviceIdentityService>();
+        _userIdentityServiceMock = new Mock<IUserIdentityService>();
+        _transactionManagerMock = new Mock<ITransactionManager>();
+        _passwordlessAuthService = new PasswordlessAuthService(
+            _identityVerificationServiceMock.Object,
+            _multiDeviceIdentityServiceMock.Object,
+            _userIdentityServiceMock.Object,
+            _transactionManagerMock.Object);
     }
 
 
@@ -34,15 +38,15 @@ public class PasswordlessAuthServiceTests
             bool expectedResult)
         {
             // Arrange
-            _mockIdentityVerificationService.Setup(s => s.SendCodeAsync(email))
+            _identityVerificationServiceMock.Setup(s => s.SendCodeAsync(email))
                 .ReturnsAsync(expectedResult);
 
             // Act
-            var result = await _service.InitiateLoginAsync(email);
+            var result = await _passwordlessAuthService.InitiateLoginAsync(email);
 
             // Assert
             result.ShouldBe(expectedResult);
-            _mockIdentityVerificationService.Verify(s => s.SendCodeAsync(email), Times.Once);
+            _identityVerificationServiceMock.Verify(s => s.SendCodeAsync(email), Times.Once);
         }
     }
 
@@ -59,19 +63,24 @@ public class PasswordlessAuthServiceTests
             Guid userId = Guid.NewGuid();
             var expectedTokens = ("access_token", "refresh_token");
 
-            _mockIdentityVerificationService.Setup(s => s.TryVerifyCodeAsync(email, code))
+            _identityVerificationServiceMock.Setup(s => s.TryVerifyCodeAsync(email, code))
                 .ReturnsAsync((true, userId));
-            _mockMultiDeviceIdentityService.Setup(s => s.EstablishIdentityAsync(userId, browser, os))
+            _multiDeviceIdentityServiceMock.Setup(s => s.EstablishIdentityAsync(userId, browser, os))
                 .ReturnsAsync(expectedTokens);
+            
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
 
             // Act
-            var result = await _service.CompleteLoginAsync(email, code, browser, os);
+            var result = await _passwordlessAuthService.CompleteLoginAsync(email, code, browser, os);
 
             // Assert
             result.accessToken.ShouldBe(expectedTokens.Item1);
             result.refreshToken.ShouldBe(expectedTokens.Item2);
-            _mockIdentityVerificationService.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);
-            _mockMultiDeviceIdentityService.Verify(s => s.EstablishIdentityAsync(userId, browser, os), Times.Once);
+            _identityVerificationServiceMock.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);
+            _multiDeviceIdentityServiceMock.Verify(s => s.EstablishIdentityAsync(userId, browser, os), Times.Once);
+            _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()), Times.Once);
         }
 
         [Fact]
@@ -83,17 +92,22 @@ public class PasswordlessAuthServiceTests
             string browser = "Chrome";
             string os = "Windows";
 
-            _mockIdentityVerificationService.Setup(s => s.TryVerifyCodeAsync(email, code))
+            _identityVerificationServiceMock.Setup(s => s.TryVerifyCodeAsync(email, code))
                 .ReturnsAsync((false, Guid.Empty));
 
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
+            
             // Act & Assert
             var exception =
-                await Assert.ThrowsAsync<ArgumentException>(() => _service.CompleteLoginAsync(email, code, browser, os));
+                await Assert.ThrowsAsync<ArgumentException>(() => _passwordlessAuthService.CompleteLoginAsync(email, code, browser, os));
 
             exception.ShouldBeOfType<ArgumentException>();
-            _mockIdentityVerificationService.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);
-            _mockMultiDeviceIdentityService.Verify(
+            _identityVerificationServiceMock.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);
+            _multiDeviceIdentityServiceMock.Verify(
                 s => s.EstablishIdentityAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()), Times.Once);
         }
     }
 
@@ -108,16 +122,21 @@ public class PasswordlessAuthServiceTests
             // Arrange
             var expectedTokens = (expectedAccessToken, expectedRefreshToken);
 
-            _mockMultiDeviceIdentityService.Setup(s => s.RefreshIdentityAsync(refreshToken))
+            _multiDeviceIdentityServiceMock.Setup(s => s.RefreshIdentityAsync(refreshToken))
                 .ReturnsAsync(expectedTokens);
+            
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
 
             // Act
-            var result = await _service.RefreshTokenAsync(refreshToken);
+            var result = await _passwordlessAuthService.RefreshTokenAsync(refreshToken);
 
             // Assert
             result.accessToken.ShouldBe(expectedTokens.Item1);
             result.refreshToken.ShouldBe(expectedTokens.Item2);
-            _mockMultiDeviceIdentityService.Verify(s => s.RefreshIdentityAsync(refreshToken), Times.Once);
+            _multiDeviceIdentityServiceMock.Verify(s => s.RefreshIdentityAsync(refreshToken), Times.Once);
+            _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()), Times.Once);
         }
     }
 }

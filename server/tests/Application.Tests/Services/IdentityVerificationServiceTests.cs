@@ -1,3 +1,4 @@
+using Application.Interfaces;
 using Application.Interfaces.Data.Repositories;
 using Application.Services;
 using Application.Tests.Fakes;
@@ -10,13 +11,14 @@ namespace Application.Tests.Services;
 
 public class IdentityVerificationServiceTests
 {
-    private readonly Mock<IOtpService> _mockOtpService;
-    private readonly Mock<IUserIdentityService> _mockUserIdentityService;
+    private readonly Mock<IOtpService> _otpServiceMock;
+    private readonly Mock<IUserIdentityService> _userIdentityServiceMock;
+    private readonly Mock<IIdentityVerificationRepository> _repositoryMock;
+    private readonly Mock<ITransactionManager> _transactionManagerMock;
+    private readonly IdentityVerificationService _identityVerificationService;
     private readonly FakeEmailSender _emailSender;
 
-    private readonly Mock<IIdentityVerificationRepository> _mockRepository;
-    private readonly IdentityVerificationService _service;
-
+    
     private const string TestEmail = "test@example.com";
     private const int TestCode = 123456;
     private static Guid TestOtpId { get; } = Guid.NewGuid();
@@ -24,16 +26,18 @@ public class IdentityVerificationServiceTests
 
     protected IdentityVerificationServiceTests()
     {
-        _mockOtpService = new Mock<IOtpService>();
-        _mockUserIdentityService = new Mock<IUserIdentityService>();
+        _otpServiceMock = new Mock<IOtpService>();
+        _userIdentityServiceMock = new Mock<IUserIdentityService>();
         _emailSender = new FakeEmailSender();
-        _mockRepository = new Mock<IIdentityVerificationRepository>();
+        _repositoryMock = new Mock<IIdentityVerificationRepository>();
+        _transactionManagerMock = new Mock<ITransactionManager>();
         
-        _service = new IdentityVerificationService(
-            _mockOtpService.Object,
-            _mockUserIdentityService.Object,
+        _identityVerificationService = new IdentityVerificationService(
+            _otpServiceMock.Object,
+            _userIdentityServiceMock.Object,
             _emailSender,
-            _mockRepository.Object);
+            _repositoryMock.Object,
+            _transactionManagerMock.Object);
     }
 
     public class SendCodeAsync : IdentityVerificationServiceTests
@@ -42,47 +46,57 @@ public class IdentityVerificationServiceTests
         public async Task SendCodeAsync_Success_ReturnsTrue()
         {
             // Arrange
-            _mockUserIdentityService.Setup(s => s.CreateAsync(TestEmail))
+            _userIdentityServiceMock.Setup(s => s.CreateAsync(TestEmail))
                 .ReturnsAsync(TestUserId);
 
 
-            _mockOtpService.Setup(s => s.GenerateAsync())
+            _otpServiceMock.Setup(s => s.GenerateAsync())
                 .ReturnsAsync((TestOtpId, TestCode));
 
-            _mockRepository.Setup(r => r.CreateAsync(TestUserId, TestOtpId))
+            _repositoryMock.Setup(r => r.CreateAsync(TestUserId, TestOtpId))
                 .ReturnsAsync(Guid.NewGuid());
 
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<bool>>>()))
+                .Returns((Func<Task<bool>> func) => func());
+
             // Act
-            var result = await _service.SendCodeAsync(TestEmail);
+            var result = await _identityVerificationService.SendCodeAsync(TestEmail);
 
             // Assert
             result.ShouldBeTrue();
-            _mockUserIdentityService.Verify(s => s.CreateAsync(TestEmail), Times.Once);
-            _mockOtpService.Verify(s => s.GenerateAsync(), Times.Once);
-            _mockRepository.Verify(r => r.CreateAsync(TestUserId, TestOtpId), Times.Once);
+            _userIdentityServiceMock.Verify(s => s.CreateAsync(TestEmail), Times.Once);
+            _otpServiceMock.Verify(s => s.GenerateAsync(), Times.Once);
+            _repositoryMock.Verify(r => r.CreateAsync(TestUserId, TestOtpId), Times.Once);
+            _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<bool>>>()), Times.Once);
         }
 
         [Fact]
         public async Task SendCodeAsync_EmailFailure_ReturnsFalse()
         {
             // Arrange
-            _mockUserIdentityService.Setup(s => s.CreateAsync(TestEmail))
+            _userIdentityServiceMock.Setup(s => s.CreateAsync(TestEmail))
                 .ReturnsAsync(TestUserId);
 
-            _mockOtpService.Setup(s => s.GenerateAsync())
+            _otpServiceMock.Setup(s => s.GenerateAsync())
                 .ReturnsAsync((TestOtpId, TestCode));
 
 
-            _mockRepository.Setup(r => r.CreateAsync(TestUserId, TestOtpId))
+            _repositoryMock.Setup(r => r.CreateAsync(TestUserId, TestOtpId))
                 .ReturnsAsync(Guid.NewGuid());
 
             _emailSender.SimulateFailure = true;
+            
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<bool>>>()))
+                .Returns((Func<Task<bool>> func) => func());
 
             // Act
-            var result = await _service.SendCodeAsync(TestEmail);
+            var result = await _identityVerificationService.SendCodeAsync(TestEmail);
 
             // Assert
             result.ShouldBeFalse();
+            _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<bool>>>()), Times.Once);
         }
     }
 
@@ -100,25 +114,30 @@ public class IdentityVerificationServiceTests
                 OtpId = TestOtpId
             };
 
-            _mockUserIdentityService.Setup(s => s.GetAsync(TestEmail))
+            _userIdentityServiceMock.Setup(s => s.GetAsync(TestEmail))
                 .ReturnsAsync(user);
 
-            _mockRepository.Setup(r => r.GetLatestAsync(TestUserId))
+            _repositoryMock.Setup(r => r.GetLatestAsync(TestUserId))
                 .ReturnsAsync(verificationContext);
 
-            _mockOtpService.Setup(o => o.IsValidAsync(TestOtpId, TestCode))
+            _otpServiceMock.Setup(o => o.IsValidAsync(TestOtpId, TestCode))
                 .ReturnsAsync(true);
 
-            _mockOtpService.Setup(o => o.MarkAsUsedAsync(TestOtpId))
+            _otpServiceMock.Setup(o => o.MarkAsUsedAsync(TestOtpId))
                 .ReturnsAsync(true);
+            
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(bool verified, Guid userId)>>>()))
+                .Returns((Func<Task<(bool verified, Guid userId)>> func) => func());
 
             // Act
-            var result = await _service.TryVerifyCodeAsync(TestEmail, TestCode);
+            var result = await _identityVerificationService.TryVerifyCodeAsync(TestEmail, TestCode);
 
             // Assert
             result.verified.ShouldBeTrue();
             result.userId.ShouldBe(TestUserId);
-            _mockOtpService.Verify(o => o.MarkAsUsedAsync(TestOtpId), Times.Once);
+            _otpServiceMock.Verify(o => o.MarkAsUsedAsync(TestOtpId), Times.Once);
+            _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(bool verified, Guid userId)>>>()), Times.Once);
         }
 
         [Fact]
@@ -127,19 +146,24 @@ public class IdentityVerificationServiceTests
             // Arrange
             var user = new User { Id = TestUserId, Email = TestEmail };
 
-            _mockUserIdentityService.Setup(s => s.GetAsync(TestEmail))
+            _userIdentityServiceMock.Setup(s => s.GetAsync(TestEmail))
                 .ReturnsAsync(user);
 
-            _mockRepository.Setup(r => r.GetLatestAsync(TestUserId))
+            _repositoryMock.Setup(r => r.GetLatestAsync(TestUserId))
                 .ReturnsAsync((VerificationContext?)null);
-
+            
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(bool verified, Guid userId)>>>()))
+                .Returns((Func<Task<(bool verified, Guid userId)>> func) => func());
+            
             // Act
-            var result = await _service.TryVerifyCodeAsync(TestEmail, TestCode);
+            var result = await _identityVerificationService.TryVerifyCodeAsync(TestEmail, TestCode);
 
             // Assert
             result.verified.ShouldBeFalse();
             result.userId.ShouldBe(Guid.Empty);
-            _mockOtpService.Verify(o => o.IsValidAsync(It.IsAny<Guid>(), It.IsAny<int>()), Times.Never);
+            _otpServiceMock.Verify(o => o.IsValidAsync(It.IsAny<Guid>(), It.IsAny<int>()), Times.Never);
+            _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(bool verified, Guid userId)>>>()), Times.Once);
         }
 
         [Fact]
@@ -154,22 +178,27 @@ public class IdentityVerificationServiceTests
                 OtpId = TestOtpId
             };
 
-            _mockUserIdentityService.Setup(s => s.GetAsync(TestEmail))
+            _userIdentityServiceMock.Setup(s => s.GetAsync(TestEmail))
                 .ReturnsAsync(user);
 
-            _mockRepository.Setup(r => r.GetLatestAsync(TestUserId))
+            _repositoryMock.Setup(r => r.GetLatestAsync(TestUserId))
                 .ReturnsAsync(verificationContext);
 
-            _mockOtpService.Setup(o => o.IsValidAsync(TestOtpId, TestCode))
+            _otpServiceMock.Setup(o => o.IsValidAsync(TestOtpId, TestCode))
                 .ReturnsAsync(false);
+            
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(bool verified, Guid userId)>>>()))
+                .Returns((Func<Task<(bool verified, Guid userId)>> func) => func());
 
             // Act
-            var result = await _service.TryVerifyCodeAsync(TestEmail, TestCode);
+            var result = await _identityVerificationService.TryVerifyCodeAsync(TestEmail, TestCode);
 
             // Assert
             result.verified.ShouldBeFalse();
             result.userId.ShouldBe(Guid.Empty);
-            _mockOtpService.Verify(o => o.MarkAsUsedAsync(It.IsAny<Guid>()), Times.Never);
+            _otpServiceMock.Verify(o => o.MarkAsUsedAsync(It.IsAny<Guid>()), Times.Never);
+            _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(bool verified, Guid userId)>>>()), Times.Once);
         }
     }
 }
