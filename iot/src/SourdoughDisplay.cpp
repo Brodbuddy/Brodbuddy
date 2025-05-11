@@ -1,4 +1,5 @@
 #include "SourdoughDisplay.h"
+#include "fonts.h"
 
 SourdoughDisplay::SourdoughDisplay() {}
 
@@ -133,6 +134,58 @@ void SourdoughDisplay::setPixel(int x, int y, uint8_t color) {
         redBuffer[byte_index] |= (1 << bit_pos);  
     }
 }
+
+void SourdoughDisplay::drawChar(int16_t x, int16_t y, char c, uint8_t color) {
+    // Determine charIndex based on your Font5x7 definition in fonts.h/cpp
+    // This example assumes Font5x7 starts at FONT_FIRST_CHAR (e.g., ASCII 32)
+    // and you have a mapping for Danish characters if they are appended.
+    uint8_t charIndex;
+    bool isDanish = false;
+
+    if (c == 'æ' || c == 'Æ') { charIndex = FONT_CHAR_COUNT; isDanish = true; } // Assuming æ is 1st after standard block
+    else if (c == 'ø' || c == 'Ø') { charIndex = FONT_CHAR_COUNT + 1; isDanish = true; } // ø is 2nd
+    else if (c == 'å' || c == 'Å') { charIndex = FONT_CHAR_COUNT + 2; isDanish = true; } // å is 3rd
+    else if (c < FONT_FIRST_CHAR || c >= (FONT_FIRST_CHAR + FONT_CHAR_COUNT) ) {
+        return; // Character not in standard font range
+    } else {
+        charIndex = c - FONT_FIRST_CHAR; // Index for standard ASCII
+    }
+
+    // Calculate the starting offset in the Font5x7 array for this character's data
+    uint16_t charDataOffset = charIndex * FONT_WIDTH; // FONT_WIDTH is 5
+
+    for (uint8_t char_col = 0; char_col < FONT_WIDTH; char_col++) { // Iterate L-R through font data columns
+        uint8_t colData = pgm_read_byte(&Font5x7[charDataOffset + char_col]);
+        
+        for (uint8_t char_row = 0; char_row < FONT_HEIGHT; char_row++) { // Iterate T-B through font data rows
+            if (colData & (1 << char_row)) { // If pixel in font data is set (LSB=top)
+                
+                // --- APPLY 180-DEGREE ROTATION FIX for characters ---
+                int screen_x_pixel = x + (FONT_WIDTH - 1 - char_col);
+                int screen_y_pixel = y + (FONT_HEIGHT - 1 - char_row);
+                
+                setPixel(screen_x_pixel, screen_y_pixel, color);
+            }
+        }
+    }
+}
+
+void SourdoughDisplay::drawString(int16_t x, int16_t y, const char* text, uint8_t color) {
+    int16_t cursorX = x;
+    
+    // Draw each character in the string
+    while (*text) {
+        drawChar(cursorX, y, *text++, color);
+        cursorX += FONT_WIDTH + FONT_SPACING;
+        
+        // Optional: Add word wrapping if needed
+        if (cursorX > EPD_WIDTH - FONT_WIDTH) {
+            cursorX = x;
+            y += FONT_HEIGHT + FONT_SPACING;
+        }
+    }
+}
+
 
 void SourdoughDisplay::drawTestPattern() {
     Serial.println("Drawing test pattern into buffers...");

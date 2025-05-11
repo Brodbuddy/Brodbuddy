@@ -10,7 +10,9 @@ void setup() {
 
   display.begin();
   display.clearBuffers();
-  display.drawTestPattern();
+  display.drawString(10, 10, "Benny", COLOR_BLACK);
+  display.drawString(10, 25, "Temp: 22.5C", COLOR_RED);
+  display.drawString(10, 40, "Rise: 35%", COLOR_BLACK);
   display.updateDisplay();
   
   Serial.println("--- Test Complete ---");

@@ -52,6 +52,8 @@ public:
 
     // TEGNE FUNKTIONER forneden
     void setPixel(int x, int y, uint8_t color);
+    void drawChar(int16_t x, int16_t y, char c, uint8_t color);
+    void drawString(int16_t x, int16_t y, const char* text, uint8_t color);
 
     void drawTestPattern();
 
