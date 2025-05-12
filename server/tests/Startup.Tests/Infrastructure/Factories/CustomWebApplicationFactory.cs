@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SharedTestDependencies.Logging;
+using StackExchange.Redis;
 using Startup.Tests.Infrastructure.Fixtures;
 using Xunit.Abstractions;
 
@@ -51,6 +52,22 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             };
 
             configBuilder.AddInMemoryCollection(testConfig);
+        });
+        
+        builder.ConfigureServices((_, services) =>
+        {
+            var redisDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IConnectionMultiplexer));
+            if (redisDescriptor != null)
+            {
+                services.Remove(redisDescriptor);
+            }
+
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
+            {
+                var connectionString = _fixture.Redis.Container.GetConnectionString();
+                _output.WriteLine($"Registering Redis connection: {connectionString}");
+                return ConnectionMultiplexer.Connect(connectionString);
+            });
         });
 
         builder.ConfigureLogging(logging =>
