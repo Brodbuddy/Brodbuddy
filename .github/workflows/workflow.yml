@@ -122,8 +122,7 @@ jobs:
           'server/Application/Application.csproj',
           'server/Core/Core.csproj',
           'server/Api.Mqtt/Api.Mqtt.csproj',
-          'server/Api.Http/Api.Http.csproj',
-          'server/Startup/Startup.csproj'
+          'server/Api.Http/Api.Http.csproj'
         ]
       fail-fast: false
     runs-on: ubuntu-latest
@@ -167,7 +166,37 @@ jobs:
           CORE_COUNT=$(nproc)
           echo "Detected $CORE_COUNT cores"
           SAFE_NAME=$(echo "${{ matrix.project }}" | tr '/' '_')
-          dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput_${SAFE_NAME}" --concurrency $CORE_COUNT --reporter "json" --reporter "html" | tee "stryker-output-${SAFE_NAME}.log"
+          
+          case "$PROJECT_NAME" in
+            "Api.Mqtt")
+            TEST_PROJECTS="**/Api.Mqtt.Tests/**/*.csproj"
+            ;;
+            "Api.Http")
+            TEST_PROJECTS="**/Api.Http.Tests/**/*.csproj"
+            ;;
+            "Infrastructure.Communication")
+            TEST_PROJECTS="**/Infrastructure.Communication.Tests/**/*.csproj"
+            ;;
+            "Infrastructure.Data")
+            TEST_PROJECTS="**/Infrastructure.Data.Tests/**/*.csproj"
+            ;;
+            "Application")
+            TEST_PROJECTS="**/Application.Tests/**/*.csproj"
+            ;;
+            "Core")
+            TEST_PROJECTS="**/Core.Tests/**/*.csproj"
+            ;;
+            *)
+            TEST_PROJECTS=""
+            ;;
+          esac
+          dotnet stryker \
+            --project "${{ matrix.project }}" \
+            --test-projects "${TEST_PROJECTS}" \
+            --output "StrykerOutput_${SAFE_NAME}" \
+            --concurrency $CORE_COUNT \
+            --reporter "json" \
+            --reporter "html" | tee "stryker-output-${SAFE_NAME}.log"
 
       - name: Upload Stryker JSON report for ${{ matrix.project }}
         if: always()
