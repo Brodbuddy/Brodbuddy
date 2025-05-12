@@ -37,6 +37,16 @@ export interface UserInfoResponse {
   isAdmin: boolean;
 }
 
+export interface TelemetryReading {
+  deviceId: string | null;
+  /** @format double */
+  distance: number;
+  /** @format double */
+  risePercentage: number;
+  /** @format date-time */
+  timestamp: string;
+}
+
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -336,6 +346,41 @@ export class Api<
     userInfo: (params: RequestParams = {}) =>
       this.request<UserInfoResponse, any>({
         path: `/api/passwordless-auth/user-info`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+  };
+  telemetry = {
+    /**
+     * No description
+     *
+     * @tags Telemetry
+     * @name GetAll
+     * @request GET:/api/telemetry
+     * @secure
+     */
+    getAll: (params: RequestParams = {}) =>
+      this.request<TelemetryReading[], any>({
+        path: `/api/telemetry`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Telemetry
+     * @name GetByDevice
+     * @request GET:/api/telemetry/{deviceId}
+     * @secure
+     */
+    getByDevice: (deviceId: string, params: RequestParams = {}) =>
+      this.request<TelemetryReading[], any>({
+        path: `/api/telemetry/${deviceId}`,
         method: "GET",
         secure: true,
         format: "json",
