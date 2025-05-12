@@ -1,6 +1,5 @@
 {
   "stryker-config": {
-    "solution": "Brodbuddy.sln",
     "ignore-methods": [
       "Log*", 
       "Console.Write*",
