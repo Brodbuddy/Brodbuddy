@@ -34,11 +34,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 // HTTP konfiguration
                 {"AppOptions:Http:Port", "5111"},
                 
-                // Database konfiguration 
-                {"AppOptions:Data:ConnectionString", _fixture.Postgres.ConnectionString},
+                // Postgres konfiguration 
+                {"AppOptions:Postgres:ConnectionString", _fixture.Postgres.ConnectionString},
                 
-                // Redis konfiguration  
-                {"AppOptions:Redis:ConnectionString", _fixture.Redis.Container.GetConnectionString()},
+                // Dragonfly (Redis) konfiguration  
+                {"AppOptions:Dragonfly:ConnectionString", _fixture.Redis.Container.GetConnectionString()},
+                {"AppOptions:Dragonfly:AllowAdmin", "true"},
+                {"AppOptions:Dragonfly:AbortOnConnectFail", "false"},
                 
                 // MQTT konfiguration
                 {"AppOptions:Mqtt:Host", _fixture.VerneMq.Host},
