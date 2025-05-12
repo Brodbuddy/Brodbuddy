@@ -1,11 +1,13 @@
 using Api.Websocket.EventHandlers;
 using SharedTestDependencies.Constants;
-using Startup.Tests.Websocket;
-using Xunit.Abstractions;
 using Shouldly;
-using Startup.Tests.WebSocket;
+using Startup.Tests.Infrastructure.Bases;
+using Startup.Tests.Infrastructure.Extensions;
+using Startup.Tests.Infrastructure.Fixtures;
+using Startup.Tests.Infrastructure.TestClients;
+using Xunit.Abstractions;
 
-namespace Startup.Tests.ApiTests;
+namespace Startup.Tests.Api.Websocket;
 
 [Collection(TestCollections.Startup)]
 public class JoinRoomTests(StartupTestFixture fixture, ITestOutputHelper output) : ApiTestBase(fixture, output)

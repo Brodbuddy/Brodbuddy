@@ -4,9 +4,9 @@ using Infrastructure.Data.Tests.Bases;
 using Infrastructure.Data.Tests.Database;
 using Microsoft.EntityFrameworkCore;
 using SharedTestDependencies.Constants;
-using SharedTestDependencies.Database;
 using SharedTestDependencies.Extensions;
 using SharedTestDependencies.Fakes;
+using SharedTestDependencies.Fixtures;
 using Shouldly;
 
 namespace Infrastructure.Data.Tests.Repositories;

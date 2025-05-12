@@ -1,10 +1,12 @@
 using Api.Mqtt.MessageHandlers;
 using SharedTestDependencies.Constants;
 using Shouldly;
-using Startup.Tests.Mqtt;
+using Startup.Tests.Infrastructure.Bases;
+using Startup.Tests.Infrastructure.Extensions;
+using Startup.Tests.Infrastructure.Fixtures;
 using Xunit.Abstractions;
 
-namespace Startup.Tests.ApiTests;
+namespace Startup.Tests.Api.Mqtt;
 
 [Collection(TestCollections.Startup)]
 public class DeviceTelemetryHandlerTests(StartupTestFixture fixture, ITestOutputHelper output) : ApiTestBase(fixture, output)

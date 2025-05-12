@@ -1,5 +1,6 @@
 using SharedTestDependencies.Constants;
 using Shouldly;
+using Startup.Tests.Infrastructure.Fixtures;
 using Xunit.Abstractions;
 
 namespace Startup.Tests;

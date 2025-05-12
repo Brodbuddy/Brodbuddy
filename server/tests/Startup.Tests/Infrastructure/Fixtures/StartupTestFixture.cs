@@ -1,10 +1,8 @@
-using SharedTestDependencies.Broker;
-using SharedTestDependencies.Database;
-using SharedTestDependencies.Redis;
+using SharedTestDependencies.Fixtures;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Startup.Tests;
+namespace Startup.Tests.Infrastructure.Fixtures;
 
 
 public class StartupTestFixture : IAsyncLifetime

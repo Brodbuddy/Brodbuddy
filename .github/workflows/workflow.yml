@@ -122,7 +122,8 @@ jobs:
           'server/Application/Application.csproj',
           'server/Core/Core.csproj',
           'server/Api.Mqtt/Api.Mqtt.csproj',
-          'server/Api.Http/Api.Http.csproj'
+          'server/Api.Http/Api.Http.csproj',
+          'server/Startup/Startup.csproj'
         ]
       fail-fast: false
     runs-on: ubuntu-latest

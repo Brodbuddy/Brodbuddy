@@ -9,7 +9,7 @@ using Testcontainers.Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace SharedTestDependencies.Database;
+namespace SharedTestDependencies.Fixtures;
 
 public class PostgresFixture :  DbContainerFixture<PostgreSqlBuilder, PostgreSqlContainer>
 {

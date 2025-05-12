@@ -1,7 +1,12 @@
 using System.Diagnostics;
 
-namespace Startup.Tests.WebApplicationFactories;
+namespace Startup.Tests.Infrastructure.Lifecycle;
 
+/// <summary>
+/// ProcessWatchdog samt TestTracker til at tvinge at test serveren hænger når alle tests er færdig
+/// på grund af HiveMQtt .NET client. Der er brugt mere 3 dage på at debug, hvor dette blev løsningen
+/// på problemet.
+/// </summary>
 public static class ProcessWatchdog
 {
     private static CancellationTokenSource? _globalWatchdogTokenSource;

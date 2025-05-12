@@ -1,5 +1,5 @@
 ﻿using SharedTestDependencies.Constants;
-using SharedTestDependencies.Database;
+using SharedTestDependencies.Fixtures;
 
 namespace Api.Http.Tests.Collections;
 

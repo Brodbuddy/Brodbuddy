@@ -1,6 +1,4 @@
-using Startup.Tests.WebApplicationFactories;
-
-namespace Startup.Tests;
+namespace Startup.Tests.Infrastructure.Lifecycle;
 
 public static class TestTracker
 {

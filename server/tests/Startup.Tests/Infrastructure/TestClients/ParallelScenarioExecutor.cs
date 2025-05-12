@@ -1,6 +1,4 @@
-using Startup.Tests.WebSocket;
-
-namespace Startup.Tests.Websocket;
+namespace Startup.Tests.Infrastructure.TestClients;
 
 public class ParallelScenarioExecutor
 {

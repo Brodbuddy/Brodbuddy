@@ -1,9 +1,7 @@
 using Brodbuddy.WebSocket.Core;
-using Shouldly;
-using Startup.Tests.Websocket;
 using Xunit.Abstractions;
 
-namespace Startup.Tests.WebSocket;
+namespace Startup.Tests.Infrastructure.TestClients;
 
 public class WebSocketTestScenario
 {

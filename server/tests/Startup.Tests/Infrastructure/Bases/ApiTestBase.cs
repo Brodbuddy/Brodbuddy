@@ -1,7 +1,9 @@
-using Startup.Tests.WebApplicationFactories;
+using Startup.Tests.Infrastructure.Factories;
+using Startup.Tests.Infrastructure.Fixtures;
+using Startup.Tests.Infrastructure.Lifecycle;
 using Xunit.Abstractions;
 
-namespace Startup.Tests;
+namespace Startup.Tests.Infrastructure.Bases;
 
 public abstract class ApiTestBase : IAsyncLifetime, IDisposable
 {
@@ -48,7 +50,7 @@ public abstract class ApiTestBase : IAsyncLifetime, IDisposable
         {
             try
             {
-                Factory?.Dispose();
+                Factory.Dispose();
             }
             catch (Exception ex)
             {

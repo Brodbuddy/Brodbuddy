@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using SharedTestDependencies.Fakes;
-using SharedTestDependencies.Redis;
+using SharedTestDependencies.Fixtures;
 using Shouldly;
 using StackExchange.Redis;
 

@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Shouldly;
 
-namespace Startup.Tests;
+namespace Startup.Tests.Infrastructure.Extensions;
 
 public static class TestExtensions
 {

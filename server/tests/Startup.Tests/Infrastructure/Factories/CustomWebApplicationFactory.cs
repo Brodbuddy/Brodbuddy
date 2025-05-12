@@ -6,9 +6,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SharedTestDependencies.Logging;
+using Startup.Tests.Infrastructure.Fixtures;
 using Xunit.Abstractions;
 
-namespace Startup.Tests.WebApplicationFactories;
+namespace Startup.Tests.Infrastructure.Factories;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {

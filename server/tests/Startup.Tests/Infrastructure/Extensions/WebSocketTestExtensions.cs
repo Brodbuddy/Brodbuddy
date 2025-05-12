@@ -1,10 +1,11 @@
 using Application;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Startup.Tests.WebApplicationFactories;
+using Startup.Tests.Infrastructure.Factories;
+using Startup.Tests.Infrastructure.TestClients;
 using Xunit.Abstractions;
 
-namespace Startup.Tests.Websocket;
+namespace Startup.Tests.Infrastructure.Extensions;
 
 public static class WebSocketTestExtensions
 {

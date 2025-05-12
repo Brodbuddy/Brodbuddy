@@ -6,7 +6,7 @@ using HiveMQtt.Client;
 using HiveMQtt.MQTT5.Types;
 using Xunit.Abstractions;
 
-namespace Startup.Tests.Mqtt;
+namespace Startup.Tests.Infrastructure.TestClients;
 
 public class MqttTestClient : IAsyncDisposable
 {

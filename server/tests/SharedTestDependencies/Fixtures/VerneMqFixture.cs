@@ -4,7 +4,7 @@ using Testcontainers.Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace SharedTestDependencies.Broker;
+namespace SharedTestDependencies.Fixtures;
 
 public class VerneMqFixture : ContainerFixture<ContainerBuilder, IContainer>
 {

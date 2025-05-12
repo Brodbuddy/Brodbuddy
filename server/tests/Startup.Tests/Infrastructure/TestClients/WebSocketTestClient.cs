@@ -1,11 +1,10 @@
 using System.Net.WebSockets;
 using System.Text.Json;
-using Startup.Tests.WebSocket;
 using Websocket.Client;
 using Xunit.Abstractions;
 using WebSocketError = Brodbuddy.WebSocket.Core.WebSocketError;
 
-namespace Startup.Tests.Websocket;
+namespace Startup.Tests.Infrastructure.TestClients;
 
 public class WebSocketTestClient : IAsyncDisposable
 {

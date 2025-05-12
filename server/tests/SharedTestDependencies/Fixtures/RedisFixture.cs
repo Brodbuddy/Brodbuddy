@@ -7,7 +7,7 @@ using Testcontainers.Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace SharedTestDependencies.Redis;
+namespace SharedTestDependencies.Fixtures;
 
 public class RedisFixture : ContainerFixture<RedisBuilder, RedisContainer>
 {

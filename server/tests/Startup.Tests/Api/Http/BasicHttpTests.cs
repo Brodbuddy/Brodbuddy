@@ -1,11 +1,11 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 using SharedTestDependencies.Constants;
 using Shouldly;
-using Startup.Tests.WebApplicationFactories;
+using Startup.Tests.Infrastructure.Bases;
+using Startup.Tests.Infrastructure.Fixtures;
 using Xunit.Abstractions;
 
-namespace Startup.Tests.ApiTests;
+namespace Startup.Tests.Api.Http;
 
 [Collection(TestCollections.Startup)]
 public class BasicHttpTests(StartupTestFixture fixture, ITestOutputHelper output) : ApiTestBase(fixture, output)
