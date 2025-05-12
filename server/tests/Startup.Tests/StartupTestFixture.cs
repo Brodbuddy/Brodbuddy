@@ -70,6 +70,7 @@ public class StartupTestFixture : IAsyncLifetime
     public async Task ResetAsync()
     {
         Log("Resetting services...");
+        await Task.Delay(100);
         await Task.WhenAll(
             Postgres.ResetDatabaseAsync(),
             Redis.ResetAsync(),

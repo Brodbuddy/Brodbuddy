@@ -20,6 +20,8 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.15" />
+        <PackageReference Include="Websocket.Client" Version="5.1.2" />
     </ItemGroup>
 
     <ItemGroup>
@@ -30,5 +32,4 @@
         <ProjectReference Include="..\..\Startup\Startup.csproj"/>
         <ProjectReference Include="..\SharedTestDependencies\SharedTestDependencies.csproj"/>
     </ItemGroup>
-    
 </Project>

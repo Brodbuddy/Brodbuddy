@@ -13,7 +13,7 @@ using Startup.TcpProxy;
 
 namespace Startup;
 
-public static class Program
+public class Program
 {
     private const string ApplicationName = "Brodbuddy";
     

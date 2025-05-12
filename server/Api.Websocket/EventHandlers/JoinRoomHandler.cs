@@ -22,7 +22,7 @@ public class JoinRoomValidator : AbstractValidator<JoinRoom>
     }
 }
 
-[Authorize(Roles = "user")]
+[AllowAnonymous]
 public class JoinRoomHandler(ISocketManager manager) : IWebSocketHandler<JoinRoom, UserJoined>
 {
     public async Task<UserJoined> HandleAsync(JoinRoom incoming, string clientId, IWebSocketConnection socket)
