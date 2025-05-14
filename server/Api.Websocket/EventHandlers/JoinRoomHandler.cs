@@ -167,8 +167,7 @@ public class JoinRoomHandler(ISocketManager manager) : ISubscriptionHandler<Join
         
         await manager.SubscribeAsync(clientId, topic);
         
-        if (!alreadySubscribed) 
-            await manager.BroadcastAsync(topic, new BroadcastTest(incoming.RoomId, "User joined"));
+        if (!alreadySubscribed) await manager.BroadcastAsync(topic, new BroadcastTest(incoming.RoomId, "User joined"));
 
         return new UserJoined(incoming.RoomId, incoming.Username, socket.ConnectionInfo.Id);
     }

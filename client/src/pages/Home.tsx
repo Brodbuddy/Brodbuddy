@@ -10,13 +10,14 @@ export default function Home() {
     const [joinedUsers, setJoinedUsers] = useState<string[]>([]);
 
     useEffect(() => {
-        if (!client) return;
+        if (!client || connected) return;
+        
         const unsubscribe = client.on(Broadcasts.broadcastTest, (payload: any) => {
             setJoinedUsers(prev => [...prev, `User ${payload.ConnectionId} joined room ${payload.RoomId}`]);
         });
-
+        
         return () => unsubscribe();
-    }, [client]);
+    }, [client, connected, roomId]);
 
     const handleJoinRoom = () => {
         if (!client || !connected || !username.trim() || !roomId.trim()) return;
@@ -30,6 +31,23 @@ export default function Home() {
             console.error('Failed to join room:', error);
         });
     };
+    
+    useEffect(() => {
+        if (!client || !connected) return;
+
+        const subscriptions = JSON.parse(sessionStorage.getItem('ws_subscriptions') || '{}');
+        const isAlreadyJoined = Object.values(subscriptions).some((sub: any) =>
+            sub.method === 'JoinRoom' && sub.payload?.RoomId === roomId
+        );
+
+        if (isAlreadyJoined) {
+            setIsJoined(true);
+            setJoinedUsers(prev => [
+                ...prev,
+                `You reconnected to room ${roomId} as ${username}`
+            ]);
+        }
+    }, [client, connected, roomId, username]);
 
     return (
         <div

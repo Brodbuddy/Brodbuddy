@@ -14,6 +14,7 @@ const WS_SUBSCRIPTION_KEY = "ws_subscriptions";
 
 export class WebSocketClient {
     private socket: WebSocket | null = null;
+    private pingInterval: number | null = null;
     private pendingRequests = new Map<string, { resolve: Function; reject: Function; timeout: number; }>();
     private listeners = new Map<string, Set<(payload: any) => void>>();
     private reconnectAttempts = 0;
@@ -56,6 +57,8 @@ export class WebSocketClient {
                 this.socket.onopen = async () => {
                     this.reconnectAttempts = 0;
                     this.reconnecting = false;
+                    
+                    this.startPing();
 
                     if (this.onOpen) this.onOpen();
                     resolve();
@@ -94,6 +97,11 @@ export class WebSocketClient {
     }
 
     public close(): void {
+        if (this.pingInterval) {
+            clearInterval(this.pingInterval);
+            this.pingInterval = null;
+        }
+        
         if (this.socket) {
             this.socket.close();
             this.socket = null;
@@ -222,6 +230,22 @@ export class WebSocketClient {
                 }
             }
         };
+    }
+    
+    private startPing(): void {
+        if (this.pingInterval) {
+            clearInterval(this.pingInterval);
+        }
+
+        this.pingInterval = window.setInterval(() => {
+            if (this.socket?.readyState === WebSocket.OPEN) {
+                this.send.ping({
+                    Timestamp: Date.now()
+                }).catch(error => {
+                    console.warn("Ping failed:", error);
+                });
+            }
+        }, 30000); // 30 seconds
     }
 
     private saveSubscription(method: string, payload: any, topicKey?: string): void {
