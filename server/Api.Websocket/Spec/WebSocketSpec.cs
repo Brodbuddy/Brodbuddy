@@ -3,7 +3,12 @@ namespace Api.Websocket.Spec;
 
 public sealed record WebSocketSpec(
     string Version,
-    Dictionary<string, string> MessageTypes,
+    Dictionary<string, string> RequestTypes,
+    Dictionary<string, string> ResponseTypes, 
+    Dictionary<string, string> BroadcastTypes,
+    Dictionary<string, string> ErrorCodes,
+    Dictionary<string, string> SubscriptionMethods,
+    Dictionary<string, string> UnsubscriptionMethods,
     Dictionary<string, TypeDefinition> Types,
     Dictionary<string, RequestResponseMapping> RequestResponses
 );

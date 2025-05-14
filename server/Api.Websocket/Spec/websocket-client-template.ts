@@ -1,10 +1,16 @@
 /* GENERATED_IMPORTS */
 
-
 export interface WebSocketError {
     code: string;
     message: string;
 }
+
+interface StoredSubscription {
+    method: string;
+    payload: any;
+}
+
+const WS_SUBSCRIPTION_KEY = "ws_subscriptions";
 
 export class WebSocketClient {
     private socket: WebSocket | null = null;
@@ -47,17 +53,25 @@ export class WebSocketClient {
                 const connectUrl = `${this.url}/?id=${encodeURIComponent(this.clientId!)}`;
                 this.socket = new WebSocket(connectUrl);
 
-                this.socket.onopen = () => {
+                this.socket.onopen = async () => {
                     this.reconnectAttempts = 0;
                     this.reconnecting = false;
+
                     if (this.onOpen) this.onOpen();
                     resolve();
+
+                    setTimeout(async () => {
+                        try {
+                            await this.replaySubscriptions();
+                        } catch (error) {
+                            console.error('Failed to replay subscriptions:', error);
+                        }
+                    }, 100);
                 };
 
                 this.socket.onclose = () => {
                     if (this.onClose) this.onClose();
                     this.reconnect();
-                    reject(new Error('Connection closed'));
                 };
 
                 this.socket.onerror = (error) => {
@@ -105,7 +119,7 @@ export class WebSocketClient {
     }
 
     private handleMessage(message: any): void {
-        const { Type, Payload, RequestId } = message;
+        const { Type, Payload, RequestId, TopicKey } = message;
 
         if (RequestId && this.pendingRequests.has(RequestId)) {
             const { resolve, reject, timeout } = this.pendingRequests.get(RequestId)!;
@@ -119,7 +133,7 @@ export class WebSocketClient {
                 };
                 reject(error);
             } else {
-                resolve(Payload);
+                resolve({ payload: Payload, topicKey: TopicKey });
             }
             return;
         }
@@ -156,7 +170,21 @@ export class WebSocketClient {
                 }
             }, timeoutMs);
 
-            this.pendingRequests.set(requestId, { resolve, reject, timeout });
+            this.pendingRequests.set(requestId, {
+                resolve: (result: { payload: any; topicKey?: string }) => { 
+                    if (Object.values(SubscriptionMethods).includes(type as any)) {  
+                        this.saveSubscription(type, payload, result.topicKey);
+                    }
+
+                    if (Object.values(UnsubscriptionMethods).includes(type as any)) { 
+                        this.removeSubscription(type, payload, result.topicKey);
+                    }
+
+                    resolve(result.payload);
+                },
+                reject,
+                timeout
+            });
 
             const token = this.getToken ? this.getToken() : null;
             const messageToSend: any = {
@@ -195,6 +223,33 @@ export class WebSocketClient {
             }
         };
     }
+
+    private saveSubscription(method: string, payload: any, topicKey?: string): void {
+        const subscriptions = JSON.parse(sessionStorage.getItem(WS_SUBSCRIPTION_KEY) || '{}') as Record<string, StoredSubscription>;
+        const key = topicKey || `${method}:${JSON.stringify(payload)}`;
+        subscriptions[key] = { method, payload };
+        sessionStorage.setItem(WS_SUBSCRIPTION_KEY, JSON.stringify(subscriptions));
+    }
+
+    private removeSubscription(method: string, payload: any, topicKey?: string): void {
+        const subscriptions = JSON.parse(sessionStorage.getItem(WS_SUBSCRIPTION_KEY) || '{}') as Record<string, StoredSubscription>;
+        const key = topicKey || `${method}:${JSON.stringify(payload)}`;
+        delete subscriptions[key];
+        sessionStorage.setItem(WS_SUBSCRIPTION_KEY, JSON.stringify(subscriptions));
+    }
+
+    private async replaySubscriptions(): Promise<void> {
+        const subscriptions = JSON.parse(sessionStorage.getItem(WS_SUBSCRIPTION_KEY) || '{}') as Record<string, StoredSubscription>;
+
+        for (const { method, payload } of Object.values(subscriptions)) {
+            try {
+                await this.sendRequest(method, payload);
+            } catch (error) {
+                console.error(`Failed to replay ${method}:`, error);
+            }
+        }
+    }
+
 
     /* GENERATED_SEND_METHODS */
 }

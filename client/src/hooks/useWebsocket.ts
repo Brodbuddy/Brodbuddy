@@ -1,70 +1,22 @@
 import { useAtomValue } from 'jotai';
 import { clientIdAtom } from './import';
-import { useEffect, useState, useMemo, useCallback } from 'react';
-import { WebSocketClient, WebSocketError } from '../api/websocket-client';
+import { useEffect, useState, useMemo } from 'react';
+import { WebSocketClient, WebSocketError, ErrorCodes } from '../api/websocket-client';
 import { refreshToken } from "./useHttp";
 import { tokenStorage, TOKEN_KEY, jwtAtom } from '../atoms/auth';
-
-const wsClient = new WebSocketClient('ws://localhost:8181');
-
-interface WebSocketSessionState {
-    roomId?: string;
-    username?: string;
-    [key: string]: any;
-}
 
 export function useWebSocket() {
     const [connected, setConnected] = useState(false);
     const [error, setError] = useState<Event | Error | null>(null);
-    const [sessionRestored, setSessionRestored] = useState(false);
     const clientId = useAtomValue(clientIdAtom);
-    const jwt = useAtomValue(jwtAtom)
+    const jwt = useAtomValue(jwtAtom);
 
-    const saveSessionState = useCallback((state: WebSocketSessionState) => {
-        localStorage.setItem('ws_session_state', JSON.stringify(state));
-    }, []);
-
-    const clearSessionState = useCallback(() => {
-        localStorage.removeItem('ws_session_state');
-    }, []);
-
-    const getSavedSessionState = useCallback((): WebSocketSessionState | null => {
-        const stateJson = localStorage.getItem('ws_session_state');
-        if (!stateJson) return null;
-
-        try {
-            return JSON.parse(stateJson);
-        } catch (error) {
-            console.error('Error parsing session state:', error);
-            localStorage.removeItem('ws_session_state');
-            return null;
-        }
-    }, []);
-
-    const handleReconnection = useCallback(async () => {
-        if (!connected || sessionRestored) return;
-
-        const savedState = getSavedSessionState();
-        if (!savedState || !savedState.roomId) return;
-
-        try {
-            await authedClient.send.joinRoom({
-                RoomId: savedState.roomId,
-                Username: savedState.username || 'Anonymous'
-            });
-
-            setSessionRestored(true);
-        } catch (error) {
-            console.error('Failed to restore session:', error);
-            clearSessionState();
-        }
-    }, [connected, sessionRestored]);
+    const wsClient = useMemo(() => new WebSocketClient('ws://localhost:8181'), []);
     
     useEffect(() => {
         if (!clientId) {
             wsClient.close();
             setConnected(false);
-            setSessionRestored(false);
             return;
         }
 
@@ -78,7 +30,6 @@ export function useWebSocket() {
         
         wsClient.onClose = () => {
             setConnected(false);
-            setSessionRestored(false);
         }
         
         wsClient.onError = (err: Event | Error) => { 
@@ -93,13 +44,7 @@ export function useWebSocket() {
             wsClient.onClose = null;
             wsClient.onError = null;
         };
-    }, [clientId, jwt]);
-
-    useEffect(() => {
-        if (connected && !sessionRestored) {
-            handleReconnection();
-        }
-    }, [connected, sessionRestored, handleReconnection]);
+    }, [wsClient, clientId, jwt]);
 
     const authedClient = useMemo(() => {
         if (!wsClient.send) return wsClient;
@@ -114,7 +59,7 @@ export function useWebSocket() {
                     try {
                         return await originalMethod.call(target, payload);
                     } catch (error) {
-                        if ((error as WebSocketError)?.code === 'UNAUTHORIZED') {
+                        if ((error as WebSocketError)?.code === ErrorCodes.unauthorized) {
                             try {
                                 await refreshToken();
                                 return await originalMethod.call(target, payload);
@@ -137,13 +82,10 @@ export function useWebSocket() {
             setCredentials: wsClient.setCredentials.bind(wsClient)
         };
     }, [wsClient]);
-
-
+    
     return {
         client: authedClient,
         connected,
-        error,
-        saveSessionState,
-        sessionRestored
+        error
     };
 }

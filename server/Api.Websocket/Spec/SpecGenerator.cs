@@ -1,4 +1,5 @@
 using System.Reflection;
+using Api.Websocket.Auth;
 using Brodbuddy.WebSocket.Core;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +10,12 @@ public static class SpecGenerator
 {
     public static WebSocketSpec GenerateSpec(Assembly assembly, IServiceProvider serviceProvider)
     {
-        var messageTypes = new Dictionary<string, string>();
+        var requestTypes = new Dictionary<string, string>();
+        var responseTypes = new Dictionary<string, string>();
+        var broadcastTypes = new Dictionary<string, string>();
+        var errorCodes = new Dictionary<string, string>();
+        var subscriptionMethods = new Dictionary<string, string>();
+        var unsubscriptionMethods = new Dictionary<string, string>();
         var types = new Dictionary<string, TypeDefinition>();
         var requestResponses = new Dictionary<string, RequestResponseMapping>();
         
@@ -25,8 +31,8 @@ public static class SpecGenerator
             var requestType = handlerInterface.GetGenericArguments()[0];
             var responseType = handlerInterface.GetGenericArguments()[1];
             
-            messageTypes[ToCamelCase(handler.MessageType)] = handler.MessageType;
-            messageTypes[ToCamelCase(responseType.Name)] = responseType.Name;
+            requestTypes[ToCamelCase(handler.MessageType)] = handler.MessageType;
+            responseTypes[ToCamelCase(responseType.Name)] = responseType.Name;
             
             types[requestType.Name] = GenerateTypeDefinition(requestType);
             types[responseType.Name] = GenerateTypeDefinition(responseType);
@@ -36,11 +42,40 @@ public static class SpecGenerator
                 ResponseType: responseType.Name,
                 Validation: GenerateValidationDefinition(requestType, assembly)
             );
+            
+            var subscriptionInterface = handlerType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ISubscriptionHandler<,>));
+            if (subscriptionInterface != null) subscriptionMethods[ToCamelCase(handler.MessageType)] = handler.MessageType;
+            
+            var unsubscriptionInterface = handlerType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IUnsubscriptionHandler<,>));
+            if (unsubscriptionInterface != null) unsubscriptionMethods[ToCamelCase(handler.MessageType)] = handler.MessageType;
+        }
+
+        var broadcastMessages = assembly.GetTypes().Where(t => typeof(IBroadcastMessage).IsAssignableFrom(t) && !t.IsInterface); 
+        foreach (var broadcastMessage in broadcastMessages) 
+        {
+            broadcastTypes[ToCamelCase(broadcastMessage.Name)] = broadcastMessage.Name;
+            types[broadcastMessage.Name] = GenerateTypeDefinition(broadcastMessage);
+        }
+        
+        var errorCodesType = typeof(WebSocketErrorCodes);
+        var constantFields = errorCodesType.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+            .Where(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(string));
+    
+        foreach (var field in constantFields)
+        {
+            var value = (string)field.GetValue(null)!;
+            var name = ToCamelCase(field.Name);
+            errorCodes[name] = value;
         }
         
         return new WebSocketSpec(
             Version: "1.0",
-            MessageTypes: messageTypes,
+            RequestTypes: requestTypes,
+            ResponseTypes: responseTypes,
+            BroadcastTypes: broadcastTypes,
+            ErrorCodes: errorCodes,
+            SubscriptionMethods: subscriptionMethods, 
+            UnsubscriptionMethods: unsubscriptionMethods,
             Types: types,
             RequestResponses: requestResponses
         );
