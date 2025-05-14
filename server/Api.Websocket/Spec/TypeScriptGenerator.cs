@@ -23,6 +23,17 @@ public static class TypeScriptGenerator
         var sb = new StringBuilder();
         var culture = CultureInfo.InvariantCulture;
         
+        foreach (var (enumName, enumDef) in spec.Enums)
+        {
+            sb.AppendLine(string.Format(culture, "export enum {0} {{", enumName));
+            foreach (var (name, value) in enumDef.Values)
+            {
+                sb.AppendLine(string.Format(culture, "    {0} = \"{1}\",", name, value));
+            }
+            sb.AppendLine("}");
+            sb.AppendLine();
+        }
+        
         sb.AppendLine("// WebSocket Error Codes");
         sb.AppendLine("export const ErrorCodes = {");
         foreach (var (key, value) in spec.ErrorCodes)

@@ -10,7 +10,8 @@ public sealed record WebSocketSpec(
     Dictionary<string, string> SubscriptionMethods,
     Dictionary<string, string> UnsubscriptionMethods,
     Dictionary<string, TypeDefinition> Types,
-    Dictionary<string, RequestResponseMapping> RequestResponses
+    Dictionary<string, RequestResponseMapping> RequestResponses,
+    Dictionary<string, EnumDefinition> Enums 
 );
 
 public sealed record RequestResponseMapping(
@@ -38,3 +39,8 @@ public sealed record ValidationRule(
     object? Value,
     string? Message
 ); 
+
+public sealed record EnumDefinition(
+    Dictionary<string, object> Values
+);
+

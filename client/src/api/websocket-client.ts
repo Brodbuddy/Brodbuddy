@@ -1,3 +1,16 @@
+export enum UserRole {
+    Guest = "Guest",
+    Member = "Member",
+    Moderator = "Moderator",
+    Admin = "Admin",
+}
+
+export enum RoomStatus {
+    Active = "Active",
+    Inactive = "Inactive",
+    Maintenance = "Maintenance",
+}
+
 // WebSocket Error Codes
 export const ErrorCodes = {
     invalidMessage: "INVALID_MESSAGE",
@@ -14,16 +27,24 @@ export const ErrorCodes = {
 // Request type constants
 export const Requests = {
     joinRoom: "JoinRoom",
+    createRoom: "CreateRoom",
+    updateUserProfile: "UpdateUserProfile",
+    getRoomHistory: "GetRoomHistory",
 } as const;
 
 // Response type constants
 export const Responses = {
     userJoined: "UserJoined",
+    roomCreated: "RoomCreated",
+    userProfileUpdated: "UserProfileUpdated",
+    roomHistoryResponse: "RoomHistoryResponse",
 } as const;
 
 // Broadcast type constants
 export const Broadcasts = {
     broadcastTest: "BroadcastTest",
+    userStatusBroadcast: "UserStatusBroadcast",
+    roomStatsUpdate: "RoomStatsUpdate",
 } as const;
 
 // Subscription methods
@@ -60,14 +81,103 @@ export interface UserJoined extends BaseResponse {
     ConnectionId: string;
 }
 
+export interface CreateRoom extends BaseRequest {
+    Name: string;
+    Description: string;
+    MaxUsers: number;
+    IsPrivate: boolean;
+    Tags: string[];
+    Settings: Record<string, string>;
+    RequiredRole: UserRole;
+    ExpiresAt?: string | null;
+}
+
+export interface RoomCreated extends BaseResponse {
+    RoomId: string;
+    Name: string;
+    CreatedAt: string;
+    CreatedBy: string;
+    Success: boolean;
+    ErrorMessage: string;
+    AllowedRoles: UserRole[];
+    Configuration: Record<string, any>;
+}
+
+export interface UpdateUserProfile extends BaseRequest {
+    DisplayName: string;
+    AvatarLetter?: string | null;
+    Role: UserRole;
+    PreferredRooms: number[];
+    Preferences: Record<string, boolean>;
+    Avatar: number[];
+    Score: number;
+    ExperiencePoints: number;
+    LastLoginAt?: string | null;
+}
+
+export interface UserProfileUpdated extends BaseResponse {
+    UserId: string;
+    Success: boolean;
+    ChangedFields: string[];
+    NewScore: number;
+    Level: number;
+    UpdatedData: Record<string, any>;
+    Timestamp: string;
+}
+
+export interface GetRoomHistory extends BaseRequest {
+    RoomId: string;
+    Limit: number;
+    FromDate?: string | null;
+    ToDate?: string | null;
+    MessageTypes: string[];
+}
+
+export interface RoomHistoryResponse extends BaseResponse {
+    RoomId: string;
+    Messages: Record<string, any>[];
+    HasMore: boolean;
+    TotalCount: number;
+    QueryDuration: string;
+    GeneratedAt: string;
+    MessageTypeCounts: Record<string, number>;
+    ParticipantIds: string[];
+}
+
 export interface BroadcastTest extends BaseBroadcast {
     RoomId: string;
     Status: string;
 }
 
+export interface UserStatusBroadcast extends BaseBroadcast {
+    RoomId: string;
+    UserId: string;
+    IsOnline: boolean;
+    LastSeen: string;
+    Role: UserRole;
+    Score: number;
+    Achievements: string[];
+    Statistics: Record<string, number>;
+}
+
+export interface RoomStatsUpdate extends BaseBroadcast {
+    RoomId: string;
+    ActiveUsers: number;
+    MaxUsers?: number | null;
+    AverageScore: number;
+    Status: RoomStatus;
+    Uptime: string;
+    CreatedAt: string;
+    MetadataHash: number[];
+    RecentActivity: Record<string, any>[];
+}
+
 // Request-response type mapping
 export type RequestResponseMap = {
     [Requests.joinRoom]: [JoinRoom, UserJoined];
+    [Requests.createRoom]: [CreateRoom, RoomCreated];
+    [Requests.updateUserProfile]: [UpdateUserProfile, UserProfileUpdated];
+    [Requests.getRoomHistory]: [GetRoomHistory, RoomHistoryResponse];
 };
 
 
@@ -326,6 +436,15 @@ export class WebSocketClient {
     send = {
     joinRoom: (payload: Omit<JoinRoom, 'requestId'>): Promise<UserJoined> => {
         return this.sendRequest<UserJoined>('JoinRoom', payload);
+    },
+    createRoom: (payload: Omit<CreateRoom, 'requestId'>): Promise<RoomCreated> => {
+        return this.sendRequest<RoomCreated>('CreateRoom', payload);
+    },
+    updateUserProfile: (payload: Omit<UpdateUserProfile, 'requestId'>): Promise<UserProfileUpdated> => {
+        return this.sendRequest<UserProfileUpdated>('UpdateUserProfile', payload);
+    },
+    getRoomHistory: (payload: Omit<GetRoomHistory, 'requestId'>): Promise<RoomHistoryResponse> => {
+        return this.sendRequest<RoomHistoryResponse>('GetRoomHistory', payload);
     },
 };
 

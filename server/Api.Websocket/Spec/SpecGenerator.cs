@@ -68,6 +68,8 @@ public static class SpecGenerator
             errorCodes[name] = value;
         }
         
+        var enums = CollectEnums(assembly);
+        
         return new WebSocketSpec(
             Version: "1.0",
             RequestTypes: requestTypes,
@@ -77,7 +79,8 @@ public static class SpecGenerator
             SubscriptionMethods: subscriptionMethods, 
             UnsubscriptionMethods: unsubscriptionMethods,
             Types: types,
-            RequestResponses: requestResponses
+            RequestResponses: requestResponses,
+            enums
         );
     } 
     
@@ -109,14 +112,131 @@ public static class SpecGenerator
         );
     }
     
-    private static string GetTypeScriptType(Type type) => type switch
+    private static string GetTypeScriptType(Type type)
     {
-        not null when type == typeof(string) => "string",
-        not null when type == typeof(int) || type == typeof(double) || type == typeof(float) => "number",
-        not null when type == typeof(bool) => "boolean",
-        not null when type == typeof(Guid) => "string",
-        _ => "any"
-    };
+        // Håndter nullable typer
+        if (IsNullableType(type))
+        {
+            var underlyingType = Nullable.GetUnderlyingType(type);
+            return GetTypeScriptType(underlyingType!) + " | null";
+        }
+        
+        // Håndter enums
+        if (type.IsEnum)
+        {
+            return type.Name;
+        }
+        
+        // Håndter arrays 
+        if (type.IsArray)
+        {
+            var elementType = type.GetElementType()!;
+            return GetTypeScriptType(elementType) + "[]";
+        }
+        
+        // Håndter generiske collections 
+        if (type.IsGenericType)
+        {
+            var genericTypeDefinition = type.GetGenericTypeDefinition();
+            var genericArguments = type.GetGenericArguments();
+            
+            // List<T>, IList<T>, ICollection<T>, IEnumerable<T> -> T[]
+            if (genericTypeDefinition == typeof(List<>) ||
+                genericTypeDefinition == typeof(IList<>) ||
+                genericTypeDefinition == typeof(ICollection<>) ||
+                genericTypeDefinition == typeof(IEnumerable<>))
+            {
+                return GetTypeScriptType(genericArguments[0]) + "[]";
+            }
+            
+            // Dictionary<string, T> -> Record<string, T>
+            if (genericTypeDefinition == typeof(Dictionary<,>) ||
+                genericTypeDefinition == typeof(IDictionary<,>))
+            {
+                var keyType = genericArguments[0];
+                var valueType = genericArguments[1];
+                
+                // Only support string keys for Record type
+                // Understøt kun string keys for Record typer
+                if (keyType == typeof(string)) return $"Record<string, {GetTypeScriptType(valueType)}>";
+                
+                // For ikke-string keys, fald tilbage til objekt
+                return "Record<string, any>";
+            }
+            
+            // KeyValuePair<K, V> -> { key: K; value: V }
+            if (genericTypeDefinition == typeof(KeyValuePair<,>))
+            {
+                var keyType = GetTypeScriptType(genericArguments[0]);
+                var valueType = GetTypeScriptType(genericArguments[1]);
+                return $"{{ key: {keyType}; value: {valueType} }}";
+            }
+        }
+        
+        // Primitive typer
+        return type switch
+        {
+            // String typer 
+            not null when type == typeof(string) => "string",
+            not null when type == typeof(char) => "string",
+            
+            // Numeriske typer 
+            not null when type == typeof(byte) => "number",
+            not null when type == typeof(sbyte) => "number",
+            not null when type == typeof(short) => "number",
+            not null when type == typeof(ushort) => "number",
+            not null when type == typeof(int) => "number",
+            not null when type == typeof(uint) => "number",
+            not null when type == typeof(long) => "number",
+            not null when type == typeof(ulong) => "number",
+            not null when type == typeof(float) => "number",
+            not null when type == typeof(double) => "number",
+            not null when type == typeof(decimal) => "number",
+            
+            // Boolean
+            not null when type == typeof(bool) => "boolean",
+            
+            // Date/Time typer (typisk serialiseret som ISO strings)
+            not null when type == typeof(DateTime) => "string",
+            not null when type == typeof(DateTimeOffset) => "string",
+            not null when type == typeof(DateOnly) => "string",
+            not null when type == typeof(TimeOnly) => "string",
+            not null when type == typeof(TimeSpan) => "string",
+            
+            // GUID og andre specielle typer 
+            not null when type == typeof(Guid) => "string",
+            not null when type == typeof(Uri) => "string",
+    
+            // Default
+            _ => "any"
+        };
+    }
+    
+    private static Dictionary<string, EnumDefinition> CollectEnums(Assembly assembly)
+    {
+        var enums = new Dictionary<string, EnumDefinition>();
+    
+        var enumTypes = assembly.GetTypes().Where(t => t.IsEnum);
+    
+        foreach (var enumType in enumTypes)
+        {
+            var enumValues = new Dictionary<string, object>();
+            var names = Enum.GetNames(enumType);
+            var values = Enum.GetValues(enumType);
+        
+            for (int i = 0; i < names.Length; i++)
+            {
+                var name = names[i];
+                var value = values.GetValue(i);
+                enumValues[name] = value!;
+            }
+        
+            enums[enumType.Name] = new EnumDefinition(enumValues);
+        }
+    
+        return enums;
+    }
+
     
     private static bool IsNullableType(Type type)
     {
