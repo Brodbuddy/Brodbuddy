@@ -1,7 +1,6 @@
 #include "SourdoughDisplay.h"
-#include "fonts.h"
 
-SourdoughDisplay::SourdoughDisplay() {}
+SourdoughDisplay::SourdoughDisplay() : Adafruit_GFX(EPD_HEIGHT, EPD_WIDTH) {}
 
 void SourdoughDisplay::begin() {
     Serial.println("Initializing E-Paper Display...");
@@ -23,6 +22,17 @@ void SourdoughDisplay::begin() {
 
     // Clear buffers til start
     clearBuffers();
+    
+    // Konfigurer GFX bibliotek
+    setFont(&FreeSans9pt7b);
+    setTextColor(COLOR_BLACK);
+    setTextSize(1);
+    
+    setRotation(0);
+    
+   // Juster tekstindstillinger
+    setTextWrap(true);
+    cp437(true); // Brug CP437 tegnsæt for specialtegn
 }
 
 void SourdoughDisplay::hardwareReset() {
@@ -116,7 +126,7 @@ void SourdoughDisplay::fullRefresh() {
     waitUntilIdle();
 }
 
-void SourdoughDisplay::setPixel(int x, int y, uint8_t color) {
+void SourdoughDisplay::setPixel(int16_t x, int16_t y, uint16_t color) {
     if (x < 0 || x >= EPD_WIDTH || y < 0 || y >= EPD_HEIGHT) {
         return;
     }
@@ -135,71 +145,29 @@ void SourdoughDisplay::setPixel(int x, int y, uint8_t color) {
     }
 }
 
-void SourdoughDisplay::drawChar(int16_t x, int16_t y, char c, uint8_t color) {
-    // Determine charIndex based on your Font5x7 definition in fonts.h/cpp
-    // This example assumes Font5x7 starts at FONT_FIRST_CHAR (e.g., ASCII 32)
-    // and you have a mapping for Danish characters if they are appended.
-    uint8_t charIndex;
-    bool isDanish = false;
-
-    if (c == 'æ' || c == 'Æ') { charIndex = FONT_CHAR_COUNT; isDanish = true; } // Assuming æ is 1st after standard block
-    else if (c == 'ø' || c == 'Ø') { charIndex = FONT_CHAR_COUNT + 1; isDanish = true; } // ø is 2nd
-    else if (c == 'å' || c == 'Å') { charIndex = FONT_CHAR_COUNT + 2; isDanish = true; } // å is 3rd
-    else if (c < FONT_FIRST_CHAR || c >= (FONT_FIRST_CHAR + FONT_CHAR_COUNT) ) {
-        return; // Character not in standard font range
-    } else {
-        charIndex = c - FONT_FIRST_CHAR; // Index for standard ASCII
+void SourdoughDisplay::drawPixel(int16_t x, int16_t y, uint16_t color) {
+    if ((x < 0) || (y < 0) || (x >= width()) || (y >= height())) {
+        return;
     }
-
-    // Calculate the starting offset in the Font5x7 array for this character's data
-    uint16_t charDataOffset = charIndex * FONT_WIDTH; // FONT_WIDTH is 5
-
-    for (uint8_t char_col = 0; char_col < FONT_WIDTH; char_col++) { // Iterate L-R through font data columns
-        uint8_t colData = pgm_read_byte(&Font5x7[charDataOffset + char_col]);
         
-        for (uint8_t char_row = 0; char_row < FONT_HEIGHT; char_row++) { // Iterate T-B through font data rows
-            if (colData & (1 << char_row)) { // If pixel in font data is set (LSB=top)
-                
-                // --- APPLY 180-DEGREE ROTATION FIX for characters ---
-                int screen_x_pixel = x + (FONT_WIDTH - 1 - char_col);
-                int screen_y_pixel = y + (FONT_HEIGHT - 1 - char_row);
-                
-                setPixel(screen_x_pixel, screen_y_pixel, color);
-            }
-        }
-    }
+    setPixel(y, x, color);
 }
 
-void SourdoughDisplay::drawString(int16_t x, int16_t y, const char* text, uint8_t color) {
-    int16_t cursorX = x;
-    
-    // Draw each character in the string
-    while (*text) {
-        drawChar(cursorX, y, *text++, color);
-        cursorX += FONT_WIDTH + FONT_SPACING;
-        
-        // Optional: Add word wrapping if needed
-        if (cursorX > EPD_WIDTH - FONT_WIDTH) {
-            cursorX = x;
-            y += FONT_HEIGHT + FONT_SPACING;
-        }
-    }
-}
 
 
 void SourdoughDisplay::drawTestPattern() {
     Serial.println("Drawing test pattern into buffers...");
     
-     // Tegner en sort firkant i øverste venstre kvadrant
-    for (int y = 10; y < (EPD_HEIGHT / 4); y++) {
-        for (int x = 10; x < (EPD_WIDTH / 2) - 10; x++) {
+    // Tegn sort firkant øverst til venstre
+    for (int y = 10; y < 60; y++) {
+        for (int x = 10; x < 60; x++) {
             setPixel(x, y, COLOR_BLACK);
         }
     }
     
-    // Tegner en rød firkant i nederste højre kvadrant
-    for (int y = (EPD_HEIGHT * 3 / 4); y < EPD_HEIGHT - 10; y++) {
-        for (int x = (EPD_WIDTH / 2) + 10; x < EPD_WIDTH - 10; x++) {
+    // Tegn rød firkant nederst til højre
+    for (int y = EPD_HEIGHT - 60; y < EPD_HEIGHT - 10; y++) {
+        for (int x = EPD_WIDTH - 60; x < EPD_WIDTH - 10; x++) {
             setPixel(x, y, COLOR_RED);
         }
     }

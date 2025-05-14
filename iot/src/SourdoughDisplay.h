@@ -3,6 +3,8 @@
 
 #include <Arduino.h>
 #include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Fonts/FreeSans9pt7b.h>
 
 // Pins for E-paper display 
 #define EINK_MISO   -1  // Vi bruger ikke MISO, da e-paper displayet ikke sender data tilbage til ESP32
@@ -38,7 +40,7 @@
 // Konfigurationsbits til Driver Output (sendData(0x00) efter CMD_DRIVER_OUTPUT)
 #define PARAM_DRIVER_CONFIG      0x00  // GD=0 (Gate driver normal), SM=0 (Scan mod), TB=0 (Scan retning)
 
-class SourdoughDisplay {
+class SourdoughDisplay : public Adafruit_GFX {
 public:
     SourdoughDisplay();
 
@@ -50,10 +52,8 @@ public:
     // Send buffer til display og refresh
     void updateDisplay();
 
-    // TEGNE FUNKTIONER forneden
-    void setPixel(int x, int y, uint8_t color);
-    void drawChar(int16_t x, int16_t y, char c, uint8_t color);
-    void drawString(int16_t x, int16_t y, const char* text, uint8_t color);
+    // GFX implementation
+    void drawPixel(int16_t x, int16_t y, uint16_t color) override;
 
     void drawTestPattern();
 
@@ -70,6 +70,7 @@ private:
     void hardwareReset();
     void softwareReset();
     void initDisplay();
+    void setPixel(int16_t x, int16_t y, uint16_t color);
 };
 
 #endif
