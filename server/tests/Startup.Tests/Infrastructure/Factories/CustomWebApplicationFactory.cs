@@ -3,6 +3,8 @@ using Application.Interfaces.Communication.Mail;
 using Application.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -70,6 +72,20 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 var connectionString = _fixture.Redis.Container.GetConnectionString();
                 _output.WriteLine($"Registering Redis connection: {connectionString}");
                 return ConnectionMultiplexer.Connect(connectionString);
+            });
+            
+            var redisCacheDescriptors = services.Where(d => 
+                d.ServiceType.Name.Contains("IDistributedCache") ||
+                d.ImplementationType?.Name.Contains("RedisCache") == true).ToList();
+                
+            foreach (var descriptor in redisCacheDescriptors)
+            {
+                services.Remove(descriptor);
+            }
+            
+            services.AddStackExchangeRedisCache(options => {
+                options.Configuration = _fixture.Redis.Container.GetConnectionString();
+                options.InstanceName = "Test_RedisCache";
             });
             
             var jwtServiceDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IJwtService));
