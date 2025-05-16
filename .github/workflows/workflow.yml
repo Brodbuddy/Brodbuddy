@@ -172,7 +172,7 @@ jobs:
         # Men se sidste trin i dette som tjekker for om vi rammer 80%
         run: |
           PROJECT_DIR=$(dirname "${{ matrix.project }}")
-          PROJECT_NAME=$(basename "$PROJECT_DIR")
+          PROJECT_NAME=$(basename "${{ matrix.project_dir }}")
           echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
           CORE_COUNT=$(nproc)
           echo "Detected $CORE_COUNT cores"
