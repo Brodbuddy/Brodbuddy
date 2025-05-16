@@ -2,6 +2,7 @@ using Api.Http.Extensions;
 using Api.Http.Models;
 using Api.Http.Utils;
 using Application;
+using Application.Models;
 using Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -58,10 +59,12 @@ public class PasswordlessAuthController : ControllerBase
     public async Task<LoginVerificationResponse> VerifyCode([FromBody] LoginVerificationRequest request)
     {
 
-        var browser = UserAgentUtils.GetBrowser(HttpContext);
-        var os = UserAgentUtils.GetOperatingSystem(HttpContext);
-
-        var (accessToken, refreshToken) = await _authService.CompleteLoginAsync(request.Email, request.Code, browser, os);
+        var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString(); 
+        var browser = UserAgentUtils.GetBrowser(userAgent);
+        var os = UserAgentUtils.GetOperatingSystem(userAgent);
+        
+        var (accessToken, refreshToken) = await _authService.CompleteLoginAsync(request.Email, request.Code, new DeviceDetails(browser, os, userAgent, ipAddress));
 
         Response.Cookies.Append(RefreshTokenCookieName, refreshToken, GetRefreshTokenCookieOptions());
         

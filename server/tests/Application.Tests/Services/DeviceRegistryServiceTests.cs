@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces.Data.Repositories;
 using Application.Services;
+using Core.Exceptions;
 using Moq;
 using Shouldly;
 using Xunit;
@@ -37,15 +38,40 @@ public class DeviceRegistryServiceTests
             // Arrange
             var userId = Guid.NewGuid();
             var deviceId = Guid.NewGuid();
+            var deviceDetails = new Models.DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
+            
             _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(true);
-            _deviceServiceMock.Setup(x => x.CreateAsync("chrome", "windows")).ReturnsAsync(deviceId);
+            _deviceServiceMock.Setup(x => x.CreateAsync(It.IsAny<Models.DeviceDetails>())).ReturnsAsync(deviceId);
+            _repositoryMock.Setup(x => x.GetDeviceIdByFingerprintAsync(userId, It.IsAny<string>())).ReturnsAsync((Guid?)null);
+            _repositoryMock.Setup(x => x.CountByUserIdAsync(userId)).ReturnsAsync(0);
 
             // Act
-            var result = await _service.AssociateDeviceAsync(userId, "chrome", "windows");
+            var result = await _service.AssociateDeviceAsync(userId, deviceDetails);
 
             // Assert
             result.ShouldBe(deviceId);
-            _repositoryMock.Verify(x => x.SaveAsync(userId, deviceId), Times.Once);
+            _repositoryMock.Verify(x => x.SaveAsync(userId, deviceId, It.IsAny<string>()), Times.Once);
+        }
+        
+        [Fact]
+        public async Task AssociateDeviceAsync_ExistingFingerprint_ReturnsExistingDeviceId()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var existingDeviceId = Guid.NewGuid();
+            var deviceDetails = new Models.DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
+            
+            _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(true);
+            _repositoryMock.Setup(x => x.GetDeviceIdByFingerprintAsync(userId, It.IsAny<string>())).ReturnsAsync(existingDeviceId);
+            
+            // Act
+            var result = await _service.AssociateDeviceAsync(userId, deviceDetails);
+
+            // Assert
+            result.ShouldBe(existingDeviceId);
+            _deviceServiceMock.Verify(x => x.UpdateLastSeenAsync(existingDeviceId), Times.Once);
+            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<Models.DeviceDetails>()), Times.Never);
+            _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -53,16 +79,36 @@ public class DeviceRegistryServiceTests
         {
             // Arrange
             var userId = Guid.NewGuid();
+            var deviceDetails = new Models.DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
             _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(false);
 
             // Act & Assert
             await Should.ThrowAsync<ArgumentException>(() =>
-                _service.AssociateDeviceAsync(userId, "chrome", "windows")
+                _service.AssociateDeviceAsync(userId, deviceDetails)
             );
 
-
-            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-            _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
+            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<Models.DeviceDetails>()), Times.Never);
+            _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
+        }
+        
+        [Fact]
+        public async Task AssociateDeviceAsync_DeviceLimitReached_ThrowsBusinessRuleViolationException()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var deviceDetails = new Models.DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
+            
+            _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(true);
+            _repositoryMock.Setup(x => x.GetDeviceIdByFingerprintAsync(userId, It.IsAny<string>())).ReturnsAsync((Guid?)null);
+            _repositoryMock.Setup(x => x.CountByUserIdAsync(userId)).ReturnsAsync(5); // Max antal enheder 
+            
+            // Act & Assert
+            await Should.ThrowAsync<BusinessRuleViolationException>(() =>
+                _service.AssociateDeviceAsync(userId, deviceDetails)
+            );
+            
+            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<Models.DeviceDetails>()), Times.Never);
+            _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
         }
     }
 }

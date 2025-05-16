@@ -1,10 +1,11 @@
 ﻿using Application.Interfaces.Data.Repositories;
+using Application.Models;
 
 namespace Application.Services;
 
 public interface IMultiDeviceIdentityService
 {
-    Task<(string accessToken, string refreshToken)> EstablishIdentityAsync(Guid userId, string browser, string os);
+    Task<(string accessToken, string refreshToken)> EstablishIdentityAsync(Guid userId, DeviceDetails deviceDetails);
     Task<(string accessToken, string refreshToken)> RefreshIdentityAsync(string refreshToken);
 }
 
@@ -30,13 +31,13 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
         _userIdentityService = userIdentityService;
     }
 
-    public async Task<(string accessToken, string refreshToken)> EstablishIdentityAsync(Guid userId, string browser, string os)
+    public async Task<(string accessToken, string refreshToken)> EstablishIdentityAsync(Guid userId,
+        DeviceDetails deviceDetails)
     {
         if (Guid.Empty == userId) throw new ArgumentException("UserId cannot be empty");
-        ArgumentException.ThrowIfNullOrWhiteSpace(browser);
-        ArgumentException.ThrowIfNullOrWhiteSpace(os);
-            
-        var deviceId = await _deviceRegistryService.AssociateDeviceAsync(userId, browser, os);
+        ArgumentNullException.ThrowIfNull(deviceDetails);
+
+        var deviceId = await _deviceRegistryService.AssociateDeviceAsync(userId, deviceDetails);
 
         var userInfo = await _userIdentityService.GetAsync(userId);
 
@@ -44,10 +45,7 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
 
         await _repository.SaveIdentityAsync(userId, deviceId, tokenId);
 
-        var accessToken = _jwtService.Generate(
-            userId.ToString(),
-            userInfo.Email,
-            "user");
+        var accessToken = _jwtService.Generate(userId.ToString(), userInfo.Email, "user");
 
         return (accessToken, refreshToken);
     }
@@ -71,15 +69,9 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
 
         await _repository.RevokeTokenContextAsync(validateResult.tokenId);
 
-        await _repository.SaveIdentityAsync(
-            tokenContext.UserId,
-            tokenContext.DeviceId,
-            newTokenId);
+        await _repository.SaveIdentityAsync(tokenContext.UserId, tokenContext.DeviceId, newTokenId);
 
-        var accessToken = _jwtService.Generate(
-            tokenContext.UserId.ToString(),
-            tokenContext.User.Email,
-            "user");
+        var accessToken = _jwtService.Generate(tokenContext.UserId.ToString(), tokenContext.User.Email, "user");
 
         return (accessToken, newRefreshToken);
     }

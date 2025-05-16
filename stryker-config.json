@@ -20,7 +20,8 @@
       "!/**/MessageHandlers/**/*",
       "!/**/EventHandlers/**/*",
       "!/**/*Exception.cs",
-      "!/**/SwaggerExtensions.cs"
+      "!/**/SwaggerExtensions.cs",
+      "!/**/GlobalExceptionHandler.cs"
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest"

@@ -1,4 +1,5 @@
 using Application.Interfaces.Data.Repositories;
+using Application.Models;
 using Core.Entities;
 using Core.Extensions;
 
@@ -6,7 +7,7 @@ namespace Application.Services;
 
 public interface IDeviceService
 {
-    Task<Guid> CreateAsync(string browser, string os);
+    Task<Guid> CreateAsync(DeviceDetails deviceDetails);
     Task<Device> GetByIdAsync(Guid id);
     Task<IEnumerable<Device>> GetByIdsAsync(IEnumerable<Guid> ids);
     Task<bool> ExistsAsync(Guid id);
@@ -25,20 +26,21 @@ public class DeviceService : IDeviceService
         _timeProvider = timeProvider;
     }
 
-    public async Task<Guid> CreateAsync(string browser, string os)
+    public async Task<Guid> CreateAsync(DeviceDetails deviceDetails)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(browser);
-        ArgumentException.ThrowIfNullOrWhiteSpace(os);
+        ArgumentNullException.ThrowIfNull(deviceDetails);
         
-        browser = browser.Trim().ToLowerInvariant();
-        os = os.Trim().ToLowerInvariant();
-
-        string name = $"{browser}_{os}";
+        var browser = deviceDetails.Browser.Trim().ToLowerInvariant();
+        var os = deviceDetails.Os.Trim().ToLowerInvariant();
+        var name = $"{browser}_{os}";
+        
         var device = new Device
         {
             Browser = browser,
             Os = os,
-            Name = name
+            Name = name,
+            UserAgent = deviceDetails.UserAgent,
+            CreatedByIp = deviceDetails.IpAddress
         };
 
         return await _repository.SaveAsync(device);

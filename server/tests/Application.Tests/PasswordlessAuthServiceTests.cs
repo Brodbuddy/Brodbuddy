@@ -61,17 +61,17 @@ public class PasswordlessAuthServiceTests
 
             _mockIdentityVerificationService.Setup(s => s.TryVerifyCodeAsync(email, code))
                 .ReturnsAsync((true, userId));
-            _mockMultiDeviceIdentityService.Setup(s => s.EstablishIdentityAsync(userId, browser, os))
+            _mockMultiDeviceIdentityService.Setup(s => s.EstablishIdentityAsync(userId, It.IsAny<Models.DeviceDetails>()))
                 .ReturnsAsync(expectedTokens);
 
             // Act
-            var result = await _service.CompleteLoginAsync(email, code, browser, os);
+            var result = await _service.CompleteLoginAsync(email, code, new Models.DeviceDetails(browser, os, "Mozilla/5.0", "127.0.0.1"));
 
             // Assert
             result.accessToken.ShouldBe(expectedTokens.Item1);
             result.refreshToken.ShouldBe(expectedTokens.Item2);
             _mockIdentityVerificationService.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);
-            _mockMultiDeviceIdentityService.Verify(s => s.EstablishIdentityAsync(userId, browser, os), Times.Once);
+            _mockMultiDeviceIdentityService.Verify(s => s.EstablishIdentityAsync(userId, It.IsAny<Models.DeviceDetails>()), Times.Once);
         }
 
         [Fact]
@@ -80,20 +80,19 @@ public class PasswordlessAuthServiceTests
             // Arrange
             string email = "test@example.com";
             int code = 123456;
-            string browser = "Chrome";
-            string os = "Windows";
+            var deviceDetails = new Models.DeviceDetails("Chrome", "Windows", "Mozilla/5.0", "127.0.0.1");
 
             _mockIdentityVerificationService.Setup(s => s.TryVerifyCodeAsync(email, code))
                 .ReturnsAsync((false, Guid.Empty));
 
             // Act & Assert
             var exception =
-                await Assert.ThrowsAsync<ArgumentException>(() => _service.CompleteLoginAsync(email, code, browser, os));
+                await Assert.ThrowsAsync<ArgumentException>(() => _service.CompleteLoginAsync(email, code, deviceDetails));
 
             exception.ShouldBeOfType<ArgumentException>();
             _mockIdentityVerificationService.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);
             _mockMultiDeviceIdentityService.Verify(
-                s => s.EstablishIdentityAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+                s => s.EstablishIdentityAsync(It.IsAny<Guid>(), It.IsAny<Models.DeviceDetails>()), Times.Never);
         }
     }
 

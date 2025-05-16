@@ -19,6 +19,10 @@ public partial class Device
 
     public bool IsActive { get; set; }
 
+    public string? CreatedByIp { get; set; }
+
+    public string? UserAgent { get; set; }
+
     public virtual ICollection<DeviceRegistry> DeviceRegistries { get; set; } = new List<DeviceRegistry>();
 
     public virtual ICollection<TokenContext> TokenContexts { get; set; } = new List<TokenContext>();

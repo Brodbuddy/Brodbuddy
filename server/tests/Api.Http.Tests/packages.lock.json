@@ -85,6 +85,11 @@
         "resolved": "4.4.0",
         "contentHash": "gwJEfIGS7FhykvtZoscwXj/XwW+mJY6UbAZk+qtLKFUGWC95kfKXnj8VkxsZQnWBxJemM/q664rGLN5nf+OHZw=="
       },
+      "FluentValidation": {
+        "type": "Transitive",
+        "resolved": "11.11.0",
+        "contentHash": "cyIVdQBwSipxWG8MA3Rqox7iNbUNUTK5bfJi9tIdm4CAfH71Oo5ABLP4/QyrUwuakqpUEPGtE43BDddvEehuYw=="
+      },
       "JWT": {
         "type": "Transitive",
         "resolved": "11.0.0",
@@ -866,6 +871,11 @@
           "xunit.extensibility.execution": "2.9.3"
         }
       },
+      "UAParser": {
+        "type": "Transitive",
+        "resolved": "3.1.47",
+        "contentHash": "I68Jl/Vs5RQZdz9BbmYtnXgujg0jVd61LhKbyNZOCm9lBxZFGxLbiQo6yFj21VYi7DzPvEvrVOmeC6v41AoLfw=="
+      },
       "xunit": {
         "type": "Transitive",
         "resolved": "2.9.3",
@@ -930,9 +940,11 @@
         "type": "Project",
         "dependencies": {
           "Application": "[1.0.0, )",
+          "FluentValidation": "[11.11.0, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[8.0.15, )",
           "Microsoft.AspNetCore.Http": "[2.2.2, )",
-          "NSwag.AspNetCore": "[14.3.0, )"
+          "NSwag.AspNetCore": "[14.3.0, )",
+          "UAParser": "[3.1.47, )"
         }
       },
       "application": {

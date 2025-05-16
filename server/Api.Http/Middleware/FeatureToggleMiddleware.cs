@@ -22,7 +22,6 @@ public class FeatureToggleMiddleware
         if (controller != null && action != null)
         {
             var featureName = $"Api.{controller}.{action}";
-            Console.WriteLine(featureName);
             
             if (!toggleService.IsEnabled(featureName))
             {

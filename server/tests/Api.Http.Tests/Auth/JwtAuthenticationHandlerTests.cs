@@ -15,7 +15,6 @@ using IAuthenticationService = Application.Interfaces.Auth.IAuthenticationServic
 
 namespace Api.Http.Tests.Auth;
 
-[CollectionDefinition(TestCollections.HttpApi)]
 public class JwtAuthenticationHandlerTests
 {
     private readonly ITestOutputHelper _output;
@@ -177,7 +176,6 @@ public class JwtAuthenticationHandlerTests
 
         // Assert
         result.Succeeded.ShouldBeTrue();
-        
         
         _authServiceMock.Verify(m => m.ValidateTokenAsync("valid-token"), Times.Once);
     }

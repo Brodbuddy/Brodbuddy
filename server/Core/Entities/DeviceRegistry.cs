@@ -11,6 +11,8 @@ public partial class DeviceRegistry
 
     public Guid DeviceId { get; set; }
 
+    public string Fingerprint { get; set; } = null!;
+
     public DateTime CreatedAt { get; set; }
 
     public virtual Device Device { get; set; } = null!;

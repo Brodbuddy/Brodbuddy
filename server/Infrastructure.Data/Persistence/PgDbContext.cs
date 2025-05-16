@@ -47,6 +47,9 @@ public partial class PgDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
+            entity.Property(e => e.CreatedByIp)
+                .HasMaxLength(45)
+                .HasColumnName("created_by_ip");
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true)
                 .HasColumnName("is_active");
@@ -59,6 +62,7 @@ public partial class PgDbContext : DbContext
             entity.Property(e => e.Os)
                 .HasMaxLength(255)
                 .HasColumnName("os");
+            entity.Property(e => e.UserAgent).HasColumnName("user_agent");
         });
 
         modelBuilder.Entity<DeviceRegistry>(entity =>
@@ -76,6 +80,9 @@ public partial class PgDbContext : DbContext
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnName("created_at");
             entity.Property(e => e.DeviceId).HasColumnName("device_id");
+            entity.Property(e => e.Fingerprint)
+                .HasMaxLength(255)
+                .HasColumnName("fingerprint");
             entity.Property(e => e.UserId).HasColumnName("user_id");
 
             entity.HasOne(d => d.Device).WithMany(p => p.DeviceRegistries)
