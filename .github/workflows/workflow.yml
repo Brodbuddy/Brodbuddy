@@ -116,14 +116,25 @@ jobs:
   mutation-tests:
     strategy:
       matrix:
-        project: [
-          'server/Infrastructure.Data/Infrastructure.Data.csproj',
-          'server/Infrastructure.Communication/Infrastructure.Communication.csproj',
-          'server/Application/Application.csproj',
-          'server/Core/Core.csproj',
-          'server/Api.Mqtt/Api.Mqtt.csproj',
-          'server/Api.Http/Api.Http.csproj'
-        ]
+        include:
+          - project_dir: 'server/Infrastructure.Data'
+            project: 'Infrastructure.Data.csproj'
+            test_project: '../tests/Infrastructure.Data.Tests/Infrastructure.Data.Tests.csproj'
+          - project_dir: 'server/Infrastructure.Communication'
+            project: 'Infrastructure.Communication.csproj'
+            test_project: '../tests/Infrastructure.Communication.Tests/Infrastructure.Communication.Tests.csproj'
+          - project_dir: 'server/Application'
+            project: 'Application.csproj'
+            test_project: '../tests/Application.Tests/Application.Tests.csproj'
+          - project_dir: 'server/Core'
+            project: 'Core.csproj'
+            test_project: '../tests/Core.Tests/Core.Tests.csproj'
+          - project_dir: 'server/Api.Mqtt'
+            project: 'Api.Mqtt.csproj'
+            test_project: '../tests/Api.Mqtt.Tests/Api.Mqtt.Tests.csproj'
+          - project_dir: 'server/Api.Http'
+            project: 'Api.Http.csproj'
+            test_project: '../tests/Api.Http.Tests/Api.Http.Tests.csproj'
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -166,7 +177,10 @@ jobs:
           CORE_COUNT=$(nproc)
           echo "Detected $CORE_COUNT cores"
           SAFE_NAME=$(echo "${{ matrix.project }}" | tr '/' '_')
-          dotnet stryker --project "${{ matrix.project }}" --output "StrykerOutput_${SAFE_NAME}" --concurrency $CORE_COUNT --reporter "json" --reporter "html" | tee "stryker-output-${SAFE_NAME}.log"
+          OUTPUT_DIR="${GITHUB_WORKSPACE}/StrykerOutput_${SAFE_NAME}"
+          echo "OUTPUT_DIR=${OUTPUT_DIR}" >> $GITHUB_ENV
+          cd ${{ matrix.project_dir }}
+          dotnet stryker --project ${{ matrix.project }} --test-project ${{ matrix.test_project }} --output "${OUTPUT_DIR}" --concurrency $CORE_COUNT --reporter "json" --reporter "html" | tee "${GITHUB_WORKSPACE}/stryker-output-${SAFE_NAME}.log"
 
       - name: Upload Stryker JSON report for ${{ matrix.project }}
         if: always()
