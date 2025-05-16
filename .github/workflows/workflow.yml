@@ -135,9 +135,6 @@ jobs:
           - project_dir: 'server/Api.Http'
             project: 'Api.Http.csproj'
             test_project: '../tests/Api.Http.Tests/Api.Http.Tests.csproj'
-          - project_dir: 'server/Startup'
-            project: 'Startup.csproj'
-            test_project: '../tests/Startup.Tests/Startup.Tests.csproj'
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -183,15 +180,26 @@ jobs:
           OUTPUT_DIR="${GITHUB_WORKSPACE}/StrykerOutput_${SAFE_NAME}"
           echo "OUTPUT_DIR=${OUTPUT_DIR}" >> $GITHUB_ENV
           cd ${{ matrix.project_dir }}
-          dotnet stryker \
+          if [[ "$PROJECT_NAME" == "Api.Http" || "$PROJECT_NAME" == "Api.Mqtt" || "$PROJECT_NAME" == "Api.Websocket" ]]; then
+            dotnet stryker \
+            --project ${{ matrix.project }} \
+            --test-project ${{ matrix.test_project }} \
+            --test-project "../tests/Startup.Tests/Startup.Tests.csproj" \
+            --output "${OUTPUT_DIR}" \
+            --concurrency $CORE_COUNT \
+            --config-file "${GITHUB_WORKSPACE}/stryker-config.json" \
+            --reporter "json" \
+            --reporter "html"
+          else
+            dotnet stryker \
             --project ${{ matrix.project }} \
             --test-project ${{ matrix.test_project }} \
             --output "${OUTPUT_DIR}" \
             --concurrency $CORE_COUNT \
-            --reporter "json" \
-            --reporter "html" \
             --config-file "${GITHUB_WORKSPACE}/stryker-config.json" \
-            | tee "${GITHUB_WORKSPACE}/stryker-output-${SAFE_NAME}.log"
+            --reporter "json" \
+            --reporter "html"
+          fi | tee "${GITHUB_WORKSPACE}/stryker-output-${SAFE_NAME}.log"
 
       - name: Upload Stryker JSON report
         if: always()

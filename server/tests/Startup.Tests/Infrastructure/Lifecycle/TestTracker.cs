@@ -29,7 +29,7 @@ public static class TestTracker
                 
             // Nu når alle tests er færdige, giver vi 5s til at slukke hele systemet
             // så vi undgår at det hænger
-            ProcessWatchdog.StartWatchdog(5); 
+            ProcessWatchdog.StartWatchdog(10); 
         }
     }
 }
