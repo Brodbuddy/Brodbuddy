@@ -1,4 +1,6 @@
 using System.Globalization;
+using Application.Interfaces.Communication.Mail;
+using Application.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -7,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using SharedTestDependencies.Logging;
 using StackExchange.Redis;
+using Startup.Tests.Infrastructure.Fakes;
 using Startup.Tests.Infrastructure.Fixtures;
 using Xunit.Abstractions;
 
@@ -68,6 +71,22 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 _output.WriteLine($"Registering Redis connection: {connectionString}");
                 return ConnectionMultiplexer.Connect(connectionString);
             });
+            
+            var jwtServiceDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IJwtService));
+            if (jwtServiceDescriptor != null)
+            {
+                services.Remove(jwtServiceDescriptor);
+            }
+            
+            services.AddSingleton<IJwtService, JwtService>();
+            
+            var emailSenderDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IEmailSender));
+            if (emailSenderDescriptor != null)
+            {
+                services.Remove(emailSenderDescriptor);
+            }
+            
+            services.AddSingleton<IEmailSender, FakeEmailSender>();
         });
 
         builder.ConfigureLogging(logging =>

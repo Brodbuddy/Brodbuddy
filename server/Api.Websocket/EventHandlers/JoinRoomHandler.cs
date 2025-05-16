@@ -22,7 +22,7 @@ public class JoinRoomValidator : AbstractValidator<JoinRoom>
     }
 }
 
-[AllowAnonymous]
+[Authorize(Roles = "user")]
 public class JoinRoomHandler(ISocketManager manager) : IWebSocketHandler<JoinRoom, UserJoined>
 {
     public async Task<UserJoined> HandleAsync(JoinRoom incoming, string clientId, IWebSocketConnection socket)
@@ -31,7 +31,7 @@ public class JoinRoomHandler(ISocketManager manager) : IWebSocketHandler<JoinRoo
         await manager.SubscribeAsync(clientId, roomTopic);
         
         var notification = new UserJoined(incoming.RoomId, incoming.Username, socket.ConnectionInfo.Id);
-        await manager.BroadcastAsync(roomTopic, notification);
+        await manager.BroadcastAsync(roomTopic, "kakao");
 
         return notification;
     }

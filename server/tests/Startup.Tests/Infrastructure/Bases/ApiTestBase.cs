@@ -1,6 +1,14 @@
+using System.Net.Http.Headers;
+using Application.Interfaces.Communication.Mail;
+using Application.Services;
+using Infrastructure.Data.Persistence;
+using Microsoft.Extensions.DependencyInjection;
+using Startup.Tests.Infrastructure.Extensions;
 using Startup.Tests.Infrastructure.Factories;
+using Startup.Tests.Infrastructure.Fakes;
 using Startup.Tests.Infrastructure.Fixtures;
 using Startup.Tests.Infrastructure.Lifecycle;
+using Startup.Tests.Infrastructure.TestClients;
 using Xunit.Abstractions;
 
 namespace Startup.Tests.Infrastructure.Bases;
@@ -27,6 +35,37 @@ public abstract class ApiTestBase : IAsyncLifetime, IDisposable
         
         // Alle tests der extender ApiTestBase bliver registreret her
         TestTracker.RegisterActiveTest();
+    }
+    
+    protected T GetService<T>() where T : notnull
+    {
+        return Factory.Services.GetRequiredService<T>();
+    }
+    
+    protected PgDbContext GetDbContext()
+    {
+        using var scope = Factory.Services.CreateScope();
+        return scope.ServiceProvider.GetRequiredService<PgDbContext>();
+    }
+    
+    protected FakeEmailSender GetEmailSender()
+    {
+        return Factory.Services.GetRequiredService<IEmailSender>() as FakeEmailSender 
+               ?? throw new InvalidOperationException("FakeEmailSender is not registered properly");
+    }
+    
+    protected async Task<T> WithDbContextAsync<T>(Func<PgDbContext, Task<T>> action)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PgDbContext>();
+        return await action(dbContext);
+    }
+    
+    protected async Task WithDbContextAsync(Func<PgDbContext, Task> action)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<PgDbContext>();
+        await action(dbContext);
     }
 
     public virtual Task InitializeAsync() => Task.CompletedTask;
