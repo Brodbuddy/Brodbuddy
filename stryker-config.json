@@ -15,8 +15,10 @@
       "!/**/AppOptions.cs",
       "!/**/FluentEmailSender.cs",
       "!/**/MessageWrapper.cs",
-      "!/**/RedisSocketKeys.cs"
-      
+      "!/**/RedisSocketKeys.cs",
+      "!/**/Controllers/**/*",
+      "!/**/MessageHandlers/**/*",
+      "!/**/EventHandlers/**/*"
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest"
