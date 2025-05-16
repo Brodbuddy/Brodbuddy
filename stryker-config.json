@@ -18,7 +18,9 @@
       "!/**/RedisSocketKeys.cs",
       "!/**/Controllers/**/*",
       "!/**/MessageHandlers/**/*",
-      "!/**/EventHandlers/**/*"
+      "!/**/EventHandlers/**/*",
+      "!/**/*Exception.cs",
+      "!/**/SwaggerExtensions.cs"
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest"
