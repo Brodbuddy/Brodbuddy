@@ -1,8 +1,10 @@
 using System.Globalization;
 using Application.Interfaces.Communication.Mail;
 using Application.Services;
+using Infrastructure.Data.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
@@ -61,11 +63,20 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         
         builder.ConfigureServices((_, services) =>
         {
+            // Postgres
+            var pgDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<PgDbContext>));
+            if (pgDescriptor != null) services.Remove(pgDescriptor);
+            
+            services.AddDbContext<PgDbContext>(options =>
+            {   
+                options.UseNpgsql(_fixture.Postgres.ConnectionString);
+                options.EnableSensitiveDataLogging(false);
+                options.LogTo(_ => { });
+            });
+
+            // Redis
             var redisDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IConnectionMultiplexer));
-            if (redisDescriptor != null)
-            {
-                services.Remove(redisDescriptor);
-            }
+            if (redisDescriptor != null) services.Remove(redisDescriptor);
 
             services.AddSingleton<IConnectionMultiplexer>(_ =>
             {
@@ -74,34 +85,25 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 return ConnectionMultiplexer.Connect(connectionString);
             });
             
-            var redisCacheDescriptors = services.Where(d => 
-                d.ServiceType.Name.Contains("IDistributedCache") ||
-                d.ImplementationType?.Name.Contains("RedisCache") == true).ToList();
-                
-            foreach (var descriptor in redisCacheDescriptors)
-            {
-                services.Remove(descriptor);
-            }
+            // Redis Cache
+            var redisCacheDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IDistributedCache));
+            if (redisCacheDescriptor != null) services.Remove(redisCacheDescriptor);
             
             services.AddStackExchangeRedisCache(options => {
                 options.Configuration = _fixture.Redis.Container.GetConnectionString();
                 options.InstanceName = "Test_RedisCache";
             });
             
+            // JWT service
             var jwtServiceDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IJwtService));
-            if (jwtServiceDescriptor != null)
-            {
-                services.Remove(jwtServiceDescriptor);
-            }
+            if (jwtServiceDescriptor != null) services.Remove(jwtServiceDescriptor);
             
             services.AddSingleton<IJwtService, JwtService>();
             
+            // EmailSender
             var emailSenderDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IEmailSender));
-            if (emailSenderDescriptor != null)
-            {
-                services.Remove(emailSenderDescriptor);
-            }
-            
+            if (emailSenderDescriptor != null) services.Remove(emailSenderDescriptor);
+
             services.AddSingleton<IEmailSender, FakeEmailSender>();
         });
 
