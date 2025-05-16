@@ -180,7 +180,7 @@ jobs:
           OUTPUT_DIR="${GITHUB_WORKSPACE}/StrykerOutput_${SAFE_NAME}"
           echo "OUTPUT_DIR=${OUTPUT_DIR}" >> $GITHUB_ENV
           cd ${{ matrix.project_dir }}
-          dotnet stryker --project ${{ matrix.project }} --test-project ${{ matrix.test_project }} --output "${OUTPUT_DIR}" --concurrency $CORE_COUNT --reporter "json" --reporter "html" | tee "${GITHUB_WORKSPACE}/stryker-output-${SAFE_NAME}.log"
+          dotnet stryker --project ${{ matrix.project }} --test-project ${{ matrix.test_project }} -V debug --output "${OUTPUT_DIR}" --concurrency $CORE_COUNT --reporter "json" --reporter "html" | tee "${GITHUB_WORKSPACE}/stryker-output-${SAFE_NAME}.log"
 
       - name: Upload Stryker JSON report
         if: always()
