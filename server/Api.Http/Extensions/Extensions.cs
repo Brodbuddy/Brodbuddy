@@ -1,4 +1,5 @@
-﻿using Api.Http.Auth;
+﻿using System.Text.Json.Serialization;
+using Api.Http.Auth;
 using Api.Http.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -19,14 +20,17 @@ public static class Extensions
     
     public static IServiceCollection AddHttpApi(this IServiceCollection services)
     {
-        services.AddControllers();
+        services.AddControllers().AddJsonOptions(options =>
+        {
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        });
         services.AddEndpointsApiExplorer();
         services.AddOpenApiDocument(configure =>
         {
             configure.Title = ApiTitle;
             configure.Version = ApiVersion;
             configure.Description = ApiDescription;
-        
+            
             configure.AddSecurity("JWT", [], new OpenApiSecurityScheme
             {
                 Type = OpenApiSecuritySchemeType.ApiKey,

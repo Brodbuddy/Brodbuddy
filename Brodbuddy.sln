@@ -42,6 +42,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Startup.Tests", "server\tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Websocket.Tests", "server\tests\Api.Websocket.Tests\Api.Websocket.Tests.csproj", "{7EFCADBA-2E22-443D-A775-016AA12B5085}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Monitoring.Tests", "server\tests\Infrastructure.Monitoring.Tests\Infrastructure.Monitoring.Tests.csproj", "{ECF07D28-7C89-47C5-B52B-C36194C3C9DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +129,10 @@ Global
 		{7EFCADBA-2E22-443D-A775-016AA12B5085}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7EFCADBA-2E22-443D-A775-016AA12B5085}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7EFCADBA-2E22-443D-A775-016AA12B5085}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECF07D28-7C89-47C5-B52B-C36194C3C9DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECF07D28-7C89-47C5-B52B-C36194C3C9DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECF07D28-7C89-47C5-B52B-C36194C3C9DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECF07D28-7C89-47C5-B52B-C36194C3C9DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{00DCAEB2-0510-411B-AACA-4CA09FFEF990} = {0011B983-CB61-450A-A1CC-38612B08B540}

@@ -15,5 +15,5 @@ public class MakeAllPropertiesRequiredProcessor : IDocumentProcessor
                 schema.RequiredProperties.Add(property.Key);
             }
         }
-    }
+    } 
 }
