@@ -19,8 +19,8 @@
       },
       "Brodbuddy.WebSocket": {
         "type": "Transitive",
-        "resolved": "0.0.16",
-        "contentHash": "KeSxWHaAkDX2Mnh4Uku7BmFe2PoTRLySibRcymcPnmw0lXs2UsFdbCTh6iKinBwdconFOpCOaZLi1CPhSLKHGw==",
+        "resolved": "0.0.17",
+        "contentHash": "QT4N+rrV/ZS+5j25uFLHPS+bDf/GbL/lMQmziCXTip7zL+lGD28emNlpF4aXzqvsdDfiOFa2dk4QUhSp3jlZsw==",
         "dependencies": {
           "Fleck": "1.2.0",
           "FluentValidation": "11.11.0",
@@ -1108,7 +1108,7 @@
           "Application": "[1.0.0, )",
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
           "NSwag.AspNetCore": "[14.3.0, )",
-          "brodbuddy.websocket": "[0.0.16, )"
+          "brodbuddy.websocket": "[0.0.17, )"
         }
       },
       "application": {
@@ -1140,7 +1140,7 @@
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
           "Microsoft.Extensions.Options": "[9.0.3, )",
           "StackExchange.Redis": "[2.8.31, )",
-          "brodbuddy.websocket": "[0.0.16, )"
+          "brodbuddy.websocket": "[0.0.17, )"
         }
       },
       "infrastructure.data": {
