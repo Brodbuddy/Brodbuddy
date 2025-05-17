@@ -87,7 +87,6 @@ public class FeatureToggleRepositoryTests : RepositoryTestBase
             // Assert
             result.ShouldBeFalse();
 
-            // Verify that no database query was made
             var dbFeature = await DbContext.Features.FirstOrDefaultAsync(f => f.Name == featureName);
             dbFeature.ShouldBeNull();
         }
@@ -150,31 +149,33 @@ public class FeatureToggleRepositoryTests : RepositoryTestBase
         }
 
         [Fact]
-        public async Task SetEnabledAsync_EnablingFeature_UpdatesCache()
+        public async Task SetEnabledAsync_EnablingFeature_InvalidatesCache()
         {
             // Arrange
             var featureName = "feature_to_enable";
+            await _cache.SetStringAsync($"feature:{featureName}", "False");
 
             // Act
             await _repository.SetEnabledAsync(featureName, true);
 
             // Assert
             var cachedValue = await _cache.GetStringAsync($"feature:{featureName}");
-            cachedValue.ShouldBe("True");
+            cachedValue.ShouldBeNull();
         }
 
         [Fact]
-        public async Task SetEnabledAsync_DisablingFeature_UpdatesCache()
+        public async Task SetEnabledAsync_DisablingFeature_InvalidatesCache()
         {
             // Arrange
             var featureName = "feature_to_disable";
+            await _cache.SetStringAsync($"feature:{featureName}", "True");
 
             // Act
             await _repository.SetEnabledAsync(featureName, false);
 
             // Assert
             var cachedValue = await _cache.GetStringAsync($"feature:{featureName}");
-            cachedValue.ShouldBe("False");
+            cachedValue.ShouldBeNull();
         }
     }
 
@@ -246,6 +247,51 @@ public class FeatureToggleRepositoryTests : RepositoryTestBase
             // Assert
             result.ShouldBeTrue();
         }
+
+        [Fact]
+        public async Task IsEnabledForUserAsync_WithCachedValue_ReturnsCachedResult()
+        {
+            // Arrange
+            var featureName = "cached_user_feature";
+            var userId = Guid.NewGuid();
+            var userCacheKey = $"feature:{featureName}:user:{userId}";
+            await _cache.SetStringAsync(userCacheKey, "false");
+
+            // Act
+            var result = await _repository.IsEnabledForUserAsync(featureName, userId);
+
+            // Assert
+            result.ShouldBeFalse();
+
+            var dbFeature = await DbContext.Features.FirstOrDefaultAsync(f => f.Name == featureName);
+            dbFeature.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task IsEnabledForUserAsync_WithoutCachedValue_SetsUserCache()
+        {
+            // Arrange
+            var featureName = "feature_to_cache_user";
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var feature = await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+
+            var featureUser = new FeatureUser
+            {
+                FeatureId = feature.Id,
+                UserId = user.Id
+            };
+            await DbContext.FeatureUsers.AddAsync(featureUser);
+            await DbContext.SaveChangesAsync();
+
+            // Act
+            var result = await _repository.IsEnabledForUserAsync(featureName, user.Id);
+
+            // Assert
+            result.ShouldBeTrue();
+            var userCacheKey = $"feature:{featureName}:user:{user.Id}";
+            var cachedValue = await _cache.GetStringAsync(userCacheKey);
+            cachedValue.ShouldBe("True");
+        }
     }
 
     public class GetAllFeaturesAsync(PostgresFixture fixture) : FeatureToggleRepositoryTests(fixture)
@@ -277,6 +323,170 @@ public class FeatureToggleRepositoryTests : RepositoryTestBase
             enumerable.Select(f => f.Name).ShouldContain("feature1");
             enumerable.Select(f => f.Name).ShouldContain("feature2");
             enumerable.Select(f => f.Name).ShouldContain("feature3");
+        }
+    }
+
+    public class AddUserToFeatureAsync(PostgresFixture fixture) : FeatureToggleRepositoryTests(fixture)
+    {
+        [Fact]
+        public async Task AddUserToFeatureAsync_WithNonExistentFeature_ReturnsFalse()
+        {
+            // Arrange
+            var featureName = "non_existent_feature";
+            var userId = Guid.NewGuid();
+
+            // Act
+            var result = await _repository.AddUserToFeatureAsync(featureName, userId);
+
+            // Assert
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task AddUserToFeatureAsync_WithNewUser_AddsUserAndReturnsTrue()
+        {
+            // Arrange
+            var featureName = "test_feature";
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var feature = await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+
+            // Act
+            var result = await _repository.AddUserToFeatureAsync(featureName, user.Id);
+
+            // Assert
+            result.ShouldBeTrue();
+            var featureUser = await DbContext.FeatureUsers
+                .FirstOrDefaultAsync(fu => fu.FeatureId == feature.Id && fu.UserId == user.Id);
+            featureUser.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task AddUserToFeatureAsync_WithExistingUser_ReturnsTrue()
+        {
+            // Arrange
+            var featureName = "test_feature";
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var feature = await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+
+            var existingFeatureUser = new FeatureUser
+            {
+                FeatureId = feature.Id,
+                UserId = user.Id
+            };
+            await DbContext.FeatureUsers.AddAsync(existingFeatureUser);
+            await DbContext.SaveChangesAsync();
+
+            // Act
+            var result = await _repository.AddUserToFeatureAsync(featureName, user.Id);
+
+            // Assert
+            result.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task AddUserToFeatureAsync_InvalidatesCacheForUser()
+        {
+            // Arrange
+            var featureName = "test_feature";
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+
+            // Pre-populate cache
+            var userCacheKey = $"feature:{featureName}:user:{user.Id}";
+            await _cache.SetStringAsync(userCacheKey, "False");
+
+            // Act
+            await _repository.AddUserToFeatureAsync(featureName, user.Id);
+
+            // Assert
+            var cachedValue = await _cache.GetStringAsync(userCacheKey);
+            cachedValue.ShouldBeNull();
+        }
+    }
+
+    public class RemoveUserFromFeatureAsync(PostgresFixture fixture) : FeatureToggleRepositoryTests(fixture)
+    {
+        [Fact]
+        public async Task RemoveUserFromFeatureAsync_WithNonExistentFeature_ReturnsFalse()
+        {
+            // Arrange
+            var featureName = "non_existent_feature";
+            var userId = Guid.NewGuid();
+
+            // Act
+            var result = await _repository.RemoveUserFromFeatureAsync(featureName, userId);
+
+            // Assert
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task RemoveUserFromFeatureAsync_WithNonExistentUser_ReturnsFalse()
+        {
+            // Arrange
+            var featureName = "test_feature";
+            var userId = Guid.NewGuid();
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+
+            // Act
+            var result = await _repository.RemoveUserFromFeatureAsync(featureName, userId);
+
+            // Assert
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task RemoveUserFromFeatureAsync_WithExistingUser_RemovesAndReturnsTrue()
+        {
+            // Arrange
+            var featureName = "test_feature";
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var feature = await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+
+            var featureUser = new FeatureUser
+            {
+                FeatureId = feature.Id,
+                UserId = user.Id
+            };
+            await DbContext.FeatureUsers.AddAsync(featureUser);
+            await DbContext.SaveChangesAsync();
+
+            // Act
+            var result = await _repository.RemoveUserFromFeatureAsync(featureName, user.Id);
+
+            // Assert
+            result.ShouldBeTrue();
+            var deletedFeatureUser = await DbContext.FeatureUsers
+                .FirstOrDefaultAsync(fu => fu.FeatureId == feature.Id && fu.UserId == user.Id);
+            deletedFeatureUser.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task RemoveUserFromFeatureAsync_InvalidatesCacheForUser()
+        {
+            // Arrange
+            var featureName = "test_feature";
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var feature = await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+
+            var featureUser = new FeatureUser
+            {
+                FeatureId = feature.Id,
+                UserId = user.Id
+            };
+            await DbContext.FeatureUsers.AddAsync(featureUser);
+            await DbContext.SaveChangesAsync();
+
+            // Pre-populate cache
+            var userCacheKey = $"feature:{featureName}:user:{user.Id}";
+            await _cache.SetStringAsync(userCacheKey, "True");
+
+            // Act
+            await _repository.RemoveUserFromFeatureAsync(featureName, user.Id);
+
+            // Assert
+            var cachedValue = await _cache.GetStringAsync(userCacheKey);
+            cachedValue.ShouldBeNull();
         }
     }
 }

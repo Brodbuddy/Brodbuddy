@@ -45,10 +45,10 @@ public class PgFeatureToggleRepository : IFeatureToggleRepository
     public async Task<bool> SetEnabledAsync(string featureName, bool enabled)
     {
         var updateResult = await _dbContext.Features
-            .Where(f => f.Name == featureName)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(f => f.IsEnabled, enabled)
-                .SetProperty(f => f.LastModifiedAt, _timeProvider.Now()));
+                                           .Where(f => f.Name == featureName)
+                                           .ExecuteUpdateAsync(setters => setters
+                                               .SetProperty(f => f.IsEnabled, enabled)
+                                               .SetProperty(f => f.LastModifiedAt, _timeProvider.Now()));
         
         if (updateResult == 0)
         {
@@ -63,22 +63,78 @@ public class PgFeatureToggleRepository : IFeatureToggleRepository
         }
         
         string cacheKey = $"{CacheKeyPrefix}{featureName}";
-        await _cache.SetStringAsync(cacheKey, enabled.ToString(), new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) });
+        await _cache.RemoveAsync(cacheKey);
     
         return true;
     }
 
     public async Task<bool> IsEnabledForUserAsync(string featureName, Guid userId)
     {
+        string userCacheKey = $"{CacheKeyPrefix}{featureName}:user:{userId}";
+        string? cachedValue = await _cache.GetStringAsync(userCacheKey);
+        
+        if (cachedValue != null) return bool.Parse(cachedValue);
+        
         var feature = await _dbContext.Features.FirstOrDefaultAsync(f => f.Name == featureName);
         if (feature == null) return true; 
         if (!feature.IsEnabled) return false; 
     
-        return await _dbContext.FeatureUsers.AnyAsync(fu => fu.FeatureId == feature.Id && fu.UserId == userId);
+        var hasAccess = await _dbContext.FeatureUsers.AnyAsync(fu => fu.FeatureId == feature.Id && fu.UserId == userId);
+        
+        await _cache.SetStringAsync(
+            userCacheKey, 
+            hasAccess.ToString(), 
+            new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) }
+        );
+        
+        return hasAccess;
     }
 
     public async Task<IEnumerable<Feature>> GetAllFeaturesAsync()
     {
         return await _dbContext.Features.ToListAsync();
+    }
+    
+    public async Task<bool> AddUserToFeatureAsync(string featureName, Guid userId)
+    {
+        var feature = await _dbContext.Features.FirstOrDefaultAsync(f => f.Name == featureName);
+        if (feature == null) return false;
+        
+        var existingEntry = await _dbContext.FeatureUsers.FirstOrDefaultAsync(fu => fu.FeatureId == feature.Id && fu.UserId == userId);
+            
+        if (existingEntry != null) return true;
+        
+        var featureUser = new FeatureUser
+        {
+            FeatureId = feature.Id,
+            UserId = userId,
+            CreatedAt = _timeProvider.Now()
+        };
+        
+        await _dbContext.FeatureUsers.AddAsync(featureUser);
+        await _dbContext.SaveChangesAsync();
+        
+        string userCacheKey = $"{CacheKeyPrefix}{featureName}:user:{userId}";
+        await _cache.RemoveAsync(userCacheKey);
+        
+        return true;
+    }
+    
+    public async Task<bool> RemoveUserFromFeatureAsync(string featureName, Guid userId)
+    {
+        var feature = await _dbContext.Features.FirstOrDefaultAsync(f => f.Name == featureName);
+        if (feature == null) return false;
+        
+        var featureUser = await _dbContext.FeatureUsers.FirstOrDefaultAsync(fu => fu.FeatureId == feature.Id && fu.UserId == userId);
+            
+        if (featureUser == null) return false;
+        
+        _dbContext.FeatureUsers.Remove(featureUser);
+        await _dbContext.SaveChangesAsync();
+        
+        string userCacheKey = $"{CacheKeyPrefix}{featureName}:user:{userId}";
+        await _cache.RemoveAsync(userCacheKey);
+        
+        return true;
     }
 }
