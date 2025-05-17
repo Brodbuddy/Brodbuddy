@@ -23,10 +23,10 @@ void SourdoughDisplay::begin() {
     // Clear buffers til start
     clearBuffers();
     
-    // Konfigurer GFX bibliotek
-    setFont(&FreeSans9pt7b);
+    // Brug standard font i stedet for FreeSans9pt7b for mere kompakt tekst
+    setFont();  // Nulstil til standard font
     setTextColor(COLOR_BLACK);
-    setTextSize(1);
+    setTextSize(1);  // Standard størrelse for at sikre det passer i header
     
     setRotation(0);
     

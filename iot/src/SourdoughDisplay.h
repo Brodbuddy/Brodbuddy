@@ -4,7 +4,6 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Adafruit_GFX.h>
-#include <Fonts/FreeSans9pt7b.h>
 
 // Pins for E-paper display 
 #define EINK_MISO   -1  // Vi bruger ikke MISO, da e-paper displayet ikke sender data tilbage til ESP32
