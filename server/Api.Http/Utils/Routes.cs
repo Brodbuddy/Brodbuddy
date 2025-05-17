@@ -1,4 +1,4 @@
-namespace Startup.Tests.Api.Http;
+namespace Api.Http.Utils;
 
 public static class Routes
 {

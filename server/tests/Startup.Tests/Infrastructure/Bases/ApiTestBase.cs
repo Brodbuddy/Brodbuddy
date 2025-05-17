@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using Application.Interfaces.Communication.Mail;
 using Application.Services;
+using Core.Entities;
 using Infrastructure.Data.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Startup.Tests.Infrastructure.Extensions;
@@ -42,6 +43,12 @@ public abstract class ApiTestBase : IAsyncLifetime, IDisposable
         return Factory.Services.GetRequiredService<T>();
     }
     
+    protected T GetScopedService<T>() where T : notnull
+    {
+        using var scope = Factory.Services.CreateScope();
+        return scope.ServiceProvider.GetRequiredService<T>();
+    }
+    
     protected PgDbContext GetDbContext()
     {
         using var scope = Factory.Services.CreateScope();
@@ -66,6 +73,22 @@ public abstract class ApiTestBase : IAsyncLifetime, IDisposable
         using var scope = Factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<PgDbContext>();
         await action(dbContext);
+    }
+    
+    protected async Task<User> SeedUserAsync(string? email = null, string? id = null)
+    {
+        return await WithDbContextAsync(async db =>
+        {
+            var user = new User
+            {
+                Id = id != null ? Guid.Parse(id) : Guid.NewGuid(),
+                Email = email ?? $"test-{Guid.NewGuid()}@example.com",
+                CreatedAt = DateTime.UtcNow
+            };
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+            return user;
+        });
     }
 
     public virtual Task InitializeAsync() => Task.CompletedTask;

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Api.Http.Models;
+using Api.Http.Utils;
 using Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
