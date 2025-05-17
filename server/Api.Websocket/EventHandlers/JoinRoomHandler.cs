@@ -25,7 +25,8 @@ public class JoinRoomValidator : AbstractValidator<JoinRoom>
     }
 }
 
-[Authorize(Roles = "user")]
+// [Authorize(Roles = "user")]
+[AllowAnonymous]
 public class JoinRoomHandler(ISocketManager manager) : ISubscriptionHandler<JoinRoom, UserJoined>
 {
     public string GetTopicKey(JoinRoom request, string clientId) => $"room:{request.RoomId}";
