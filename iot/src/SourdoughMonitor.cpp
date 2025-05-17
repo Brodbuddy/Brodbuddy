@@ -1,26 +1,28 @@
 #include "SourdoughMonitor.h"
 
-const int mockGrowthData[] = {
-  100, 102, 101, 104, 108, 115,
-  117, 120, 123, 127, 134, 140,
-  138, 135, 142, 152, 158, 165,
-  169, 172, 180, 178, 187, 195,
-  203, 210, 214, 212, 225, 235,
-  232, 228, 235, 242, 256, 265,
-  268, 273, 269, 278, 288, 295,
-  300, 307, 304, 312, 318, 325,
-  330, 324, 336, 345, 351, 348,
-  352, 351, 346, 338, 329, 320,
-  315, 308, 303, 295, 287, 280,
-  277, 268, 260, 255, 250, 245
-};
-
-const int NUM_DETAILED_POINTS = sizeof(mockGrowthData) / sizeof(mockGrowthData[0]);
-
 SourdoughMonitor::SourdoughMonitor(SourdoughDisplay& display) : _display(display) {}
 
 SourdoughData SourdoughMonitor::generateMockData() {
-    SourdoughData data;
+    const int mockGrowthValues[] = {
+        100, 102, 101, 104, 108, 115,
+        117, 120, 123, 127, 134, 140,
+        138, 135, 142, 152, 158, 165,
+        169, 172, 180, 178, 187, 195,
+        203, 210, 214, 212, 225, 235,
+        232, 228, 235, 242, 256, 265,
+        268, 273, 269, 278, 288, 295,
+        300, 307, 304, 312, 318, 325,
+        330, 324, 336, 345, 351, 348,
+        352, 351, 346, 338, 329, 320,
+        315, 308, 303, 295, 287, 280,
+        277, 268, 260, 255, 250, 245
+    };
+    const int mockDataSize = sizeof(mockGrowthValues) / sizeof(mockGrowthValues[0]);
+    
+    SourdoughData data = {};
+    data.dataCount = 0;
+    data.oldestIndex = 0;
+    data.bufferFull = false;
     
     data.outTemp = 21.0;
     data.outHumidity = 44;
@@ -28,27 +30,69 @@ SourdoughData SourdoughMonitor::generateMockData() {
     data.inHumidity = 100;
     data.batteryLevel = 55;
     
-    data.currentGrowth = mockGrowthData[NUM_DETAILED_POINTS - 1];
+    // Beregn start-tidsstempel (12 timer før nu)
+    unsigned long now = millis() / 1000;
+    unsigned long startTime = now - (12 * 60 * 60);
     
-    data.peakGrowth = 0;
-    int peakIndex = 0;
-    for (int i = 0; i < NUM_DETAILED_POINTS; i++) {
-        if (mockGrowthData[i] > data.peakGrowth) {
-            data.peakGrowth = mockGrowthData[i];
-            peakIndex = i;
-        }
+    // Tilføj mockdata med 10-minutters intervaller
+    unsigned long interval = 10 * 60;
+    for (int i = 0; i < mockDataSize; i++) {
+        unsigned long timestamp = startTime + (i * interval);
+        addDataPoint(data, mockGrowthValues[i], timestamp);
     }
-    
-    data.peakHoursAgo = peakIndex / 6.0;
-    
-    data.growthData = mockGrowthData;
-    data.growthDataSize = NUM_DETAILED_POINTS;
     
     return data;
 }
 
 int SourdoughMonitor::readBatteryLevel() {
     return 55;
+}
+
+void SourdoughMonitor::addDataPoint(SourdoughData& data, int growthPercentage, unsigned long timestamp) {
+    int insertIndex;
+    
+    if (data.bufferFull) {
+        insertIndex = data.oldestIndex;
+        data.oldestIndex = (data.oldestIndex + 1) % MAX_DATA_POINTS;
+    } else {
+        insertIndex = data.dataCount;
+        data.dataCount++;
+        
+        if (data.dataCount >= MAX_DATA_POINTS) {
+            data.bufferFull = true;
+            data.dataCount = MAX_DATA_POINTS;
+        }
+    }
+    
+    data.growthValues[insertIndex] = growthPercentage;
+    data.timestamps[insertIndex] = timestamp;
+    
+    data.currentGrowth = growthPercentage;
+    
+    updatePeakInfo(data);
+}
+
+void SourdoughMonitor::updatePeakInfo(SourdoughData& data) {
+    data.peakGrowth = 0;
+    int peakIndex = -1;
+    
+    // Find peak værdi og indeks
+    for (int i = 0; i < data.dataCount; i++) {
+        int actualIndex = (data.oldestIndex + i) % MAX_DATA_POINTS;
+        if (data.growthValues[actualIndex] > data.peakGrowth) {
+            data.peakGrowth = data.growthValues[actualIndex];
+            peakIndex = actualIndex;
+        }
+    }
+    
+    // Beregn timer siden peak
+    if (peakIndex >= 0) {
+        unsigned long now = millis() / 1000;
+        unsigned long peakTime = data.timestamps[peakIndex];
+        data.peakHoursAgo = (now - peakTime) / 3600.0;  // Konverter sekunder til timer
+    } else {
+        data.peakHoursAgo = 0;
+    }
 }
 
 void SourdoughMonitor::updateDisplay(const SourdoughData& data) {
@@ -97,12 +141,11 @@ void SourdoughMonitor::drawHeader(const SourdoughData& data) {
     _display.print("%");
 }
 
-
 void SourdoughMonitor::drawBattery(int batteryLevel) {
     // Tegn batteriniveau (lodret, 55% fyldt)
     // Tegn lodret batteri form
-    _display.drawRect(270, 5, 10, 20, COLOR_BLACK);          // Batteriets ydre
-    _display.drawRect(272, 2, 6, 3, COLOR_BLACK);            // Batteriets top
+    _display.drawRect(270, 5, 10, 20, COLOR_BLACK); // Batteriets ydre
+    _display.drawRect(272, 2, 6, 3, COLOR_BLACK);   // Batteriets top
     // Fyld batteriniveau fra bunden op
     int fillHeight = (int)(batteryLevel/100.0 * 16);
     _display.fillRect(272, 23 - fillHeight, 6, fillHeight, COLOR_BLACK);
@@ -114,18 +157,6 @@ void SourdoughMonitor::drawGraph(const SourdoughData& data) {
     int graphY = 45;
     int graphWidth = _display.width() - 20;
     int graphHeight = _display.height() - graphY - 10;
-    
-    const int hourlyPoints = data.growthDataSize / 6; // 12 timer + nutid
-    int growthData[hourlyPoints];
-    
-    for (int i = 0; i < hourlyPoints; i++) {
-        // Tag én prøve for hver 6 datapunkter (hver time)
-        int dataIndex = i * 6;
-        if (dataIndex < data.growthDataSize) {
-            growthData[i] = data.growthData[dataIndex];
-        }
-    }
-    int numPoints = hourlyPoints;
     
     // Definer etiketbredde for Y-aksen
     int yLabelWidth = 30;
@@ -176,52 +207,72 @@ void SourdoughMonitor::drawGraph(const SourdoughData& data) {
         _display.print("%");
     }
     
+    // Værdier for skalering
     int maxValue = 400;
     int minValue = 100;
     int valueRange = maxValue - minValue;
     
-    // Tegn vækstgrafen med et punkt for hver time
-    for (int i = 0; i < numPoints - 1; i++) {
-        // Beregn koordinater for timebaserede datapunkter
-        int x1 = xLabelStartX + (i * hourWidth);
-        int y1 = graphY + graphHeight - ((growthData[i] - minValue) * graphHeight / valueRange);
-        int x2 = xLabelStartX + ((i+1) * hourWidth);
-        int y2 = graphY + graphHeight - ((growthData[i+1] - minValue) * graphHeight / valueRange);
-        
-        // Tegn linje mellem punkter
-        _display.drawLine(x1, y1, x2, y2, COLOR_BLACK);
-        
-        // Marker timepunkter med små rektangler (kun ved lige timer)
-        if (i % 2 == 0) {
-            _display.fillRect(x1-2, y1-2, 4, 4, COLOR_BLACK);
+    if (data.dataCount == 0) return;
+    
+    // Beregn tidsramme (12 timer total)
+    unsigned long now = millis() / 1000;
+    unsigned long twelveHoursAgo = now - (12 * 60 * 60);
+    float timeRange = 12.0 * 60 * 60; // 12 timer i sekunder
+    
+    // Kun tegn punkter, hvis vi har mindst 2
+    if (data.dataCount >= 2) {
+        // Tegn linjerne mellem punkter
+        for (int i = 0; i < data.dataCount - 1; i++) {
+            // Beregn de faktiske indekser med hensyn til cirkulær buffer
+            int idx1 = (data.oldestIndex + i) % MAX_DATA_POINTS;
+            int idx2 = (data.oldestIndex + i + 1) % MAX_DATA_POINTS;
+            
+            // Beregn relative positioner på tidsaksen
+            float timePct1 = (data.timestamps[idx1] - twelveHoursAgo) / timeRange;
+            float timePct2 = (data.timestamps[idx2] - twelveHoursAgo) / timeRange;
+            
+            // Begræns til gyldig tidsskala (0.0 til 1.0)
+            timePct1 = max(0.0f, min(1.0f, timePct1));
+            timePct2 = max(0.0f, min(1.0f, timePct2));
+            
+            // Beregn x-koordinater baseret på disse tidspositioner
+            int x1 = xLabelStartX + (timePct1 * (graphWidth - yLabelWidth));
+            int x2 = xLabelStartX + (timePct2 * (graphWidth - yLabelWidth));
+            
+            // Beregn y-koordinater baseret på vækstværdier
+            int y1 = graphY + graphHeight - ((data.growthValues[idx1] - minValue) * graphHeight / valueRange);
+            int y2 = graphY + graphHeight - ((data.growthValues[idx2] - minValue) * graphHeight / valueRange);
+            
+            // Tegn linje mellem punkter
+            _display.drawLine(x1, y1, x2, y2, COLOR_BLACK);
+            
+            // Marker hver 3. datapunkt
+            if (i % 3 == 0) {
+                _display.fillRect(x1-2, y1-2, 4, 4, COLOR_BLACK);
+            }
         }
     }
     
-    // Tegn en mere detaljeret graf med alle detaljerede data
-    float pointSpacing = (float)hourWidth / 6; // 6 punkter per time
-    
-    for (int i = 0; i < data.growthDataSize - 1; i++) {
-        int x1 = xLabelStartX + (i * pointSpacing);
-        int y1 = graphY + graphHeight - ((data.growthData[i] - minValue) * graphHeight / valueRange);
-        int x2 = xLabelStartX + ((i+1) * pointSpacing);
-        int y2 = graphY + graphHeight - ((data.growthData[i+1] - minValue) * graphHeight / valueRange);
-        
-        // Tegn tyndere linjer for de detaljerede data
-        _display.drawLine(x1, y1, x2, y2, COLOR_BLACK);
-    }
-    
-    // Marker peak-værdien med en rød markør
-    int peakIndex = 0;
+    // Find peak for at markere den
     int peakValue = 0;
+    int peakIndex = -1;
     
-    for (int i = 0; i < data.growthDataSize; i++) {
-        if (data.growthData[i] > peakValue) {
-            peakValue = data.growthData[i];
-            peakIndex = i;
+    for (int i = 0; i < data.dataCount; i++) {
+        int idx = (data.oldestIndex + i) % MAX_DATA_POINTS;
+        if (data.growthValues[idx] > peakValue) {
+            peakValue = data.growthValues[idx];
+            peakIndex = idx;
         }
     }
     
-    int peakX = xLabelStartX + (peakIndex * pointSpacing);
-    int peakY = graphY + graphHeight - ((peakValue - minValue) * graphHeight / valueRange);
-    _display.fillRect(peakX-3, peakY-3, 6, 6, COLOR_RED);
+    // Hvis vi fandt en peak, marker den
+    if (peakIndex >= 0) {
+        float peakTimePct = (data.timestamps[peakIndex] - twelveHoursAgo) / timeRange;
+        peakTimePct = max(0.0f, min(1.0f, peakTimePct));
+        
+        int peakX = xLabelStartX + (peakTimePct * (graphWidth - yLabelWidth));
+        int peakY = graphY + graphHeight - ((peakValue - minValue) * graphHeight / valueRange);
+        
+        _display.fillRect(peakX-3, peakY-3, 6, 6, COLOR_RED);
+    }
 }
