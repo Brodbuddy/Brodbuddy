@@ -1,6 +1,6 @@
 #include "SourdoughMonitor.h"
 
-const int detailedGrowthData[] = {
+const int mockGrowthData[] = {
   100, 102, 101, 104, 108, 115,
   117, 120, 123, 127, 134, 140,
   138, 135, 142, 152, 158, 165,
@@ -15,7 +15,7 @@ const int detailedGrowthData[] = {
   277, 268, 260, 255, 250, 245
 };
 
-const int NUM_DETAILED_POINTS = sizeof(detailedGrowthData) / sizeof(detailedGrowthData[0]);
+const int NUM_DETAILED_POINTS = sizeof(mockGrowthData) / sizeof(mockGrowthData[0]);
 
 SourdoughMonitor::SourdoughMonitor(SourdoughDisplay& display) : _display(display) {}
 
@@ -28,20 +28,20 @@ SourdoughData SourdoughMonitor::generateMockData() {
     data.inHumidity = 100;
     data.batteryLevel = 55;
     
-    data.currentGrowth = detailedGrowthData[NUM_DETAILED_POINTS - 1];
+    data.currentGrowth = mockGrowthData[NUM_DETAILED_POINTS - 1];
     
     data.peakGrowth = 0;
     int peakIndex = 0;
     for (int i = 0; i < NUM_DETAILED_POINTS; i++) {
-        if (detailedGrowthData[i] > data.peakGrowth) {
-            data.peakGrowth = detailedGrowthData[i];
+        if (mockGrowthData[i] > data.peakGrowth) {
+            data.peakGrowth = mockGrowthData[i];
             peakIndex = i;
         }
     }
     
     data.peakHoursAgo = peakIndex / 6.0;
     
-    data.growthData = detailedGrowthData;
+    data.growthData = mockGrowthData;
     data.growthDataSize = NUM_DETAILED_POINTS;
     
     return data;

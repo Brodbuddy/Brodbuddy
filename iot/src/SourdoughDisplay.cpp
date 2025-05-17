@@ -23,7 +23,6 @@ void SourdoughDisplay::begin() {
     // Clear buffers til start
     clearBuffers();
     
-    // Brug standard font i stedet for FreeSans9pt7b for mere kompakt tekst
     setFont();  // Nulstil til standard font
     setTextColor(COLOR_BLACK);
     setTextSize(1);  // Standard størrelse for at sikre det passer i header
@@ -152,8 +151,6 @@ void SourdoughDisplay::drawPixel(int16_t x, int16_t y, uint16_t color) {
         
     setPixel(y, x, color);
 }
-
-
 
 void SourdoughDisplay::drawTestPattern() {
     Serial.println("Drawing test pattern into buffers...");
