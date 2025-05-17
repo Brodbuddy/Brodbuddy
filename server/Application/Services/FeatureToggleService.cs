@@ -8,6 +8,7 @@ public interface IFeatureToggleService
     /// Basal toggle tilstand - f.eks. for API enable/disable
     /// </summary>
     bool IsEnabled(string featureName);
+    bool IsEnabledForUser(string featureName, Guid userId);
 }
 
 public class FeatureToggleService : IFeatureToggleService
@@ -22,5 +23,10 @@ public class FeatureToggleService : IFeatureToggleService
     public bool IsEnabled(string featureName)
     {
         return _repository.IsEnabledAsync(featureName).GetAwaiter().GetResult();
+    }
+
+    public bool IsEnabledForUser(string featureName, Guid userId)
+    {
+        return _repository.IsEnabledForUserAsync(featureName, userId).GetAwaiter().GetResult();
     }
 }

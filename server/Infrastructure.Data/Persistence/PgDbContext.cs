@@ -18,6 +18,8 @@ public partial class PgDbContext : DbContext
 
     public virtual DbSet<Feature> Features { get; set; }
 
+    public virtual DbSet<FeatureUser> FeatureUsers { get; set; }
+
     public virtual DbSet<OneTimePassword> OneTimePasswords { get; set; }
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -120,6 +122,36 @@ public partial class PgDbContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .HasColumnName("name");
+        });
+
+        modelBuilder.Entity<FeatureUser>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("feature_users_pkey");
+
+            entity.ToTable("feature_users");
+
+            entity.HasIndex(e => new { e.FeatureId, e.UserId }, "feature_users_feature_id_user_id_key").IsUnique();
+
+            entity.HasIndex(e => e.FeatureId, "idx_feature_users_feature_id");
+
+            entity.HasIndex(e => e.UserId, "idx_feature_users_user_id");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.FeatureId).HasColumnName("feature_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Feature).WithMany(p => p.FeatureUsers)
+                .HasForeignKey(d => d.FeatureId)
+                .HasConstraintName("feature_users_feature_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.FeatureUsers)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("feature_users_user_id_fkey");
         });
 
         modelBuilder.Entity<OneTimePassword>(entity =>

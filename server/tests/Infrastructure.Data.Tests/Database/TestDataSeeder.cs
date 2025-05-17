@@ -112,4 +112,21 @@ public static class TestDataSeeder
                               tc.RefreshTokenId == effectiveRefreshTokenId);
         return createdContext;
     }
+    
+    public static async Task<Feature> SeedFeatureAsync(this PgDbContext context,
+        TimeProvider timeProvider,
+        string name = "test_feature",
+        bool isEnabled = true)
+    {
+        var feature = new Feature
+        {
+            Name = name,
+            IsEnabled = isEnabled,
+            CreatedAt = timeProvider.Now()
+        };
+        await context.Features.AddAsync(feature);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        return feature;
+    }
 }

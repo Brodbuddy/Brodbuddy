@@ -12,7 +12,6 @@ public class FeatureToggleWebSocketMiddleware : IWebSocketMiddleware
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<FeatureToggleWebSocketMiddleware> _logger;
     
-    
     public FeatureToggleWebSocketMiddleware(
         IServiceScopeFactory scopeFactory,
         ILogger<FeatureToggleWebSocketMiddleware> logger)
@@ -25,9 +24,12 @@ public class FeatureToggleWebSocketMiddleware : IWebSocketMiddleware
     {
         using var scope = _scopeFactory.CreateScope();
         var toggleService = scope.ServiceProvider.GetRequiredService<IFeatureToggleService>();
+        var jwtService = scope.ServiceProvider.GetRequiredService<IJwtService>();
         
-        try {
-            var options = new JsonDocumentOptions {
+        try 
+        {
+            var options = new JsonDocumentOptions 
+            {
                 AllowTrailingCommas = true,
                 CommentHandling = JsonCommentHandling.Skip
             };
@@ -35,39 +37,34 @@ public class FeatureToggleWebSocketMiddleware : IWebSocketMiddleware
             var root = JsonDocument.Parse(message, options).RootElement;
             
             string? messageType = null;
+            string? token = null;
+            var requestId = "unknown";
+            
             foreach (var property in root.EnumerateObject())
             {
-                if (!property.Name.Equals("Type", StringComparison.OrdinalIgnoreCase)) continue;
-                messageType = property.Value.GetString();
-                break;
+                if (property.Name.Equals("Type", StringComparison.OrdinalIgnoreCase))
+                {
+                    messageType = property.Value.GetString();
+                }
+                else if (property.Name.Equals("Token", StringComparison.OrdinalIgnoreCase))
+                {
+                    token = property.Value.GetString();
+                }
+                else if (property.Name.Equals("RequestId", StringComparison.OrdinalIgnoreCase))
+                {
+                    requestId = property.Value.GetString() ?? "unknown";
+                }
             }
             
             if (!string.IsNullOrEmpty(messageType)) 
             {
                 var featureName = $"Websocket.{messageType}";
+                var isFeatureEnabled = IsFeatureEnabledForContext(featureName, token, toggleService, jwtService);
                 
-                if (!toggleService.IsEnabled(featureName)) 
+                if (!isFeatureEnabled)
                 {
-                    _logger.LogInformation("WebSocket handler {Handler} is disabled", messageType);
-                    
-                    var requestId = "unknown";
-                    foreach (var property in root.EnumerateObject())
-                    {
-                        if (!property.Name.Equals("RequestId", StringComparison.OrdinalIgnoreCase)) continue;
-                        requestId = property.Value.GetString() ?? "unknown";
-                        break;
-                    }
-                    
-                    await socket.Send(JsonSerializer.Serialize(new {
-                        Type = "Error",
-                        RequestId = requestId,
-                        Payload = new {
-                            Code = "FEATURE_DISABLED",
-                            Message = "This feature is currently disabled"
-                        }
-                    }));
-                    
-                    return false; // Stop middleware pipeline
+                    await SendFeatureDisabledError(socket, messageType, requestId);
+                    return false;
                 }
             }
         }
@@ -78,5 +75,43 @@ public class FeatureToggleWebSocketMiddleware : IWebSocketMiddleware
         
         await next();
         return true;
+    }
+    
+    private static bool IsFeatureEnabledForContext(string featureName, string? token, IFeatureToggleService toggleService, IJwtService jwtService)
+    {
+        var isGloballyEnabled = toggleService.IsEnabled(featureName);
+        
+        if (string.IsNullOrEmpty(token))
+        {
+            return isGloballyEnabled;
+        }
+        
+        if (token.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            token = token["Bearer ".Length..].Trim();
+        }
+        
+        if (jwtService.TryValidate(token, out var claims) && Guid.TryParse(claims.Sub, out var userId))
+        {
+            return toggleService.IsEnabledForUser(featureName, userId);
+        }
+        
+        return isGloballyEnabled;
+    }
+    
+    private async Task SendFeatureDisabledError(IWebSocketConnection socket, string messageType, string requestId)
+    {
+        _logger.LogInformation("WebSocket handler {Handler} is disabled", messageType);
+        
+        await socket.Send(JsonSerializer.Serialize(new 
+        {
+            Type = "Error",
+            RequestId = requestId,
+            Payload = new 
+            {
+                Code = "FEATURE_DISABLED",
+                Message = "This feature is currently disabled"
+            }
+        }));
     }
 }

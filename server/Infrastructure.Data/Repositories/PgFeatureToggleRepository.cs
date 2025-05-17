@@ -68,6 +68,15 @@ public class PgFeatureToggleRepository : IFeatureToggleRepository
         return true;
     }
 
+    public async Task<bool> IsEnabledForUserAsync(string featureName, Guid userId)
+    {
+        var feature = await _dbContext.Features.FirstOrDefaultAsync(f => f.Name == featureName);
+        if (feature == null) return true; 
+        if (!feature.IsEnabled) return false; 
+    
+        return await _dbContext.FeatureUsers.AnyAsync(fu => fu.FeatureId == feature.Id && fu.UserId == userId);
+    }
+
     public async Task<IEnumerable<Feature>> GetAllFeaturesAsync()
     {
         return await _dbContext.Features.ToListAsync();

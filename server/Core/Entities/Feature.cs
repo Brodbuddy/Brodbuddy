@@ -16,4 +16,6 @@ public partial class Feature
     public DateTime CreatedAt { get; set; }
 
     public DateTime? LastModifiedAt { get; set; }
+
+    public virtual ICollection<FeatureUser> FeatureUsers { get; set; } = new List<FeatureUser>();
 }

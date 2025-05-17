@@ -135,6 +135,9 @@ jobs:
           - project_dir: 'server/Api.Http'
             project: 'Api.Http.csproj'
             test_project: '../tests/Api.Http.Tests/Api.Http.Tests.csproj'
+          - project_dir: 'server/Api.Websocket'
+            project: 'Api.Websocket.csproj'
+            test_project: '../tests/Api.Websocket.Tests/Api.Websocket.Tests.csproj'
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
