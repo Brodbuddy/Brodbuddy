@@ -37,7 +37,6 @@ public:
     void addDataPoint(SourdoughData& data, int growthPercentage, unsigned long timestamp);
     void updateDisplay(const SourdoughData& data);
     SourdoughData generateMockData();    
-    int readBatteryLevel();
     void updatePeakInfo(SourdoughData& data);
 private:
     SourdoughDisplay& _display;

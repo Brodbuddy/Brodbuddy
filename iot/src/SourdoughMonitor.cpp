@@ -28,7 +28,7 @@ SourdoughData SourdoughMonitor::generateMockData() {
     data.outHumidity = 44;
     data.inTemp = 20.7;
     data.inHumidity = 100;
-    data.batteryLevel = 55;
+    data.batteryLevel = 20;
     
     // Beregn start-tidsstempel (12 timer før nu)
     unsigned long now = millis() / 1000;
@@ -42,10 +42,6 @@ SourdoughData SourdoughMonitor::generateMockData() {
     }
     
     return data;
-}
-
-int SourdoughMonitor::readBatteryLevel() {
-    return 55;
 }
 
 void SourdoughMonitor::addDataPoint(SourdoughData& data, int growthPercentage, unsigned long timestamp) {
@@ -142,7 +138,6 @@ void SourdoughMonitor::drawHeader(const SourdoughData& data) {
 }
 
 void SourdoughMonitor::drawBattery(int batteryLevel) {
-    // Tegn batteriniveau (lodret, 55% fyldt)
     // Tegn lodret batteri form
     _display.drawRect(270, 5, 10, 20, COLOR_BLACK); // Batteriets ydre
     _display.drawRect(272, 2, 6, 3, COLOR_BLACK);   // Batteriets top
