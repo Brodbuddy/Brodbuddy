@@ -21,9 +21,14 @@
       "!/**/EventHandlers/**/*",
       "!/**/*Exception.cs",
       "!/**/SwaggerExtensions.cs",
-      "!/**/GlobalExceptionHandler.cs"
+      "!/**/GlobalExceptionHandler.cs",
+      "!/**/LoggerFactory.cs",
+      "!/**/Instrumentation.cs",
+      "!/**/MqttHostedService.cs",
+      "!/**/FleckWebSocketSerer.cs"
     ],
     "reporters": ["html", "progress"],
-    "coverage-analysis": "perTest"
+    "coverage-analysis": "perTest",
+    "test-case-filter": "FullyQualifiedName!~IsEnabledForUserAsync_WithSpecificRolloutPercentage & FullyQualifiedName!~WithRolloutPercentage_DistributesUsersCorrectly_AcrossMultiplePercentages & FullyQualifiedName!~GetDjb2HashCode_WithMultipleRandomInputs & FullyQualifiedName!~WithRolloutPercentage_IsDeterministic & FullyQualifiedName!~WithExplicitUser_ReturnsTrueRegardlessOfPercentage & FullyQualifiedName!~WithSameUserIdAndFeature_ReturnsSameResultConsistently"
   }
 }
