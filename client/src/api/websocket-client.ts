@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 // WebSocket Error Codes
 export const ErrorCodes = {
     invalidMessage: "INVALID_MESSAGE",
@@ -254,7 +256,7 @@ export class WebSocketClient {
         }
 
         return new Promise<T>((resolve, reject) => {
-            const requestId = crypto.randomUUID();
+            const requestId = uuidv4(); 
             const timeout = window.setTimeout(() => {
                 if (this.pendingRequests.has(requestId)) {
                     this.pendingRequests.delete(requestId);

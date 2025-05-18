@@ -3,8 +3,9 @@ import { Api } from '../api/Api';
 import { tokenStorage, TOKEN_KEY, jwtAtom, userInfoAtom } from "../atoms/auth";
 import { getDefaultStore } from "jotai";
 import { AppRoutes } from '../helpers/appRoutes';
+import config from '../config';
 
-export const baseUrl = import.meta.env.VITE_APP_BASE_API_URL
+export const baseUrl = config.httpUrl; 
 export const REDIRECT_PATH_KEY = 'redirectPath';
 
 const store = getDefaultStore();

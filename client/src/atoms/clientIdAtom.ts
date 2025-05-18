@@ -1,4 +1,5 @@
 import { atomWithStorage, createJSONStorage } from 'jotai/utils';
+import { v4 as uuidv4 } from 'uuid';
 
 interface SimpleStorage {
     getItem: (key: string) => string | null;
@@ -12,16 +13,6 @@ const simpleSyncStorage: SimpleStorage = {
     setItem: (key: string, value: string) => { memoryStorage.set(key, value); }, 
     removeItem: (key: string) => { memoryStorage.delete(key); },                 
 }
-
-const getOrCreateClientId = (): string => {
-    const existingId = getLocalStorage().getItem('websocketDeviceId');
-    if (existingId) {
-        return existingId;
-    }
-    const newId = crypto.randomUUID();
-    getLocalStorage().setItem('websocketDeviceId', newId);
-    return newId;
-};
 
 const getLocalStorage = (): SimpleStorage => {
     try {
@@ -39,7 +30,7 @@ const localStorageJotai = createJSONStorage<string>(() => getLocalStorage());
 
 export const clientIdAtom = atomWithStorage<string>(
     'websocketDeviceId',
-    getOrCreateClientId(),      
+    uuidv4(),    
     localStorageJotai,      
     { getOnInit: true }         
 );

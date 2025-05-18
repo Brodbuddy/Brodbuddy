@@ -57,16 +57,7 @@ public static class Extensions
         services.AddProblemDetails();
         services.AddExceptionHandler<GlobalExceptionHandler>();
 
-        services.AddCors(options =>
-        {
-            options.AddPolicy(CorsPolicy, builder =>
-            {
-                builder.WithOrigins("http://localhost:5173")
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials(); 
-            });
-        });
+        services.AddCors();
         
         services
             .AddAuthentication(options =>
@@ -126,7 +117,7 @@ public static class Extensions
             settings.DocExpansion = "list";
         });
         
-        app.UseCors(CorsPolicy);
+        app.UseCors(policy => policy.WithOrigins(appOptions.Cors.AllowedOrigins).AllowAnyMethod().AllowAnyHeader().AllowCredentials());
         app.UseFeatureToggles(); 
         app.UseAuthentication();
         app.UseAuthorization();

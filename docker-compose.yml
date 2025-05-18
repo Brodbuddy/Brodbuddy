@@ -10,6 +10,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
+    profiles: ["deploy"]
   
   flyway:
     image: flyway/flyway:latest
@@ -24,6 +25,7 @@ services:
     volumes:
       - ./db/migrations:/flyway/sql
     command: migrate
+    profiles: ["deploy"]
     
   dragonfly:
     image: docker.dragonflydb.io/dragonflydb/dragonfly
@@ -33,6 +35,7 @@ services:
       - '${APPOPTIONS__DRAGONFLY__PORT:-6379}:6379'
     volumes:
       - dragonflydata:/data
+    profiles: ["deploy"]
   
   mailhog:
     image: mailhog/mailhog
@@ -40,6 +43,7 @@ services:
       - '1025:1025'
       - '8025:8025'
     restart: always
+    profiles: ["dev"]
     
   seq:
     image: datalust/seq
@@ -50,12 +54,14 @@ services:
     volumes:
       - seq_data:/data
     restart: unless-stopped
+    profiles: ["deploy"]
   
   zipkin:
     image: openzipkin/zipkin:latest
     ports:
       - '9411:9411'
     restart: unless-stopped
+    profiles: ["deploy"]
     
   vernemq:
     image: vernemq/vernemq
@@ -69,9 +75,56 @@ services:
     volumes:
       - vernemq-data:/var/lib/vernemq # Behøves ikke, men gør sådan at vi kan opbevare data
     restart: unless-stopped # Gør sådan at broker genstarter på system reboot
+    profiles: ["deploy"]
+    
+  backend:
+    image: ${SERVER_IMAGE_TAG:-ghcr.io/brodbuddy/brodbuddy-backend:latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - dragonfly
+      - vernemq
+    profiles: ["deploy"]
+
+  frontend:
+    image: ${CLIENT_IMAGE_TAG:-ghcr.io/brodbuddy/brodbuddy-frontend:latest}
+    environment:
+      - VITE_HTTP_URL=${VITE_HTTP_URL}
+      - VITE_WS_URL=${VITE_WS_URL}
+    restart: unless-stopped
+    profiles: ["deploy"]
+
+  nginx:
+    image: nginx:stable-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Mount directory hvor config fil bliver placeret efter deploy
+      - type: bind
+        source: ./nginx_config # Host path relativt til docker-compose.yml
+        target: /etc/nginx/conf.d # Inde i container
+        read_only: true
+      # Mount Nginx logs
+      - type: volume
+        source: nginx_logs
+        target: /var/log/nginx
+      # Mount Let's Encrypt certifikater for SSL
+      - type: bind
+        source: /etc/letsencrypt
+        target: /etc/letsencrypt
+        read_only: true
+    depends_on:
+      - backend
+      - frontend
+    profiles: ["deploy"]
 
 volumes:
   postgres_data:
   dragonflydata:
   vernemq-data:
   seq_data:
+  nginx_logs:

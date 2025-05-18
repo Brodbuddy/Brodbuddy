@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { WebSocketClient, WebSocketError, ErrorCodes } from '../api/websocket-client';
 import { refreshToken } from "./useHttp";
 import { tokenStorage, TOKEN_KEY, jwtAtom } from '../atoms/auth';
+import config from '../config';
 
 export function useWebSocket() {
     const [connected, setConnected] = useState(false);
@@ -11,7 +12,7 @@ export function useWebSocket() {
     const clientId = useAtomValue(clientIdAtom);
     const jwt = useAtomValue(jwtAtom);
 
-    const wsClient = useMemo(() => new WebSocketClient('ws://localhost:8181'), []);
+    const wsClient = useMemo(() => new WebSocketClient(config.wsUrl), []);
     
     useEffect(() => {
         if (!clientId) {

@@ -5,6 +5,7 @@ public class AppOptions
     public int PublicPort { get; set; } = 9999;
     public HttpOptions Http { get; init; } = new();
     public WebsocketOptions Websocket { get; init; } = new();
+    public CorsOptions Cors { get; init; } = new();
     public EmailOptions Email { get; init; } = new();
     public PostgresOptions Postgres { get; init; } = new();
     public DragonflyOptions Dragonfly { get; init; } = new();
@@ -23,6 +24,11 @@ public class HttpOptions
 public class WebsocketOptions
 {
     public int Port { get; set; } = 8181;
+}
+
+public class CorsOptions
+{
+    public string[] AllowedOrigins { get; set; } = ["http://localhost:5173"];
 }
 
 public class EmailOptions
