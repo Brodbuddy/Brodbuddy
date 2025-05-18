@@ -37,6 +37,8 @@ public static class Extensions
         services.AddScoped<IUserRoleRepository, PgUserRoleRepository>();
         
         services.AddScoped<IFeatureToggleRepository, PgFeatureToggleRepository>();
+
+        services.AddScoped<ITransactionManager, EfTransactionManager>();
         return services;
     }
 }

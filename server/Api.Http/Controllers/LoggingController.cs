@@ -18,7 +18,7 @@ public class LoggingController : ControllerBase
     }
     
     [HttpGet("level")]
-    [AllowAnonymous]
+    [Authorize(Roles = Role.Admin)]
     public ActionResult<LogLevelResponse> GetCurrentLogLevel()
     {
         var currentLevel = _logLevelManager.GetCurrentLevel();
@@ -26,7 +26,7 @@ public class LoggingController : ControllerBase
     }
     
     [HttpPut("level")]
-    [AllowAnonymous]
+    [Authorize(Roles = Role.Admin)]
     public ActionResult<LogLevelUpdateResponse> SetLogLevel([FromBody] LogLevelUpdateRequest request)
     {
         _logLevelManager.SetLogLevel(request.LogLevel);

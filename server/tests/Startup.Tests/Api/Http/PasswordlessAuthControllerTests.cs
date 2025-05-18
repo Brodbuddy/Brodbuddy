@@ -304,6 +304,7 @@ public partial class PasswordlessAuthControllerTests(StartupTestFixture fixture,
         });
         
         // Verificer loginc
+        Output.WriteLine($"Sending verification request for email: {email}, code: {otpCode}");
         var verifyResponse = await client.PostAsJsonAsync(Routes.PasswordlessAuth.Verify, 
             new LoginVerificationRequest(email, otpCode));
         
@@ -336,6 +337,10 @@ public partial class PasswordlessAuthControllerTests(StartupTestFixture fixture,
         var refreshResponse = await client.SendAsync(refreshRequest);
         
         // Assert
+        Output.WriteLine($"HALO? response: Status={refreshResponse.StatusCode}, Content={refreshResponse}");
+        Output.WriteLine($"HVa fuck? response: Status={refreshResponse.IsSuccessStatusCode}, Content={refreshResponse}"); 
+        var errorContent = await refreshResponse.Content.ReadAsStringAsync();
+        Output.WriteLine($"Error details: {errorContent}");
         refreshResponse.IsSuccessStatusCode.ShouldBeTrue();
         
         // Respons skal indeholde access token 

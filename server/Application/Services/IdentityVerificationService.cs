@@ -1,3 +1,4 @@
+using Application.Interfaces;
 using Application.Interfaces.Communication.Mail;
 using Application.Interfaces.Data.Repositories;
 
@@ -16,53 +17,61 @@ public class IdentityVerificationService : IIdentityVerificationService
     private readonly IUserRoleService _userRoleService;
     private readonly IEmailSender _emailService;
     private readonly IIdentityVerificationRepository _identityVerificationRepository;
+    private readonly ITransactionManager _transactionManager;
     
     public IdentityVerificationService(
         IOtpService otpService,
         IUserIdentityService userIdentityService,
         IUserRoleService userRoleService,
         IEmailSender emailService,
-        IIdentityVerificationRepository identityVerificationRepository)
+        IIdentityVerificationRepository identityVerificationRepository,
+        ITransactionManager transactionManager)
     {
         _otpService = otpService;
         _userIdentityService = userIdentityService;
         _userRoleService = userRoleService;
         _identityVerificationRepository = identityVerificationRepository;
         _emailService = emailService;
+        _transactionManager = transactionManager;
     }
     
     public async Task<bool> SendCodeAsync(string email)
     {
-        var userId = await _userIdentityService.CreateAsync(email);
-        
-        var userRoles = await _userRoleService.GetUserRolesAsync(userId);
-        if (!userRoles.Any()) await _userRoleService.AssignRoleAsync(userId, Core.Entities.Role.Member);
+        return await _transactionManager.ExecuteInTransactionAsync(async () =>
+        {
+            var userId = await _userIdentityService.CreateAsync(email);
+            var userRoles = await _userRoleService.GetUserRolesAsync(userId);
+            if (!userRoles.Any()) await _userRoleService.AssignRoleAsync(userId, Core.Entities.Role.Member);
+            
+            var (otpId, code) = await _otpService.GenerateAsync();
 
-        var (otpId, code) = await _otpService.GenerateAsync();
+            await _identityVerificationRepository.CreateAsync(userId, otpId);
 
-        await _identityVerificationRepository.CreateAsync(userId, otpId);
-
-        var emailContent = "Your verification code is: " + code;
-        return await _emailService.SendEmailAsync(email, "Verification Code", emailContent);
+            var emailContent = "Your verification code is: " + code;
+            return await _emailService.SendEmailAsync(email, "Verification Code", emailContent);
+        });
     }
 
     public async Task<(bool verified, Guid userId)> TryVerifyCodeAsync(string email, int code)
     {
-        var user = await _userIdentityService.GetAsync(email);
-
-        var verificationContext = await _identityVerificationRepository.GetLatestAsync(user.Id);
-        if (verificationContext == null)
+        return await _transactionManager.ExecuteInTransactionAsync(async () =>
         {
-            return (false, Guid.Empty);
-        }
+            var user = await _userIdentityService.GetAsync(email);
 
-        if (!await _otpService.IsValidAsync(verificationContext.OtpId, code))
-        {
-            return (false, Guid.Empty);
-        }
+            var verificationContext = await _identityVerificationRepository.GetLatestAsync(user.Id);
+            if (verificationContext == null)
+            {
+                return (false, Guid.Empty);
+            }
 
-        await _otpService.MarkAsUsedAsync(verificationContext.OtpId);
+            if (!await _otpService.IsValidAsync(verificationContext.OtpId, code))
+            {
+                return (false, Guid.Empty);
+            }
 
-        return (true, user.Id);
+            await _otpService.MarkAsUsedAsync(verificationContext.OtpId);
+
+            return (true, user.Id);
+        });
     }
 }

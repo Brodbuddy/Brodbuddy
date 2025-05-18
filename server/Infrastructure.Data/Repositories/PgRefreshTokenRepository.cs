@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Transactions;
 using Application.Interfaces.Data.Repositories;
 using Core.Entities;
 using Core.Extensions;
@@ -12,7 +13,7 @@ public class PgRefreshTokenRepository : IRefreshTokenRepository
     private readonly PgDbContext _dbContext;
     private readonly TimeProvider _timeProvider;
     
-    public PgRefreshTokenRepository(PgDbContext dbContext, TimeProvider timeProvider)
+    public PgRefreshTokenRepository(PgDbContext dbContext,  TimeProvider timeProvider)
     {
         _dbContext = dbContext;
         _timeProvider = timeProvider;
@@ -77,7 +78,19 @@ public class PgRefreshTokenRepository : IRefreshTokenRepository
             CreatedAt = now,
             ExpiresAt = expiresAt
         };
+        
+        if (_dbContext.Database.CurrentTransaction != null)
+        {
+            await _dbContext.RefreshTokens.AddAsync(refreshToken);
+            await _dbContext.SaveChangesAsync();
 
+            oldToken.RevokedAt = now;
+            oldToken.ReplacedByTokenId = refreshToken.Id;
+
+            await _dbContext.SaveChangesAsync(); 
+            return (refreshToken.Token, refreshToken.Id);
+        }
+        
         await using (var transaction = await _dbContext.Database.BeginTransactionAsync())
         {
             try

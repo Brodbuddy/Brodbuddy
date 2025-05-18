@@ -59,7 +59,6 @@ public class PasswordlessAuthController : ControllerBase
     [AllowAnonymous]
     public async Task<LoginVerificationResponse> VerifyCode([FromBody] LoginVerificationRequest request)
     {
-
         var userAgent = HttpContext.Request.Headers.UserAgent.ToString();
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString(); 
         var browser = UserAgentUtils.GetBrowser(userAgent);

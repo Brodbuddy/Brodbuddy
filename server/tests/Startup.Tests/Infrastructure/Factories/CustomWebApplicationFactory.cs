@@ -1,6 +1,8 @@
 using System.Globalization;
+using Application.Interfaces;
 using Application.Interfaces.Communication.Mail;
 using Application.Services;
+using Infrastructure.Data;
 using Infrastructure.Data.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -103,7 +105,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             // EmailSender
             var emailSenderDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IEmailSender));
             if (emailSenderDescriptor != null) services.Remove(emailSenderDescriptor);
-
+            
             services.AddSingleton<IEmailSender, FakeEmailSender>();
         });
 
