@@ -55,14 +55,14 @@ export function useWebSocket() {
 
                 if (typeof originalMethod !== 'function') return originalMethod;
 
-                return async function(payload: any) {
+                return async function(this: typeof target, payload: any) {
                     try {
-                        return await originalMethod.call(target, payload);
+                        return await originalMethod.call(this, payload);
                     } catch (error) {
                         if ((error as WebSocketError)?.code === ErrorCodes.unauthorized) {
                             try {
                                 await refreshToken();
-                                return await originalMethod.call(target, payload);
+                                return await originalMethod.call(this, payload);
                             } catch (refreshError) {
                                 throw refreshError;
                             }

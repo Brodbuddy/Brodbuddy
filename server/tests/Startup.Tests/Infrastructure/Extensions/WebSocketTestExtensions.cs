@@ -30,9 +30,8 @@ public static class WebSocketTestExtensions
     {
         var jwtService = factory.Services.GetRequiredService<IJwtService>();
         var token = jwtService.Generate(userId, email, role);
-        
-        var wsClient = factory.CreateWebSocketClient(output, clientId);
-        wsClient.WithAuth(token);
+
+        var wsClient = factory.CreateWebSocketClient(output, clientId).WithAuth(token);
         
         return wsClient;
     }
@@ -47,9 +46,8 @@ public static class WebSocketTestExtensions
     {
         var jwtService = factory.Services.GetRequiredService<IJwtService>();
         var token = jwtService.Generate(userId, email, role);
-        
-        var wsClient = factory.CreateWebSocketClient(output, clientId);
-        wsClient.WithAuth(token);
+
+        var wsClient = factory.CreateWebSocketClient(output, clientId).WithAuth(token);
         
         return wsClient;
     }

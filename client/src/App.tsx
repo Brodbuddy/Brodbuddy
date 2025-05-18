@@ -11,7 +11,7 @@ export default function App() {
     return (
         <AuthContext.Provider value={auth}>
             <Routes>
-                <Route path={AppRoutes.home} element={<RequireAuth accessLevel={AccessLevel.Member} element={<Home />}/>}/>
+                <Route path={AppRoutes.home} element={<RequireAuth accessLevel={AccessLevel.Protected} element={<Home />}/>}/>
                 <Route path={AppRoutes.login} element={<InitiateLoginPage />} />
                 <Route path={AppRoutes.verifyLogin} element={<CompleteLoginPage />} />
             </Routes>

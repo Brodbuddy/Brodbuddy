@@ -26,7 +26,7 @@ public class JoinRoomValidator : AbstractValidator<JoinRoom>
     }
 }
 
-// [Authorize(Roles = Role.Member)]
+// [Authorize(Roles = Role.Admin)]
 [AllowAnonymous]
 public class JoinRoomHandler(ISocketManager manager) : ISubscriptionHandler<JoinRoom, UserJoined>
 {
