@@ -13,6 +13,7 @@ type AuthHook = {
     completeLogin: (code: number) => Promise<false | undefined>;
     logout: () => void;
     isLoading: boolean;
+    isAuthenticated: boolean;
 };
 
 export const useAuth = (): AuthHook => {
@@ -96,5 +97,5 @@ export const useAuth = (): AuthHook => {
         navigate(AppRoutes.login);
     };
 
-    return { user, initiateLogin, completeLogin, logout, isLoading };
+    return { user, initiateLogin, completeLogin, logout, isLoading, isAuthenticated: !!user };
 };

@@ -3,7 +3,7 @@ import { UserInfoResponse } from '../api/Api';
 export enum AccessLevel {
     Anonymous = 'anonymous',
     Protected = 'protected',
-    User = 'user',
+    Member = 'member',
     Admin = 'admin'
 }
 
@@ -15,7 +15,7 @@ export const canAccess = (accessLevel: AccessLevel, user: UserInfoResponse | nul
             return user !== null;
         case AccessLevel.Admin:
             return user !== null && user.isAdmin;
-        case AccessLevel.User:
+        case AccessLevel.Member:
             return user !== null && !user.isAdmin;
         default:
             return false;

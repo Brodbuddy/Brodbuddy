@@ -1,10 +1,16 @@
-﻿using Api.Http.Auth;
+﻿using System.Text.Json.Serialization;
+using Api.Http.Auth;
 using Api.Http.Middleware;
+using Application;
+using Core.Entities;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 
@@ -15,18 +21,27 @@ public static class Extensions
     private const string ApiTitle = "Brodbuddy API";
     private const string ApiVersion = "v1";
     private const string ApiDescription = "API til Brodbuddy";
-    private const string CorsPolicy = "CorsPolicy";
+    private const string AdminPolicy = "admin";
+    private const string MemberPolicy = "member";
     
     public static IServiceCollection AddHttpApi(this IServiceCollection services)
     {
-        services.AddControllers();
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
+        
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssembly(typeof(Extensions).Assembly);
+        
         services.AddEndpointsApiExplorer();
         services.AddOpenApiDocument(configure =>
         {
             configure.Title = ApiTitle;
             configure.Version = ApiVersion;
             configure.Description = ApiDescription;
-        
+            
             configure.AddSecurity("JWT", [], new OpenApiSecurityScheme
             {
                 Type = OpenApiSecuritySchemeType.ApiKey,
@@ -43,16 +58,7 @@ public static class Extensions
         services.AddProblemDetails();
         services.AddExceptionHandler<GlobalExceptionHandler>();
 
-        services.AddCors(options =>
-        {
-            options.AddPolicy(CorsPolicy, builder =>
-            {
-                builder.WithOrigins("http://localhost:5173")
-                    .AllowAnyMethod()
-                    .AllowAnyHeader()
-                    .AllowCredentials(); 
-            });
-        });
+        services.AddCors();
         
         services
             .AddAuthentication(options =>
@@ -87,8 +93,8 @@ public static class Extensions
                 })
                 .Build();
             
-            options.AddPolicy("admin", policy => policy.RequireRole("admin"));
-            options.AddPolicy("user", policy => policy.RequireRole("user"));
+            options.AddPolicy(AdminPolicy, policy => policy.RequireRole(Role.Admin));
+            options.AddPolicy(MemberPolicy, policy => policy.RequireRole(Role.Member));
         });
         
         services.AddRouting(options =>
@@ -103,6 +109,8 @@ public static class Extensions
 
     public static WebApplication ConfigureHttpApi(this WebApplication app, int port)
     {
+        var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
+        
         app.UseExceptionHandler();
         app.UseOpenApi();
         
@@ -112,7 +120,7 @@ public static class Extensions
             settings.DocExpansion = "list";
         });
         
-        app.UseCors(CorsPolicy);
+        app.UseCors(policy => policy.WithOrigins(appOptions.Cors.AllowedOrigins).AllowAnyMethod().AllowAnyHeader().AllowCredentials());
         app.UseFeatureToggles(); 
         app.UseAuthentication();
         app.UseAuthorization();

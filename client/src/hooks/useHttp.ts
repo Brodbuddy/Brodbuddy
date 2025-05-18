@@ -3,8 +3,9 @@ import { Api } from '../api/Api';
 import { tokenStorage, TOKEN_KEY, jwtAtom, userInfoAtom } from "../atoms/auth";
 import { getDefaultStore } from "jotai";
 import { AppRoutes } from '../helpers/appRoutes';
+import config from '../config';
 
-export const baseUrl = import.meta.env.VITE_APP_BASE_API_URL
+export const baseUrl = config.httpUrl; 
 export const REDIRECT_PATH_KEY = 'redirectPath';
 
 const store = getDefaultStore();
@@ -40,6 +41,43 @@ const processQueue = (error: any = null) => {
     failedQueue = [];
 };
 
+export const refreshToken = async (): Promise<string> => {
+    if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+            failedQueue.push({
+                resolve: (): void => {
+                    const token = tokenStorage.getItem(TOKEN_KEY, null);
+                    if (token !== null) {
+                        resolve(token);
+                    } else {
+                        reject(new Error("No token available"));
+                    }
+                },
+                reject
+            });
+        });
+    }
+
+    isRefreshing = true;
+
+    try {
+        const response = await api.passwordlessAuth.refreshToken();
+        const newToken = response.data.accessToken;
+
+        store.set(jwtAtom, newToken);
+        tokenStorage.setItem(TOKEN_KEY, newToken);
+
+        processQueue();
+
+        return newToken;
+    } catch (refreshError) {
+        processQueue(refreshError);
+        return handleAuthFailure(refreshError);
+    } finally {
+        isRefreshing = false;
+    }
+};
+
 api.instance.interceptors.request.use((config) => {
     if (config.url?.endsWith('api/passwordless-auth/user-info')) {
         return config;
@@ -56,6 +94,7 @@ interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
     _retry?: boolean;
 }
 
+
 api.instance.interceptors.response.use((response) => response, async (error: AxiosError) => {
     const originalRequest = error.config as ExtendedAxiosRequestConfig | undefined;
 
@@ -67,27 +106,13 @@ api.instance.interceptors.response.use((response) => response, async (error: Axi
         return handleAuthFailure(error);
     }
 
-    if (isRefreshing) {
-        return new  Promise((resolve, reject) => { failedQueue.push({ resolve, reject }); } )
-            .then(() => api.instance(originalRequest))
-            .catch((err) => Promise.reject(err));
-    }
-
-    isRefreshing = true;
-
     try {
-        const response = await api.passwordlessAuth.refreshToken();
-        const newToken = response.data.accessToken;
+        const newToken = await refreshToken();
 
-        store.set(jwtAtom, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
-        processQueue();
-        return api.instance(originalRequest);
+        return await api.instance(originalRequest);
     } catch (refreshError) {
-        processQueue(refreshError);
         return handleAuthFailure(refreshError);
-    } finally {
-        isRefreshing = false;
     }
 });

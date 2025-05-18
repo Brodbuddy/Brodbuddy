@@ -1,5 +1,5 @@
 using SharedTestDependencies.Constants;
-using SharedTestDependencies.Database;
+using SharedTestDependencies.Fixtures;
 
 namespace Infrastructure.Data.Tests.Collections;
 

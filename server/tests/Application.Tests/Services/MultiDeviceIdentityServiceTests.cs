@@ -1,4 +1,5 @@
-﻿using Application.Interfaces.Data.Repositories;
+﻿using Application.Interfaces;
+using Application.Interfaces.Data.Repositories;
 using Application.Services;
 using Core.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,8 @@ public class MultiDeviceIdentityServiceTests
     private readonly Mock<IRefreshTokenService> _refreshTokenServiceMock;
     private readonly Mock<IJwtService> _jwtServiceMock;
     private readonly Mock<IUserIdentityService> _userIdentityServiceMock;
+    private readonly Mock<IUserRoleService> _userRoleServiceMock;
+    private readonly Mock<ITransactionManager> _transactionManagerMock;
     private readonly IMultiDeviceIdentityService _multiDeviceIdentityService;
 
 
@@ -28,12 +31,17 @@ public class MultiDeviceIdentityServiceTests
         _refreshTokenServiceMock = new Mock<IRefreshTokenService>();
         _jwtServiceMock = new Mock<IJwtService>();
         _userIdentityServiceMock = new Mock<IUserIdentityService>();
+        _userRoleServiceMock = new Mock<IUserRoleService>();
+        _transactionManagerMock = new Mock<ITransactionManager>();
+        
         _multiDeviceIdentityService = new MultiDeviceIdentityService(
             _repositoryMock.Object,
             _deviceRegistryServiceMock.Object,
             _refreshTokenServiceMock.Object,
             _jwtServiceMock.Object,
-            _userIdentityServiceMock.Object);
+            _userIdentityServiceMock.Object,
+            _userRoleServiceMock.Object,
+            _transactionManagerMock.Object);
     }
 
     public class EstablishIdentityAsync(ITestOutputHelper outputHelper) : MultiDeviceIdentityServiceTests(outputHelper)
@@ -43,8 +51,7 @@ public class MultiDeviceIdentityServiceTests
         {
             // Arrange
             var deviceId = Guid.NewGuid();
-            const string browser = "chrome";
-            const string os = "macos";
+            var deviceDetails = new Models.DeviceDetails("chrome", "macos", "Mozilla/5.0", "127.0.0.1");
 
             var userId = Guid.NewGuid();
             const string email = "test@email.com";
@@ -54,24 +61,32 @@ public class MultiDeviceIdentityServiceTests
             const string expectedAccessToken = "access-token-123";
             const string expectedRefreshToken = "refresh-token-abc";
 
-            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, browser, os)).ReturnsAsync(deviceId);
+            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, It.IsAny<Models.DeviceDetails>())).ReturnsAsync(deviceId);
             _userIdentityServiceMock.Setup(x => x.GetAsync(userId)).ReturnsAsync(userInfo);
             _refreshTokenServiceMock.Setup(x => x.GenerateAsync()).ReturnsAsync((expectedRefreshToken, refreshTokenId));
             _repositoryMock.Setup(x => x.SaveIdentityAsync(userId, deviceId, refreshTokenId)).ReturnsAsync(Guid.NewGuid());
-            _jwtServiceMock.Setup(x => x.Generate(userId.ToString(), email, "user")).Returns(expectedAccessToken);
+            _userRoleServiceMock.Setup(x => x.GetUserRolesAsync(userId)).ReturnsAsync(new List<Role> { new Role { Name = Role.Member } });
+            _jwtServiceMock.Setup(x => x.Generate(userId.ToString(), email, Role.Member)).Returns(expectedAccessToken);
+            
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string accessToken, string refreshToken)>>>()))
+                .Returns((Func<Task<(string accessToken, string refreshToken)>> func) => func());
 
             // Act
-            var result = await _multiDeviceIdentityService.EstablishIdentityAsync(userId, browser, os);
+            var result = await _multiDeviceIdentityService.EstablishIdentityAsync(userId, deviceDetails);
 
             // Assert
             result.accessToken.ShouldBe(expectedAccessToken);
             result.refreshToken.ShouldBe(expectedRefreshToken);
 
-            _deviceRegistryServiceMock.Verify(x => x.AssociateDeviceAsync(userId, browser, os), Times.Once);
+            _deviceRegistryServiceMock.Verify(x => x.AssociateDeviceAsync(userId, It.IsAny<Models.DeviceDetails>()), Times.Once);
             _userIdentityServiceMock.Verify(x => x.GetAsync(userId), Times.Once);
             _refreshTokenServiceMock.Verify(x => x.GenerateAsync(), Times.Once);
             _repositoryMock.Verify(x => x.SaveIdentityAsync(userId, deviceId, refreshTokenId), Times.Once);
-            _jwtServiceMock.Verify(x => x.Generate(userId.ToString(), email, "user"), Times.Once);
+            _jwtServiceMock.Verify(x => x.Generate(userId.ToString(), email, Role.Member), Times.Once);
+            _transactionManagerMock.Verify(
+                tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string accessToken, string refreshToken)>>>()),
+                Times.Once);
         }
 
         [Fact]
@@ -79,28 +94,38 @@ public class MultiDeviceIdentityServiceTests
         {
             // Arrange
             var emptyUserId = Guid.Empty;
-            const string browser = "chrome";
-            const string os = "macos";
+            var deviceDetails = new Models.DeviceDetails("chrome", "macos", "Mozilla/5.0", "127.0.0.1");
 
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
+            
             // Act & Assert
             await Should.ThrowAsync<ArgumentException>(() =>
-                _multiDeviceIdentityService.EstablishIdentityAsync(emptyUserId, browser, os));
+                _multiDeviceIdentityService.EstablishIdentityAsync(emptyUserId, deviceDetails));
+            
+            _transactionManagerMock.Verify(
+                tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
+                Times.Never);
         }
 
-        [Theory]
-        [InlineData("", "freebsd")]
-        [InlineData("   ", "freebsd")]
-        [InlineData(null, "freebsd")]
-        [InlineData("zen", "")]
-        [InlineData("zen", "   ")]
-        [InlineData("zen", null)]
-        public async Task EstablishIdentityAsync_WithInvalidBrowserOrOs_ThrowsArgumentException(string? browser, string? os)
+        [Fact]
+        public async Task EstablishIdentityAsync_WithNullDeviceDetails_ThrowsArgumentNullException()
         {
             // Arrange
             var userId = Guid.NewGuid();
 
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
+            
             // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() => _multiDeviceIdentityService.EstablishIdentityAsync(userId, browser!, os!));
+            await Should.ThrowAsync<ArgumentNullException>(() => 
+                _multiDeviceIdentityService.EstablishIdentityAsync(userId, null!));
+            
+            _transactionManagerMock.Verify(
+                tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
+                Times.Never);
         }
 
         [Fact]
@@ -109,21 +134,27 @@ public class MultiDeviceIdentityServiceTests
             // Arrange
             var userId = Guid.NewGuid();
             var deviceId = Guid.NewGuid();
-            const string browser = "safari";
-            const string os = "freebsd";
+            var deviceDetails = new Models.DeviceDetails("safari", "freebsd", "Mozilla/5.0", "127.0.0.1");
 
-            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, browser, os)).ReturnsAsync(deviceId);
+            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, It.IsAny<Models.DeviceDetails>())).ReturnsAsync(deviceId);
 
             // Simulering af fejl
             _userIdentityServiceMock.Setup(x => x.GetAsync(userId)).ThrowsAsync(new ArgumentException("User lookup failed"));
 
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
+            
             // Act & Assert
             await Should.ThrowAsync<ArgumentException>(() =>
-                _multiDeviceIdentityService.EstablishIdentityAsync(userId, browser, os));
+                _multiDeviceIdentityService.EstablishIdentityAsync(userId, deviceDetails));
 
             _refreshTokenServiceMock.Verify(x => x.GenerateAsync(), Times.Never);
             _repositoryMock.Verify(x => x.SaveIdentityAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>()),
                 Times.Never);
+            _transactionManagerMock.Verify(
+                tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
+                Times.Once);
         }
 
         [Fact]
@@ -135,14 +166,12 @@ public class MultiDeviceIdentityServiceTests
             var userInfo = new User { Id = userId, Email = email };
 
             var deviceId = Guid.NewGuid();
-            const string browser = "firefox";
-            const string os = "windows vista";
-
+            var deviceDetails = new Models.DeviceDetails("firefox", "windows vista", "Mozilla/5.0", "127.0.0.1");
 
             var refreshTokenId = Guid.NewGuid();
             const string expectedRefreshToken = "refresh-token-xyz";
 
-            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, browser, os)).ReturnsAsync(deviceId);
+            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, It.IsAny<Models.DeviceDetails>())).ReturnsAsync(deviceId);
             _userIdentityServiceMock.Setup(x => x.GetAsync(userId)).ReturnsAsync(userInfo);
             _refreshTokenServiceMock.Setup(x => x.GenerateAsync()).ReturnsAsync((expectedRefreshToken, refreshTokenId));
 
@@ -150,14 +179,21 @@ public class MultiDeviceIdentityServiceTests
                 .Setup(x => x.SaveIdentityAsync(userId, deviceId, refreshTokenId))
                 .ThrowsAsync(new DbUpdateException("Simulated database save failure", new Exception())); // Simuler repository fejl
 
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
+            
             // Act & Assert
-            await Should.ThrowAsync<DbUpdateException>(() => _multiDeviceIdentityService.EstablishIdentityAsync(userId, browser, os));
+            await Should.ThrowAsync<DbUpdateException>(() => _multiDeviceIdentityService.EstablishIdentityAsync(userId, deviceDetails));
 
-            _deviceRegistryServiceMock.Verify(x => x.AssociateDeviceAsync(userId, browser, os), Times.Once);
+            _deviceRegistryServiceMock.Verify(x => x.AssociateDeviceAsync(userId, It.IsAny<Models.DeviceDetails>()), Times.Once);
             _userIdentityServiceMock.Verify(x => x.GetAsync(userId), Times.Once);
             _refreshTokenServiceMock.Verify(x => x.GenerateAsync(), Times.Once);
             _repositoryMock.Verify(x => x.SaveIdentityAsync(userId, deviceId, refreshTokenId), Times.Once); // Burde være kaldt 1 gang (fejl)
             _jwtServiceMock.Verify(x => x.Generate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never); // Burde ikke kalde JWT!!
+            _transactionManagerMock.Verify(
+                tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
+                Times.Once);
         }
     }
 
@@ -224,12 +260,23 @@ public class MultiDeviceIdentityServiceTests
                 .ReturnsAsync(Guid.NewGuid())
                 .Verifiable("Saving new identity context must be attempted");
 
-            // 7. Opsæt generering af NY access token  -> Success
+            // 7. Opsæt hentning af brugerens roller -> Success
+            _userRoleServiceMock
+                .Setup(x => x.GetUserRolesAsync(userId))
+                .ReturnsAsync(new List<Role> { new Role { Name = Role.Member } })
+                .Verifiable("Fetching user roles must be attempted");
+                
+            // 8. Opsæt generering af NY access token  -> Success
             _jwtServiceMock
-                .Setup(x => x.Generate(userId.ToString(), email, "user"))
+                .Setup(x => x.Generate(userId.ToString(), email, Role.Member))
                 .Returns(expectedAccessToken)
                 .Verifiable("Generation of new JWT must be attempted");
-
+            
+            // 8. Opsæt TransactionManager
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
+            
             // Act
             var result = await _multiDeviceIdentityService.RefreshIdentityAsync(oldRefreshToken);
 
@@ -239,7 +286,10 @@ public class MultiDeviceIdentityServiceTests
             
             _refreshTokenServiceMock.Verify(); 
             _repositoryMock.Verify();        
-            _jwtServiceMock.Verify();        
+            _jwtServiceMock.Verify();     
+            _transactionManagerMock.Verify(
+                tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
+                Times.Once);
         }
 
         [Fact]
@@ -253,8 +303,16 @@ public class MultiDeviceIdentityServiceTests
             _refreshTokenServiceMock.Setup(x => x.TryValidateAsync(oldRefreshToken)).ReturnsAsync((true, oldTokenId));
             _repositoryMock.Setup(x => x.GetAsync(oldTokenId)).ReturnsAsync(tokenContext);
 
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
+            
             // Act & Assert
             await Should.ThrowAsync<InvalidOperationException>(() => _multiDeviceIdentityService.RefreshIdentityAsync(oldRefreshToken));
+            
+            _transactionManagerMock.Verify(
+                tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
+                Times.Once);
         }
 
         [Theory]
@@ -279,8 +337,16 @@ public class MultiDeviceIdentityServiceTests
             _repositoryMock.Setup(x => x.GetAsync(oldTokenId)).ReturnsAsync(tokenContext);
             _refreshTokenServiceMock.Setup(x => x.RotateAsync(oldRefreshToken))!.ReturnsAsync((newRefreshToken, Guid.Empty));
 
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
+            
             // Act & Assert
             await Should.ThrowAsync<InvalidOperationException>(() =>  _multiDeviceIdentityService.RefreshIdentityAsync(oldRefreshToken));
+            
+            _transactionManagerMock.Verify(
+                tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
+                Times.Once);
         }
         
         [Fact]
@@ -293,12 +359,20 @@ public class MultiDeviceIdentityServiceTests
                                     .ReturnsAsync((false, Guid.Empty))
                                     .Verifiable(); 
 
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
+            
             // Act & Assert
             await Should.ThrowAsync<InvalidOperationException>(() => _multiDeviceIdentityService.RefreshIdentityAsync(oldRefreshToken));
             
             _refreshTokenServiceMock.Verify(); 
             _repositoryMock.Verify(x => x.GetAsync(It.IsAny<Guid>()), Times.Never);
             _refreshTokenServiceMock.Verify(x => x.RotateAsync(It.IsAny<string>()), Times.Never);
+            
+            _transactionManagerMock.Verify(
+                tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
+                Times.Once);
         }
         
         [Fact]
@@ -328,6 +402,10 @@ public class MultiDeviceIdentityServiceTests
             _repositoryMock.Setup(x => x.RevokeTokenContextAsync(oldTokenId))
                            .ThrowsAsync(expectedInnerException); // Simuler fejl
 
+            _transactionManagerMock
+                .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
+                .Returns((Func<Task<(string, string)>> func) => func());
+            
             // Act & Assert
             var actualException = await Should.ThrowAsync<Exception>(() => _multiDeviceIdentityService.RefreshIdentityAsync(oldRefreshToken));
             actualException.ShouldBeSameAs(expectedInnerException);
@@ -341,6 +419,9 @@ public class MultiDeviceIdentityServiceTests
             // Tjek at følgende kald IKKE skete
             _repositoryMock.Verify(x => x.SaveIdentityAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<Guid>()), Times.Never);
             _jwtServiceMock.Verify(x => x.Generate(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            _transactionManagerMock.Verify(
+                tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
+                Times.Once);
         }
     }
 }

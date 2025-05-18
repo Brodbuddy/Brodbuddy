@@ -11,6 +11,9 @@ dotnet_diagnostic.CA1869.severity = none # iConnectionManager
 dotnet_diagnostic.S4487.severity = none # Tillad metoder uden assertions i test klasser
 dotnet_diagnostic.CA1707.severity = none # Tillad underscores i test metodenavne for læsbarhed (fx Method_Scenario_Result)
 
+[Program.cs]
+dotnet_diagnostic.S1118.severity = none # Gør sådan at klassen ikke behøver at være static, skal kunne tilgå i WebApplicationFactory for testing.
+
 [*TestCollection.cs]
 dotnet_diagnostic.CA1711.severity = none # Tillad at klassenavne slutter på 'Collection' hvilket er xUnit konventionen
 

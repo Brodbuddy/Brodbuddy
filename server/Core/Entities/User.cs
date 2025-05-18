@@ -13,7 +13,11 @@ public partial class User
 
     public virtual ICollection<DeviceRegistry> DeviceRegistries { get; set; } = new List<DeviceRegistry>();
 
+    public virtual ICollection<FeatureUser> FeatureUsers { get; set; } = new List<FeatureUser>();
+
     public virtual ICollection<TokenContext> TokenContexts { get; set; } = new List<TokenContext>();
 
     public virtual ICollection<VerificationContext> VerificationContexts { get; set; } = new List<VerificationContext>();
+    
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }

@@ -1,15 +1,18 @@
 import { useAtomValue } from 'jotai';
 import { clientIdAtom } from './import';
-import { useEffect, useState } from 'react';
-import { WebSocketClient } from '../api/websocket-client';
-
-const wsClient = new WebSocketClient('ws://localhost:8181');
+import { useEffect, useState, useMemo } from 'react';
+import { WebSocketClient, WebSocketError, ErrorCodes } from '../api/websocket-client';
+import { refreshToken } from "./useHttp";
+import { tokenStorage, TOKEN_KEY, jwtAtom } from '../atoms/auth';
+import config from '../config';
 
 export function useWebSocket() {
     const [connected, setConnected] = useState(false);
     const [error, setError] = useState<Event | Error | null>(null);
-
     const clientId = useAtomValue(clientIdAtom);
+    const jwt = useAtomValue(jwtAtom);
+
+    const wsClient = useMemo(() => new WebSocketClient(config.wsUrl), []);
     
     useEffect(() => {
         if (!clientId) {
@@ -18,7 +21,8 @@ export function useWebSocket() {
             return;
         }
 
-        wsClient.setCredentials(clientId)
+        const tokenProvider = () => tokenStorage.getItem(TOKEN_KEY, null);
+        wsClient.setCredentials(clientId, tokenProvider)
         
         wsClient.onOpen = () => {
             setConnected(true);
@@ -30,7 +34,8 @@ export function useWebSocket() {
         }
         
         wsClient.onError = (err: Event | Error) => { 
-            setError(err); setConnected(false);
+            setError(err);
+            setConnected(false);
         };
         
         wsClient.connect().catch()
@@ -40,10 +45,47 @@ export function useWebSocket() {
             wsClient.onClose = null;
             wsClient.onError = null;
         };
-    }, [clientId]);
+    }, [wsClient, clientId, jwt]);
 
+    const authedClient = useMemo(() => {
+        if (!wsClient.send) return wsClient;
+
+        const proxiedSend = new Proxy(wsClient.send, {
+            get(target, prop) {
+                const originalMethod = target[prop as keyof typeof target];
+
+                if (typeof originalMethod !== 'function') return originalMethod;
+
+                return async function(this: typeof target, payload: any) {
+                    try {
+                        return await originalMethod.call(this, payload);
+                    } catch (error) {
+                        if ((error as WebSocketError)?.code === ErrorCodes.unauthorized) {
+                            try {
+                                await refreshToken();
+                                return await originalMethod.call(this, payload);
+                            } catch (refreshError) {
+                                throw refreshError;
+                            }
+                        }
+                        throw error;
+                    }
+                };
+            }
+        });
+
+        return {
+            ...wsClient,
+            send: proxiedSend,
+            on: wsClient.on.bind(wsClient), 
+            connect: wsClient.connect.bind(wsClient),
+            close: wsClient.close.bind(wsClient),
+            setCredentials: wsClient.setCredentials.bind(wsClient)
+        };
+    }, [wsClient]);
+    
     return {
-        client: wsClient,
+        client: authedClient,
         connected,
         error
     };

@@ -1,6 +1,7 @@
 using Api.Http.Extensions;
 using Api.Websocket;
 using Api.Mqtt;
+using Api.Websocket.Spec;
 using Application;
 using Infrastructure.Auth;
 using Infrastructure.Communication;
@@ -13,9 +14,10 @@ using Startup.TcpProxy;
 
 namespace Startup;
 
-public static class Program
+public class Program
 {
     private const string ApplicationName = "Brodbuddy";
+    private const string GenerateFlag = "--ws";
     
     private static void ConfigureServices(IServiceCollection services, IHostEnvironment environment)
     {
@@ -38,11 +40,41 @@ public static class Program
         services.AddTcpProxyService();
     }
     
+    private static void TryHandleWebSocketClientGeneration(IServiceCollection services)
+    {
+        Log.Information("Generating WebSocket TypeScript client...");
+        var baseDir = Directory.GetCurrentDirectory();
+        var templatesDir = Path.Combine(baseDir, "../Api.Websocket/Spec");
+        var outputDir = Path.Combine(baseDir, "../../client/src/api");
+        Directory.CreateDirectory(outputDir);
+    
+        var spec = SpecGenerator.GenerateSpec(typeof(FleckWebSocketServer).Assembly, services.BuildServiceProvider());
+        TypeScriptGenerator.Generate(spec, templatesDir, outputDir);
+        
+        const string outputFile = "/client/src/api/websocket-client.ts"; // Skal gerne findes dynamisk i stedet, men nu blir det lige sådan her. 
+        Log.Information("WebSocket TypeScript client successfully generated at {OutputFile}", outputFile);
+    }
+    
     private static void ConfigureHost(IHostBuilder host)
     {
         host.AddMonitoringInfrastructure(ApplicationName);
     }
 
+    private static void LogSwaggerUrl(WebApplication app)
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            app.Lifetime.ApplicationStarted.Register(() =>
+            {
+                var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
+                var publicPort = appOptions.PublicPort;
+            
+                var publicUrl = $"http://localhost:{publicPort}"; // Burde nok også være dynamisk host i stedet
+                Log.Information("Swagger UI available at: {SwaggerUrl}/swagger", publicUrl);
+            });
+        }
+    }
+    
     private static void ConfigureMiddleware(WebApplication app)
     {
         var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
@@ -62,20 +94,13 @@ public static class Program
         {
             var builder = WebApplication.CreateBuilder(args);
             ConfigureServices(builder.Services, builder.Environment);
+            if (args.Contains(GenerateFlag)) TryHandleWebSocketClientGeneration(builder.Services);
             ConfigureHost(builder.Host);
 
             var app = builder.Build();
             ConfigureMiddleware(app);
-            
-            if (app.Environment.IsDevelopment()) { app.Lifetime.ApplicationStarted.Register(() =>
-                {
-                    var addresses = app.Urls;
-                    if (addresses.Count != 0)
-                    {
-                        Log.Information("Swagger UI available at: {SwaggerUrl}/swagger", addresses.First());
-                    }
-                });
-            }
+
+            LogSwaggerUrl(app);
 
             await app.RunAsync();
             Log.Information("{ApplicationName} stopped cleanly", ApplicationName);

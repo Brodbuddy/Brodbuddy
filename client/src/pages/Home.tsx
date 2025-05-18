@@ -1,62 +1,79 @@
-import { useState, useEffect } from 'react';
-import { useWebSocket } from '../hooks/useWebsocket.ts';
-import { MessageType } from "../api/websocket-client.ts";
+import {useState, useEffect} from 'react';
+import {useWebSocket} from '../hooks/useWebsocket.ts';
+import {Broadcasts} from "../api/websocket-client.ts";
 
 export default function Home() {
-    const { client, connected } = useWebSocket();
+    const {client, connected} = useWebSocket();
     const [username, setUsername] = useState('');
     const [roomId, setRoomId] = useState('default');
     const [isJoined, setIsJoined] = useState(false);
     const [joinedUsers, setJoinedUsers] = useState<string[]>([]);
 
     useEffect(() => {
-        if (!client) return;
-        const unsubscribe = client.on(MessageType.userJoined, (payload: any) => {
+        if (!client || connected) return;
+        
+        const unsubscribe = client.on(Broadcasts.broadcastTest, (payload: any) => {
             setJoinedUsers(prev => [...prev, `User ${payload.ConnectionId} joined room ${payload.RoomId}`]);
         });
-
+        
         return () => unsubscribe();
-    }, [client]);
+    }, [client, connected, roomId]);
 
     const handleJoinRoom = () => {
         if (!client || !connected || !username.trim() || !roomId.trim()) return;
         client.send.joinRoom({
             RoomId: roomId,
             Username: username
-        })
-            .then(response => {
-                setIsJoined(true);
-                setJoinedUsers(prev => [...prev, `You joined room ${response.RoomId} with ID ${response.ConnectionId}`]);
-            })
-            .catch(error => {
-                console.error('Failed to join room:', error);
-            });
+        }).then(response => {
+            setIsJoined(true);
+            setJoinedUsers(prev => [...prev, `You joined room ${response.RoomId} with ID ${response.ConnectionId}`]);
+        }).catch(error => {
+            console.error('Failed to join room:', error);
+        });
     };
+    
+    useEffect(() => {
+        if (!client || !connected) return;
+
+        const subscriptions = JSON.parse(sessionStorage.getItem('ws_subscriptions') || '{}');
+        const isAlreadyJoined = Object.values(subscriptions).some((sub: any) =>
+            sub.method === 'JoinRoom' && sub.payload?.RoomId === roomId
+        );
+
+        if (isAlreadyJoined) {
+            setIsJoined(true);
+            setJoinedUsers(prev => [
+                ...prev,
+                `You reconnected to room ${roomId} as ${username}`
+            ]);
+        }
+    }, [client, connected, roomId, username]);
 
     return (
-        <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '500px' }}>
-            <h1 style={{ textAlign: 'center' }}>WebSocket Chat Room</h1>
+        <div
+            style={{position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '500px'}}>
+            <h1 style={{textAlign: 'center'}}>WebSocket Chat Room</h1>
 
             {!isJoined ? (
-                <div style={{ border: '1px solid #ccc', padding: '20px', borderRadius: '5px' }}>
+                <div style={{border: '1px solid #ccc', padding: '20px', borderRadius: '5px'}}>
                     <h2>Join a Room</h2>
-                    <div style={{ marginBottom: '10px' }}>
-                        <label style={{ display: 'block', marginBottom: '5px' }}>Username:</label>
+                    <div style={{marginBottom: '10px'}}>
+                        <label style={{display: 'block', marginBottom: '5px'}}>Username:</label>
                         <input
                             type="text"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            style={{ width: '100%', padding: '8px', border: '1px solid #ccc' }}
+                            style={{width: '100%', padding: '8px', border: '1px solid #ccc'}}
                             disabled={!connected}
                         />
                     </div>
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', marginBottom: '5px' }}>Room ID:</label>
+                    <div style={{marginBottom: '20px'}}>
+                        <label style={{display: 'block', marginBottom: '5px'}}>Room ID:</label>
                         <input
                             type="text"
                             value={roomId}
                             onChange={(e) => setRoomId(e.target.value)}
-                            style={{ width: '100%', padding: '8px', border: '1px solid #ccc' }}
+                            style={{width: '100%', padding: '8px', border: '1px solid #ccc'}}
                             disabled={!connected}
                         />
                     </div>
@@ -76,31 +93,48 @@ export default function Home() {
                     </button>
 
                     {!connected && (
-                        <div style={{ marginTop: '10px', color: 'red', textAlign: 'center' }}>
+                        <div style={{marginTop: '10px', color: 'red', textAlign: 'center'}}>
                             Not connected to server
                         </div>
                     )}
                 </div>
             ) : (
                 <div>
-                    <div style={{ marginBottom: '10px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
+                    <div style={{
+                        marginBottom: '10px',
+                        padding: '10px',
+                        backgroundColor: '#f0f0f0',
+                        borderRadius: '5px'
+                    }}>
                         Connected to room <strong>{roomId}</strong> as <strong>{username}</strong>
                     </div>
 
-                    <div style={{ height: '400px', overflowY: 'auto', border: '1px solid #ccc', marginBottom: '10px', padding: '10px', backgroundColor: 'white' }}>
+                    <div style={{
+                        height: '400px',
+                        overflowY: 'auto',
+                        border: '1px solid #ccc',
+                        marginBottom: '10px',
+                        padding: '10px',
+                        backgroundColor: 'white'
+                    }}>
                         {joinedUsers.map((user, idx) => (
-                            <div key={idx} style={{marginBottom: '10px', padding: '10px', backgroundColor: '#f0f0f0', borderRadius: '5px'}}>
+                            <div key={idx} style={{
+                                marginBottom: '10px',
+                                padding: '10px',
+                                backgroundColor: '#f0f0f0',
+                                borderRadius: '5px'
+                            }}>
                                 {user}
                             </div>
                         ))}
                         {joinedUsers.length === 0 && (
-                            <div style={{ textAlign: 'center', color: '#666' }}>
+                            <div style={{textAlign: 'center', color: '#666'}}>
                                 No users yet
                             </div>
                         )}
                     </div>
 
-                    <div style={{ textAlign: 'center', color: '#666', fontStyle: 'italic' }}>
+                    <div style={{textAlign: 'center', color: '#666', fontStyle: 'italic'}}>
                         Note: You can only join rooms for now. Message sending is not implemented yet.
                     </div>
                 </div>

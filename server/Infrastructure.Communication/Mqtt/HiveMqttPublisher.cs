@@ -14,14 +14,14 @@ public interface IMqttPublisher
 
 public class HiveMqttPublisher : IMqttPublisher
 {
-    private readonly HiveMQClient _mqttClient;
+    private readonly IHiveMQClient _mqttClient;
     private readonly ILogger<HiveMqttPublisher> _logger;
     private readonly JsonSerializerOptions _jsonOptions = new() 
     { 
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
     };
     
-    public HiveMqttPublisher(HiveMQClient mqttClient, ILogger<HiveMqttPublisher> logger)
+    public HiveMqttPublisher(IHiveMQClient mqttClient, ILogger<HiveMqttPublisher> logger)
     {
         _mqttClient = mqttClient;
         _logger = logger;

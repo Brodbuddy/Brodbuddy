@@ -8,13 +8,13 @@ namespace Api.Mqtt.Service;
 
 public class MqttHostedService : IHostedService, IAsyncDisposable
 {
-    private readonly HiveMQClient _mqttClient;
+    private readonly IHiveMQClient _mqttClient;
     private readonly MqttDispatcher _dispatcher;
     private readonly ILogger<MqttHostedService> _logger;
     private bool _isDisposed;
 
     public MqttHostedService(
-        HiveMQClient mqttClient,
+        IHiveMQClient mqttClient,
         MqttDispatcher dispatcher,
         ILogger<MqttHostedService> logger)
     {

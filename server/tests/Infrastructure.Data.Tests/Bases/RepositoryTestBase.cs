@@ -1,6 +1,6 @@
 using Infrastructure.Data.Persistence;
 using Microsoft.EntityFrameworkCore;
-using SharedTestDependencies.Database;
+using SharedTestDependencies.Fixtures;
 
 namespace Infrastructure.Data.Tests.Bases;
 

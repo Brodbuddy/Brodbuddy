@@ -15,6 +15,7 @@ public class RedisSubscriptionListener : IHostedService, IAsyncDisposable
     private ISubscriber? _subscriber;
     private readonly CancellationTokenSource _stoppingCts = new();
     private bool _disposed;
+    private bool _stopped;
 
     public RedisSubscriptionListener(ILogger<RedisSubscriptionListener> logger, IConnectionMultiplexer redis,
         ISocketManager socketManager)
@@ -43,16 +44,40 @@ public class RedisSubscriptionListener : IHostedService, IAsyncDisposable
         }
     }
 
+
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        if (_stopped || _disposed) return;
+        
         _logger.LogInformation("Stopping Redis Subscription Listener...");
-        if (_subscriber != null)
+        
+        try
         {
-            await _subscriber.UnsubscribeAllAsync();
-            _logger.LogInformation("Unsubscribed from all Redis channels.");
-        }
+            _stopped = true;
+            
+            if (_subscriber != null)
+            {
+                await _subscriber.UnsubscribeAllAsync();
+                _logger.LogInformation("Unsubscribed from all Redis channels.");
+            }
 
-        await _stoppingCts.CancelAsync();
+            // Prøv kun at cancel hvis ikke disposed
+            if (!_disposed)
+            {
+                try
+                {
+                    await _stoppingCts.CancelAsync();
+                }
+                catch (ObjectDisposedException ex)
+                {
+                    _logger.LogDebug(ex, "CancellationTokenSource was already disposed");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error stopping Redis subscription listener");
+        }
     }
     
     // Bruges som wrapper og er `async void` for at kunne bruges i SubscribeAsync
@@ -114,7 +139,7 @@ public class RedisSubscriptionListener : IHostedService, IAsyncDisposable
             }
 
             if (localSends <= 0) return;
-
+            
             _logger.LogDebug(
                 "Forwarded message from channel {Channel} to {LocalSendCount} local sockets for topic {Topic}",
                 channelStr, localSends, topic);
@@ -145,21 +170,34 @@ public class RedisSubscriptionListener : IHostedService, IAsyncDisposable
         GC.SuppressFinalize(this);
     }
     
+
     protected virtual async ValueTask DisposeAsyncCore()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        if (_subscriber != null)
-        {
-            await _subscriber.UnsubscribeAllAsync();
-        }
+        if (_disposed) return;
         
-        await _stoppingCts.CancelAsync();
-        _stoppingCts.Dispose();
-
         _disposed = true;
+        
+        try
+        {
+            // Kalder kun StopAsync hvis vi ikke er allerede er stoppet
+            if (!_stopped && _subscriber != null)
+            {
+                try
+                {
+                    await _subscriber.UnsubscribeAllAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Error unsubscribing during disposal");
+                }
+            }
+            
+            _stoppingCts.Dispose();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error disposing Redis subscription listener");
+        }
     }
+
 }

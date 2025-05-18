@@ -40,9 +40,10 @@ public class DeviceServiceTests
                 .Callback<Device>(d => capturedDevice = d)
                 .ReturnsAsync(expectedId);
 
+            var deviceDetails = new Models.DeviceDetails(browser, os, "Some user agent", "127.0.0.1");
 
             // Act 
-            var result = await _service.CreateAsync(browser, os);
+            var result = await _service.CreateAsync(deviceDetails);
 
             // Assert
             result.ShouldBe(expectedId);
@@ -50,21 +51,11 @@ public class DeviceServiceTests
             capturedDevice.Name.ShouldBe(expectedName);
         }
 
-        [Theory]
-        [InlineData("", "windows")]
-        [InlineData("   ", "windows")]
-        [InlineData("chrome", "")]
-        [InlineData("chrome", "   ")]
-        [InlineData("chrome", null)]
-        [InlineData(null, "MacOS")]
-        [InlineData(null, null)]
-        [InlineData("", "")]
-        [InlineData("   ", "   ")]
-        public async Task CreateAsync_WithNullOrEmptyOrWhitespaceBrowserOrOs_ThrowsArgumentException(string? browser,
-            string? os)
+        [Fact]
+        public async Task CreateAsync_WithNullDeviceDetails_ThrowsArgumentNullException()
         {
             // Act & Assert
-            await Should.ThrowAsync<ArgumentException>(() => _service.CreateAsync(browser!, os!));
+            await Should.ThrowAsync<ArgumentNullException>(() => _service.CreateAsync(null!));
         }
     }
     

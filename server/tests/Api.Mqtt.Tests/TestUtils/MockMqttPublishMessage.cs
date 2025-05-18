@@ -1,7 +1,4 @@
-﻿using Moq;
-using System.Text;
-using HiveMQtt.Client.Events;
-using HiveMQtt.MQTT5.Types;
+﻿using System.Text;
 
 namespace Api.Mqtt.Tests.TestUtils;
 

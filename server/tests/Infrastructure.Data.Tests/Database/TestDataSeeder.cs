@@ -112,4 +112,45 @@ public static class TestDataSeeder
                               tc.RefreshTokenId == effectiveRefreshTokenId);
         return createdContext;
     }
+    
+    public static async Task<Feature> SeedFeatureAsync(this PgDbContext context,
+        TimeProvider timeProvider,
+        string name = "test_feature",
+        bool isEnabled = true)
+    {
+        var feature = new Feature
+        {
+            Name = name,
+            IsEnabled = isEnabled,
+            CreatedAt = timeProvider.Now()
+        };
+        await context.Features.AddAsync(feature);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        return feature;
+    }
+    
+    public static async Task<Role> SeedRoleAsync(this PgDbContext context,
+        TimeProvider timeProvider,
+        string name = "user",
+        string? description = null)
+    {
+        var existingRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == name);
+        if (existingRole != null)
+        {
+            context.ChangeTracker.Clear();
+            return existingRole;
+        }
+        
+        var role = new Role
+        {
+            Name = name,
+            Description = description,
+            CreatedAt = timeProvider.Now()
+        };
+        await context.Roles.AddAsync(role);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        return role;
+    }
 }

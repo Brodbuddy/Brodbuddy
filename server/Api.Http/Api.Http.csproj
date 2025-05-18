@@ -14,6 +14,9 @@
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.15" />
         <PackageReference Include="NSwag.AspNetCore" Version="14.3.0" />
         <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
+        <PackageReference Include="FluentValidation" Version="11.11.0" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+        <PackageReference Include="UAParser" Version="3.1.47" />
     </ItemGroup>
 
     <ItemGroup>

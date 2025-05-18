@@ -10,6 +10,55 @@
  * ---------------------------------------------------------------
  */
 
+export enum LoggingLevel {
+  Verbose = "Verbose",
+  Debug = "Debug",
+  Information = "Information",
+  Warning = "Warning",
+  Error = "Error",
+  Fatal = "Fatal",
+}
+
+export interface FeatureToggleListResponse {
+  features: FeatureToggleResponse[];
+}
+
+export interface FeatureToggleResponse {
+  /** @format guid */
+  id: string;
+  name: string;
+  description: string | null;
+  isEnabled: boolean;
+  /** @format int32 */
+  rolloutPercentage: number | null;
+  /** @format date-time */
+  createdAt: string;
+  /** @format date-time */
+  lastModifiedAt: string | null;
+}
+
+export interface FeatureToggleUpdateRequest {
+  isEnabled: boolean;
+}
+
+export interface FeatureToggleRolloutRequest {
+  /** @format int32 */
+  percentage: number;
+}
+
+export interface LogLevelResponse {
+  currentLevel: LoggingLevel;
+}
+
+export interface LogLevelUpdateResponse {
+  message: string;
+  currentLevel: LoggingLevel;
+}
+
+export interface LogLevelUpdateRequest {
+  logLevel: LoggingLevel;
+}
+
 export interface TestTokenResponse {
   accessToken: string;
 }
@@ -237,6 +286,145 @@ export class Api<
       ...params,
     });
 
+  features = {
+    /**
+     * No description
+     *
+     * @tags FeatureToggle
+     * @name FeatureToggleGetAllFeatures
+     * @request GET:/api/features
+     * @secure
+     */
+    featureToggleGetAllFeatures: (params: RequestParams = {}) =>
+      this.request<FeatureToggleListResponse, any>({
+        path: `/api/features`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags FeatureToggle
+     * @name FeatureToggleSetFeatureEnabled
+     * @request PUT:/api/features/{featureName}
+     * @secure
+     */
+    featureToggleSetFeatureEnabled: (
+      featureName: string,
+      data: FeatureToggleUpdateRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<File, any>({
+        path: `/api/features/${featureName}`,
+        method: "PUT",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags FeatureToggle
+     * @name FeatureToggleAddUserToFeature
+     * @request POST:/api/features/{featureName}/users/{userId}
+     * @secure
+     */
+    featureToggleAddUserToFeature: (
+      featureName: string,
+      userId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<File, any>({
+        path: `/api/features/${featureName}/users/${userId}`,
+        method: "POST",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags FeatureToggle
+     * @name FeatureToggleRemoveUserFromFeature
+     * @request DELETE:/api/features/{featureName}/users/{userId}
+     * @secure
+     */
+    featureToggleRemoveUserFromFeature: (
+      featureName: string,
+      userId: string,
+      params: RequestParams = {},
+    ) =>
+      this.request<File, any>({
+        path: `/api/features/${featureName}/users/${userId}`,
+        method: "DELETE",
+        secure: true,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags FeatureToggle
+     * @name FeatureToggleSetRolloutPercentage
+     * @request PUT:/api/features/{featureName}/rollout
+     * @secure
+     */
+    featureToggleSetRolloutPercentage: (
+      featureName: string,
+      data: FeatureToggleRolloutRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<File, any>({
+        path: `/api/features/${featureName}/rollout`,
+        method: "PUT",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        ...params,
+      }),
+  };
+  logging = {
+    /**
+     * No description
+     *
+     * @tags Logging
+     * @name GetCurrentLogLevel
+     * @request GET:/api/logging/level
+     * @secure
+     */
+    getCurrentLogLevel: (params: RequestParams = {}) =>
+      this.request<LogLevelResponse, any>({
+        path: `/api/logging/level`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Logging
+     * @name SetLogLevel
+     * @request PUT:/api/logging/level
+     * @secure
+     */
+    setLogLevel: (data: LogLevelUpdateRequest, params: RequestParams = {}) =>
+      this.request<LogLevelUpdateResponse, any>({
+        path: `/api/logging/level`,
+        method: "PUT",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
   passwordlessAuth = {
     /**
      * No description

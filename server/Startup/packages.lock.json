@@ -19,8 +19,8 @@
       },
       "Brodbuddy.WebSocket": {
         "type": "Transitive",
-        "resolved": "0.0.16",
-        "contentHash": "KeSxWHaAkDX2Mnh4Uku7BmFe2PoTRLySibRcymcPnmw0lXs2UsFdbCTh6iKinBwdconFOpCOaZLi1CPhSLKHGw==",
+        "resolved": "0.0.17",
+        "contentHash": "QT4N+rrV/ZS+5j25uFLHPS+bDf/GbL/lMQmziCXTip7zL+lGD28emNlpF4aXzqvsdDfiOFa2dk4QUhSp3jlZsw==",
         "dependencies": {
           "Fleck": "1.2.0",
           "FluentValidation": "11.11.0",
@@ -53,6 +53,24 @@
         "type": "Transitive",
         "resolved": "11.11.0",
         "contentHash": "cyIVdQBwSipxWG8MA3Rqox7iNbUNUTK5bfJi9tIdm4CAfH71Oo5ABLP4/QyrUwuakqpUEPGtE43BDddvEehuYw=="
+      },
+      "FluentValidation.AspNetCore": {
+        "type": "Transitive",
+        "resolved": "11.3.0",
+        "contentHash": "jtFVgKnDFySyBlPS8bZbTKEEwJZnn11rXXJ2SQnjDhZ56rQqybBg9Joq4crRLz3y0QR8WoOq4iE4piV81w/Djg==",
+        "dependencies": {
+          "FluentValidation": "11.5.1",
+          "FluentValidation.DependencyInjectionExtensions": "11.5.1"
+        }
+      },
+      "FluentValidation.DependencyInjectionExtensions": {
+        "type": "Transitive",
+        "resolved": "11.5.1",
+        "contentHash": "iWM0LS1MDYX06pcjMEQKqHirl2zkjHlNV23mEJSoR1IZI7KQmTa0RcTtGEJpj5+iHvBCfrzP2mYKM4FtRKVb+A==",
+        "dependencies": {
+          "FluentValidation": "11.5.1",
+          "Microsoft.Extensions.Dependencyinjection.Abstractions": "2.1.0"
+        }
       },
       "HiveMQtt": {
         "type": "Transitive",
@@ -1060,6 +1078,11 @@
         "resolved": "8.0.0",
         "contentHash": "CMaFr7v+57RW7uZfZkPExsPB6ljwzhjACWW1gfU35Y56rk72B/Wu+sTqxVmGSk4SFUlPc3cjeKND0zktziyjBA=="
       },
+      "UAParser": {
+        "type": "Transitive",
+        "resolved": "3.1.47",
+        "contentHash": "I68Jl/Vs5RQZdz9BbmYtnXgujg0jVd61LhKbyNZOCm9lBxZFGxLbiQo6yFj21VYi7DzPvEvrVOmeC6v41AoLfw=="
+      },
       "Websocket.Client": {
         "type": "Transitive",
         "resolved": "5.1.2",
@@ -1080,9 +1103,12 @@
         "type": "Project",
         "dependencies": {
           "Application": "[1.0.0, )",
+          "FluentValidation": "[11.11.0, )",
+          "FluentValidation.AspNetCore": "[11.3.0, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[8.0.15, )",
           "Microsoft.AspNetCore.Http": "[2.2.2, )",
-          "NSwag.AspNetCore": "[14.3.0, )"
+          "NSwag.AspNetCore": "[14.3.0, )",
+          "UAParser": "[3.1.47, )"
         }
       },
       "api.mqtt": {
@@ -1101,7 +1127,7 @@
           "Application": "[1.0.0, )",
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
           "NSwag.AspNetCore": "[14.3.0, )",
-          "brodbuddy.websocket": "[0.0.16, )"
+          "brodbuddy.websocket": "[0.0.17, )"
         }
       },
       "application": {
@@ -1133,7 +1159,7 @@
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
           "Microsoft.Extensions.Options": "[9.0.3, )",
           "StackExchange.Redis": "[2.8.31, )",
-          "brodbuddy.websocket": "[0.0.16, )"
+          "brodbuddy.websocket": "[0.0.17, )"
         }
       },
       "infrastructure.data": {

@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using Application;
+using Application.Interfaces;
+using Application.Interfaces.Monitoring;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -8,6 +10,7 @@ using OpenTelemetry.Exporter;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
+using Serilog.Core;
 using Serilog.Enrichers.Sensitive;
 using Serilog.Events;
 using Serilog.Exceptions;
@@ -22,6 +25,7 @@ public static class MonitoringExtensions
         IHostEnvironment environment)
     {
         services.AddSingleton(new ActivitySource(serviceName));
+        services.AddSingleton<ILogLevelManager, LogLevelManager>();
 
         services.Configure<ZipkinExporterOptions>(_ =>
         {
@@ -74,6 +78,8 @@ public static class MonitoringExtensions
 
     public static IHostBuilder AddMonitoringInfrastructure(this IHostBuilder builder, string? applicationName = null)
     {
+        var levelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
+        
         builder.UseSerilog((context, services, loggerConfiguration) =>
         {
             var options = services.GetRequiredService<IOptions<AppOptions>>().Value;
@@ -81,7 +87,11 @@ public static class MonitoringExtensions
             ConfigureBasicLogging(loggerConfiguration, context, applicationName);
             ConfigureConsoleLogging(loggerConfiguration, context.HostingEnvironment);
             ConfigureSeqLogging(loggerConfiguration, options.Seq);
+            
+            loggerConfiguration.MinimumLevel.ControlledBy(levelSwitch);
         });
+        
+        builder.ConfigureServices(services => services.AddSingleton(levelSwitch));
 
         return builder;
     }

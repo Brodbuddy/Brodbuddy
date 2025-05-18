@@ -1,3 +1,4 @@
+using Api.Http.Extensions;
 using Application.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
@@ -22,9 +23,8 @@ public class FeatureToggleMiddleware
         if (controller != null && action != null)
         {
             var featureName = $"Api.{controller}.{action}";
-            Console.WriteLine(featureName);
             
-            if (!toggleService.IsEnabled(featureName))
+            if (!await IsFeatureEnabledForContext(featureName, context, toggleService))
             {
                 context.Response.StatusCode = 404;
                 return;
@@ -32,5 +32,20 @@ public class FeatureToggleMiddleware
         }
 
         await _next(context);
+    }
+    
+    private static async Task<bool> IsFeatureEnabledForContext(string featureName, HttpContext context, IFeatureToggleService toggleService)
+    {
+        if (context.User.Identity?.IsAuthenticated != true) return await toggleService.IsEnabledAsync(featureName);
+        
+        try
+        {
+            var userId = context.User.GetUserId();
+            return await toggleService.IsEnabledForUserAsync(featureName, userId);
+        }
+        catch (ArgumentException)
+        {
+            return await toggleService.IsEnabledAsync(featureName);
+        }
     }
 }

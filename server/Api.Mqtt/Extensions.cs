@@ -15,7 +15,7 @@ public static class Extensions
 {
     public static IServiceCollection AddMqttApi(this IServiceCollection services)
     {
-        services.AddSingleton<HiveMQClient>(sp =>
+        services.AddSingleton<IHiveMQClient>(sp =>
         {
             var options = sp.GetRequiredService<IOptions<AppOptions>>().Value;
             var logger = sp.GetRequiredService<ILogger<HiveMQClient>>();
@@ -25,15 +25,6 @@ public static class Extensions
                 .WithClientId($"backend_{Guid.NewGuid()}")
                 .WithUserName(options.Mqtt.Username)
                 .WithPassword(options.Mqtt.Password)
-                .WithCleanStart(true)
-                .WithAutomaticReconnect(true)
-                .WithKeepAlive(30)
-                .WithMaximumPacketSize(1024)
-                .WithReceiveMaximum(100)
-                .WithSessionExpiryInterval(3600)
-                .WithRequestProblemInformation(true)
-                .WithRequestResponseInformation(true)
-                .WithAllowInvalidBrokerCertificates(true)
                 .Build();
 
             var client = new HiveMQClient(clientOptions);

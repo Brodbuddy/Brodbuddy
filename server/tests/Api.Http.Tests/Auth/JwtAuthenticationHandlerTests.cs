@@ -2,6 +2,7 @@
 using System.Text.Encodings.Web;
 using Application.Models;
 using Api.Http.Auth;
+using Core.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
@@ -15,14 +16,13 @@ using IAuthenticationService = Application.Interfaces.Auth.IAuthenticationServic
 
 namespace Api.Http.Tests.Auth;
 
-[CollectionDefinition(TestCollections.HttpApi)]
 public class JwtAuthenticationHandlerTests
 {
     private readonly ITestOutputHelper _output;
     private readonly Mock<IAuthenticationService> _authServiceMock;
     private readonly JwtAuthenticationHandler _handler;
     private readonly DefaultHttpContext _httpContext;
-    private static readonly string[] DefaultRole = ["user"];
+    private static readonly string[] DefaultRole = [Role.Member];
 
     public JwtAuthenticationHandlerTests(ITestOutputHelper output)
     {
@@ -69,7 +69,7 @@ public class JwtAuthenticationHandlerTests
         {
             result.Principal.Identity.IsAuthenticated.ShouldBeTrue();
             result.Principal.FindFirstValue(ClaimTypes.NameIdentifier).ShouldBe("skumbanan");
-            result.Principal.IsInRole("user").ShouldBeTrue();
+            result.Principal.IsInRole(Role.Member).ShouldBeTrue();
         }
     }
 
@@ -122,7 +122,7 @@ public class JwtAuthenticationHandlerTests
     {
         // Arrange
         _httpContext.Request.Headers.Authorization = "Bearer valid-token";
-        var customRoles = new[] { "user", "admin" };
+        var customRoles = new[] { Role.Member, Role.Admin };
 
         _authServiceMock.Setup(m => m.ValidateTokenAsync("valid-token"))
                         .ReturnsAsync(new AuthenticationResult(true, "skumbanan", customRoles));
@@ -137,8 +137,8 @@ public class JwtAuthenticationHandlerTests
         if (result.Principal != null)
         {
             result.Principal.HasClaim(ClaimTypes.NameIdentifier, "skumbanan").ShouldBeTrue();
-            result.Principal.IsInRole("user").ShouldBeTrue();
-            result.Principal.IsInRole("admin").ShouldBeTrue();
+            result.Principal.IsInRole(Role.Member).ShouldBeTrue();
+            result.Principal.IsInRole(Role.Admin).ShouldBeTrue();
 
             var identity = result.Principal.Identity as ClaimsIdentity;
             identity?.Claims.Count().ShouldBe(3);
@@ -177,7 +177,6 @@ public class JwtAuthenticationHandlerTests
 
         // Assert
         result.Succeeded.ShouldBeTrue();
-        
         
         _authServiceMock.Verify(m => m.ValidateTokenAsync("valid-token"), Times.Once);
     }
