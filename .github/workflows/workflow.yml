@@ -26,7 +26,7 @@ jobs:
       - name: Initialize SonarQube analysis
         # Kan ikke køre SonarQube ordentlig på flere branches hvis man har Community Edition og Developer koster 500$ om året
         # SonarQube community kan heller ikke køre på PR
-        if: (github.ref == 'refs/heads/master')
+        #if: (github.ref == 'refs/heads/master')
         env:
           SONARQUBE_PROJECT_KEY: ${{ vars.SONARQUBE_PROJECT_KEY }}
           SONARQUBE_SERVER: ${{ vars.SONARQUBE_SERVER }}
@@ -78,17 +78,17 @@ jobs:
           python .github/scripts/generate_coverage_report.py
 
       - name: Complete SonarQube analysis
-        if: always() && (github.ref == 'refs/heads/master')
+        #if: always() && (github.ref == 'refs/heads/master')
         run: |
           dotnet sonarscanner end \
           /d:sonar.token="${{ secrets.SONARQUBE_TOKEN }}"
 
       - name: Install Python dependencies # Skal bruges i 'Generate SonarQube Summary' for at hente data fra SonarQube server
-        if: always() && (github.ref == 'refs/heads/master')
+        #if: always() && (github.ref == 'refs/heads/master')
         run: pip install requests
 
       - name: Generate SonarQube Summary
-        if: always() && (github.ref == 'refs/heads/master')
+        #if: always() && (github.ref == 'refs/heads/master')
         env:
           SONARQUBE_SERVER: ${{ vars.SONARQUBE_SERVER }}
           SONARQUBE_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
