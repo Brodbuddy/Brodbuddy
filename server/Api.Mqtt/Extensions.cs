@@ -15,7 +15,7 @@ public static class Extensions
 {
     public static IServiceCollection AddMqttApi(this IServiceCollection services)
     {
-        services.AddSingleton<HiveMQClient>(sp =>
+        services.AddSingleton<IHiveMQClient>(sp =>
         {
             var options = sp.GetRequiredService<IOptions<AppOptions>>().Value;
             var logger = sp.GetRequiredService<ILogger<HiveMQClient>>();

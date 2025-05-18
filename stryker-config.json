@@ -29,7 +29,9 @@
       "!/**/LoggerFactory.cs",
       "!/**/Instrumentation.cs",
       "!/**/MqttHostedService.cs",
-      "!/**/FleckWebSocketServer.cs"
+      "!/**/FleckWebSocketServer.cs",
+      "!/**/TestMqttDevicePublisher.cs",
+      "!/**/HandlerTypeHelpers.cs"
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest",
