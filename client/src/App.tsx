@@ -5,6 +5,7 @@ import { useAuth } from "./hooks/useAuth";
 import { AuthContext } from './AuthContext';
 import { useSidebar } from "./components/ui/sidebar";
 import { RequireAuth } from "./components/RequireAuth";
+import { Toaster} from 'sonner';
 
 export default function App() {
     const auth = useAuth();
@@ -17,7 +18,7 @@ export default function App() {
 
     return (
         <AuthContext.Provider value={auth}>
-
+            <Toaster richColors position="top-right" />
             <div className={sidebarClass}>
                 <div className="p-4">
                     <Routes>
