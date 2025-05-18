@@ -83,7 +83,7 @@ public static class SpecGenerator
         );
     } 
     
-    private static TypeDefinition GenerateTypeDefinition(Type type)
+    internal static TypeDefinition GenerateTypeDefinition(Type type)
     {
         var properties = type.GetProperties().ToDictionary(
             p => p.Name,

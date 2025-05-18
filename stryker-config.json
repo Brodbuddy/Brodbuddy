@@ -5,7 +5,8 @@
       "Console.Write*",
       "*Exception.ctor",
       "DisposeAsync",
-      "DisposeAsyncCore"
+      "DisposeAsyncCore",
+      "*.AppendLine"
     ],
     "mutate": [
       "/**/*.cs",
