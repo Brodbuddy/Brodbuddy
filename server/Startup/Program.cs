@@ -17,7 +17,7 @@ namespace Startup;
 public class Program
 {
     private const string ApplicationName = "Brodbuddy";
-    private const string GenerateFlag = "--generate-ws-client";
+    private const string GenerateFlag = "--ws";
     
     private static void ConfigureServices(IServiceCollection services, IHostEnvironment environment)
     {

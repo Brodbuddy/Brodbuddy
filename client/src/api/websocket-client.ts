@@ -16,13 +16,11 @@ export const ErrorCodes = {
 // Request type constants
 export const Requests = {
     joinRoom: "JoinRoom",
-    ping: "Ping",
 } as const;
 
 // Response type constants
 export const Responses = {
     userJoined: "UserJoined",
-    pong: "Pong",
 } as const;
 
 // Broadcast type constants
@@ -64,15 +62,6 @@ export interface UserJoined extends BaseResponse {
     ConnectionId: string;
 }
 
-export interface Ping extends BaseRequest {
-    Timestamp: number;
-}
-
-export interface Pong extends BaseResponse {
-    Timestamp: number;
-    ServerTimestamp: number;
-}
-
 export interface BroadcastTest extends BaseBroadcast {
     RoomId: string;
     Status: string;
@@ -81,7 +70,6 @@ export interface BroadcastTest extends BaseBroadcast {
 // Request-response type mapping
 export type RequestResponseMap = {
     [Requests.joinRoom]: [JoinRoom, UserJoined];
-    [Requests.ping]: [Ping, Pong];
 };
 
 
@@ -256,7 +244,7 @@ export class WebSocketClient {
         }
 
         return new Promise<T>((resolve, reject) => {
-            const requestId = uuidv4(); 
+            const requestId = uuidv4();
             const timeout = window.setTimeout(() => {
                 if (this.pendingRequests.has(requestId)) {
                     this.pendingRequests.delete(requestId);
@@ -323,15 +311,6 @@ export class WebSocketClient {
             clearInterval(this.pingInterval);
         }
 
-        this.pingInterval = window.setInterval(() => {
-            if (this.socket?.readyState === WebSocket.OPEN) {
-                this.send.ping({
-                    Timestamp: Date.now()
-                }).catch(error => {
-                    console.warn("Ping failed:", error);
-                });
-            }
-        }, 30000); // 30 seconds
     }
 
     private saveSubscription(method: string, payload: any, topicKey?: string): void {
@@ -364,9 +343,6 @@ export class WebSocketClient {
     send = {
     joinRoom: (payload: Omit<JoinRoom, 'requestId'>): Promise<UserJoined> => {
         return this.sendRequest<UserJoined>('JoinRoom', payload);
-    },
-    ping: (payload: Omit<Ping, 'requestId'>): Promise<Pong> => {
-        return this.sendRequest<Pong>('Ping', payload);
     },
 };
 

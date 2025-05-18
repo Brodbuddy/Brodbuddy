@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Api.Http.Auth;
 using Api.Http.Middleware;
+using Application;
 using Core.Entities;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using NSwag;
 using NSwag.Generation.Processors.Security;
 
@@ -19,7 +21,6 @@ public static class Extensions
     private const string ApiTitle = "Brodbuddy API";
     private const string ApiVersion = "v1";
     private const string ApiDescription = "API til Brodbuddy";
-    private const string CorsPolicy = "CorsPolicy";
     private const string AdminPolicy = "admin";
     private const string MemberPolicy = "member";
     
@@ -108,6 +109,8 @@ public static class Extensions
 
     public static WebApplication ConfigureHttpApi(this WebApplication app, int port)
     {
+        var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
+        
         app.UseExceptionHandler();
         app.UseOpenApi();
         
