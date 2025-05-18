@@ -4,11 +4,11 @@ using Application.Services;
 using Core.Entities;
 using Infrastructure.Data.Persistence;
 using Microsoft.Extensions.DependencyInjection;
+using SharedTestDependencies.Lifecycle;
 using Startup.Tests.Infrastructure.Extensions;
 using Startup.Tests.Infrastructure.Factories;
 using Startup.Tests.Infrastructure.Fakes;
 using Startup.Tests.Infrastructure.Fixtures;
-using Startup.Tests.Infrastructure.Lifecycle;
 using Startup.Tests.Infrastructure.TestClients;
 using Xunit.Abstractions;
 

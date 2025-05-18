@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Startup.Tests.Infrastructure.Lifecycle;
+namespace SharedTestDependencies.Lifecycle;
 
 /// <summary>
 /// ProcessWatchdog samt TestTracker til at tvinge at test serveren hænger når alle tests er færdig

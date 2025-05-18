@@ -1,4 +1,4 @@
-namespace Startup.Tests.Infrastructure.Lifecycle;
+namespace SharedTestDependencies.Lifecycle;
 
 public static class TestTracker
 {

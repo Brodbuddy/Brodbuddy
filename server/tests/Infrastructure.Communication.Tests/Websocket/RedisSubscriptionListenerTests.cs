@@ -279,7 +279,7 @@ public class RedisSubscriptionListenerTests : IAsyncDisposable
             });
         
         _socketManagerMock.Setup(m => m.TryGetLocalSocket(socketIdFail, out It.Ref<IWebSocketConnection?>.IsAny))
-            .Returns((Guid id, out IWebSocketConnection? socket) =>
+            .Returns((Guid _, out IWebSocketConnection? socket) =>
             {
                 socket = mockSocketFail.Object;
                 return true;
