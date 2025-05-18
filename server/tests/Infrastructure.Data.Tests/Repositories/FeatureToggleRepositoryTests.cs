@@ -46,32 +46,20 @@ public class FeatureToggleRepositoryTests : RepositoryTestBase
             result.ShouldBeTrue();
         }
 
-        [Fact]
-        public async Task IsEnabledAsync_WithEnabledFeature_ReturnsTrue()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task IsEnabledAsync_WithFeatureEnabledStatus_ReturnsExpectedStatus(bool isEnabled)
         {
             // Arrange
-            var featureName = "enabled_feature";
-            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            var featureName = $"feature_{isEnabled}";
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, isEnabled);
 
             // Act
             var result = await _repository.IsEnabledAsync(featureName);
 
             // Assert
-            result.ShouldBeTrue();
-        }
-
-        [Fact]
-        public async Task IsEnabledAsync_WithDisabledFeature_ReturnsFalse()
-        {
-            // Arrange
-            var featureName = "disabled_feature";
-            await DbContext.SeedFeatureAsync(_timeProvider, featureName, false);
-
-            // Act
-            var result = await _repository.IsEnabledAsync(featureName);
-
-            // Assert
-            result.ShouldBeFalse();
+            result.ShouldBe(isEnabled);
         }
 
         [Fact]
@@ -148,34 +136,21 @@ public class FeatureToggleRepositoryTests : RepositoryTestBase
             updatedFeature.LastModifiedAt.Value.ShouldBeWithinTolerance(now);
         }
 
-        [Fact]
-        public async Task SetEnabledAsync_EnablingFeature_InvalidatesCache()
+        [Theory]
+        [InlineData(true, "False")]
+        [InlineData(false, "True")]
+        public async Task SetEnabledAsync_ChangingFeatureStatus_InvalidatesCache(bool newStatus, string cachedValue)
         {
             // Arrange
-            var featureName = "feature_to_enable";
-            await _cache.SetStringAsync($"feature:{featureName}", "False");
+            var featureName = $"feature_to_{(newStatus ? "enable" : "disable")}";
+            await _cache.SetStringAsync($"feature:{featureName}", cachedValue);
 
             // Act
-            await _repository.SetEnabledAsync(featureName, true);
+            await _repository.SetEnabledAsync(featureName, newStatus);
 
             // Assert
-            var cachedValue = await _cache.GetStringAsync($"feature:{featureName}");
-            cachedValue.ShouldBeNull();
-        }
-
-        [Fact]
-        public async Task SetEnabledAsync_DisablingFeature_InvalidatesCache()
-        {
-            // Arrange
-            var featureName = "feature_to_disable";
-            await _cache.SetStringAsync($"feature:{featureName}", "True");
-
-            // Act
-            await _repository.SetEnabledAsync(featureName, false);
-
-            // Assert
-            var cachedValue = await _cache.GetStringAsync($"feature:{featureName}");
-            cachedValue.ShouldBeNull();
+            var cachedResult = await _cache.GetStringAsync($"feature:{featureName}");
+            cachedResult.ShouldBeNull();
         }
     }
 
@@ -223,6 +198,123 @@ public class FeatureToggleRepositoryTests : RepositoryTestBase
 
             // Assert
             result.ShouldBeFalse();
+        }
+        
+        [Fact]
+        public async Task IsEnabledForUserAsync_With100PercentRollout_ReturnsTrueForAllUsers()
+        {
+            // Arrange
+            var featureName = "rollout_feature_100";
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            await _repository.SetRolloutPercentageAsync(featureName, 100);
+            
+            var userId = Guid.NewGuid();
+
+            // Act
+            var result = await _repository.IsEnabledForUserAsync(featureName, userId);
+
+            // Assert
+            result.ShouldBeTrue();
+        }
+        
+        [Fact]
+        public async Task IsEnabledForUserAsync_WithRolloutPercentage_ReturnsTrueForIncludedUsers()
+        {
+            // Arrange
+            var featureName = "rollout_feature_90";
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            await _repository.SetRolloutPercentageAsync(featureName, 90);
+            
+            bool foundIncluded = false;
+            Guid includedUserId = Guid.Empty;
+            
+            for (int i = 0; i < 100; i++)
+            {
+                var testId = Guid.NewGuid();
+                var testResult = await _repository.IsEnabledForUserAsync(featureName, testId);
+                
+                if (!testResult) continue;
+                includedUserId = testId;
+                foundIncluded = true;
+                break;
+            }
+            
+            foundIncluded.ShouldBeTrue();
+
+            // Act
+            var result = await _repository.IsEnabledForUserAsync(featureName, includedUserId);
+
+            // Assert
+            result.ShouldBeTrue();
+        }
+        
+        [Fact]
+        public async Task IsEnabledForUserAsync_WithRolloutPercentage_ReturnsFalseForExcludedUsers()
+        {
+            // Arrange
+            var featureName = "rollout_feature_1";
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            await _repository.SetRolloutPercentageAsync(featureName, 1); 
+            
+            var excludedUserId = Guid.NewGuid();
+
+            // Act
+            var result = await _repository.IsEnabledForUserAsync(featureName, excludedUserId);
+
+            // Assert
+            result.ShouldBeFalse();
+        }
+        
+        [Fact]
+        public async Task IsEnabledForUserAsync_WithRolloutAndExplicitUser_ReturnsTrueForExplicitUser()
+        {
+            // Arrange
+            var featureName = "rollout_with_explicit_user";
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var feature = await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            feature.RolloutPercentage = 0;
+            await DbContext.SaveChangesAsync();
+            
+            var featureUser = new FeatureUser
+            {
+                FeatureId = feature.Id,
+                UserId = user.Id
+            };
+            await DbContext.FeatureUsers.AddAsync(featureUser);
+            await DbContext.SaveChangesAsync();
+
+            // Act
+            var result = await _repository.IsEnabledForUserAsync(featureName, user.Id);
+
+            // Assert
+            result.ShouldBeTrue();
+        }
+        
+        [Fact]
+        public async Task IsEnabledForUserAsync_WithNoRolloutPercentage_UsesUserListOnly()
+        {
+            // Arrange
+            var featureName = "no_rollout_feature";
+            var user = await DbContext.SeedUserAsync(_timeProvider);
+            var feature = await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            
+            var featureUser = new FeatureUser
+            {
+                FeatureId = feature.Id,
+                UserId = user.Id
+            };
+            await DbContext.FeatureUsers.AddAsync(featureUser);
+            await DbContext.SaveChangesAsync();
+            
+            var userNotInList = Guid.NewGuid();
+
+            // Act
+            var resultInList = await _repository.IsEnabledForUserAsync(featureName, user.Id);
+            var resultNotInList = await _repository.IsEnabledForUserAsync(featureName, userNotInList);
+
+            // Assert
+            resultInList.ShouldBeTrue();
+            resultNotInList.ShouldBeFalse();
         }
 
         [Fact]
@@ -291,6 +383,174 @@ public class FeatureToggleRepositoryTests : RepositoryTestBase
             var userCacheKey = $"feature:{featureName}:user:{user.Id}";
             var cachedValue = await _cache.GetStringAsync(userCacheKey);
             cachedValue.ShouldBe("True");
+        }
+        
+        [Theory]
+        [InlineData(10)]
+        [InlineData(30)]
+        [InlineData(50)]
+        [InlineData(70)]
+        [InlineData(90)]
+        public async Task IsEnabledForUserAsync_WithSpecificRolloutPercentage_DistributesUsersCorrectly(int percentage)
+        {
+            // Arrange
+            var testId = Guid.NewGuid().ToString("N");
+            var featureName = $"rollout_feature_{percentage}_{testId}";
+    
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            await _repository.SetRolloutPercentageAsync(featureName, percentage);
+    
+            const int sampleSize = 1000;
+            var enabledCount = 0;
+    
+            // Act
+            for (int i = 0; i < sampleSize; i++)
+            {
+                var userId = Guid.NewGuid();
+                var result = await _repository.IsEnabledForUserAsync(featureName, userId);
+                if (result) enabledCount++;
+            }
+    
+            // Assert
+            var actualPercentage = enabledCount / (double) sampleSize * 100;
+            var marginOfError = 6.0; 
+    
+            actualPercentage.ShouldBeInRange(percentage - marginOfError, percentage + marginOfError);
+        }
+        
+        [Fact]
+        public async Task IsEnabledForUserAsync_WithRolloutPercentage_DistributesUsersCorrectly_AcrossMultiplePercentages()
+        {
+            var random = new Random();
+            
+            // Test 10 tilfælde procenter mellem 10 og 90
+            for (int test = 0; test < 10; test++)
+            {
+                var percentage = random.Next(10, 91);
+                
+                // Arrange
+                var testId = Guid.NewGuid().ToString("N");
+                var featureName = $"rollout_feature_{percentage}_{testId}";
+                
+                await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+                await _repository.SetRolloutPercentageAsync(featureName, percentage);
+                
+                const int sampleSize = 1000;
+                var enabledCount = 0;
+                
+                // Act
+                for (int i = 0; i < sampleSize; i++)
+                {
+                    var userId = Guid.NewGuid();
+                    var result = await _repository.IsEnabledForUserAsync(featureName, userId);
+                    if (result) enabledCount++;
+                }
+                
+                // Assert
+                var actualPercentage = enabledCount / (double)sampleSize * 100;
+                var marginOfError = 6.0;
+                
+                actualPercentage.ShouldBeInRange(percentage - marginOfError, percentage + marginOfError);
+            }
+        }
+        
+        [Fact]
+        public async Task IsEnabledForUserAsync_WithRolloutPercentage_IsDeterministic()
+        {
+            var random = new Random();
+            
+            // Test 10 random combinations
+            for (int test = 0; test < 10; test++)
+            {
+                // Arrange
+                var userId = Guid.NewGuid();
+                var percentage = random.Next(0, 101);
+                var testId = Guid.NewGuid().ToString("N");
+                var featureName = $"deterministic_feature_{percentage}_{testId}";
+                
+                await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+                await _repository.SetRolloutPercentageAsync(featureName, percentage);
+                
+                // Act
+                var result1 = await _repository.IsEnabledForUserAsync(featureName, userId);
+                var result2 = await _repository.IsEnabledForUserAsync(featureName, userId);
+                var result3 = await _repository.IsEnabledForUserAsync(featureName, userId);
+                
+                // Assert
+                result1.ShouldBe(result2);
+                result2.ShouldBe(result3);
+            }
+        }
+        
+        [Fact]
+        public async Task IsEnabledForUserAsync_WithExplicitUser_ReturnsTrueRegardlessOfPercentage()
+        {
+            var random = new Random();
+            
+            // Test 10 random percentages
+            for (int test = 0; test < 10; test++)
+            {
+                // Arrange
+                var percentage = random.Next(0, 101);
+                var testId = Guid.NewGuid().ToString("N");
+                var featureName = $"explicit_user_feature_{percentage}_{testId}";
+                var user = await DbContext.SeedUserAsync(_timeProvider);
+                
+                await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+                await _repository.SetRolloutPercentageAsync(featureName, percentage);
+                await _repository.AddUserToFeatureAsync(featureName, user.Id);
+                
+                // Act
+                var result = await _repository.IsEnabledForUserAsync(featureName, user.Id);
+                
+                // Assert
+                result.ShouldBeTrue();
+            }
+        }
+        
+        [Theory]
+        [InlineData(0, false)]
+        [InlineData(100, true)]
+        public async Task IsEnabledForUserAsync_WithBoundaryPercentages_ReturnsExpectedResult(int percentage, bool expectedResult)
+        {
+            // Arrange 
+            var userId = Guid.NewGuid();
+            var testId = Guid.NewGuid().ToString("N");
+            var featureName = $"feature_{percentage}_{testId}";
+    
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            await _repository.SetRolloutPercentageAsync(featureName, percentage);
+    
+            // Act
+            var result = await _repository.IsEnabledForUserAsync(featureName, userId);
+    
+            // Assert
+            result.ShouldBe(expectedResult);
+        }
+        
+        [Fact]
+        public async Task IsEnabledForUserAsync_WithSameUserIdAndFeature_ReturnsSameResultConsistently()
+        {
+            // Arrange
+            var featureName = "determinism_test";
+            var userId = Guid.NewGuid();
+            
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            await _repository.SetRolloutPercentageAsync(featureName, 50);
+            
+            var userCacheKey = $"feature:{featureName}:user:{userId}";
+            
+            // Act
+            var results = new List<bool>();
+            for (int i = 0; i < 5; i++)
+            {
+                await _cache.RemoveAsync(userCacheKey); // Tving genberegning
+                var result = await _repository.IsEnabledForUserAsync(featureName, userId);
+                results.Add(result);
+            }
+            
+            // Assert
+            results.All(r => r == results[0]).ShouldBeTrue();
         }
     }
 
@@ -456,8 +716,7 @@ public class FeatureToggleRepositoryTests : RepositoryTestBase
 
             // Assert
             result.ShouldBeTrue();
-            var deletedFeatureUser = await DbContext.FeatureUsers
-                .FirstOrDefaultAsync(fu => fu.FeatureId == feature.Id && fu.UserId == user.Id);
+            var deletedFeatureUser = await DbContext.FeatureUsers.FirstOrDefaultAsync(fu => fu.FeatureId == feature.Id && fu.UserId == user.Id);
             deletedFeatureUser.ShouldBeNull();
         }
 
@@ -488,5 +747,92 @@ public class FeatureToggleRepositoryTests : RepositoryTestBase
             var cachedValue = await _cache.GetStringAsync(userCacheKey);
             cachedValue.ShouldBeNull();
         }
+    }
+    
+    public class SetRolloutPercentageAsync(PostgresFixture fixture) : FeatureToggleRepositoryTests(fixture)
+    {
+        [Fact]
+        public async Task SetRolloutPercentageAsync_WithNonExistentFeature_ReturnsFalse()
+        {
+            // Arrange
+            var featureName = "non_existent_feature";
+            var percentage = 50;
+
+            // Act
+            var result = await _repository.SetRolloutPercentageAsync(featureName, percentage);
+
+            // Assert
+            result.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task SetRolloutPercentageAsync_WithExistingFeature_UpdatesAndReturnsTrue()
+        {
+            // Arrange
+            var featureName = "test_feature";
+            var percentage = 75;
+            var feature = await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+
+            // Act
+            var result = await _repository.SetRolloutPercentageAsync(featureName, percentage);
+
+            // Assert
+            result.ShouldBeTrue();
+            var updatedFeature = await DbContext.Features.FirstAsync(f => f.Id == feature.Id);
+            updatedFeature.RolloutPercentage.ShouldBe(percentage);
+            updatedFeature.LastModifiedAt.ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task SetRolloutPercentageAsync_InvalidatesFeatureCache()
+        {
+            // Arrange
+            var featureName = "test_feature";
+            var percentage = 25;
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            
+            // Pre-populate cache
+            await _cache.SetStringAsync($"feature:{featureName}", "true");
+
+            // Act
+            await _repository.SetRolloutPercentageAsync(featureName, percentage);
+
+            // Assert
+            var cachedValue = await _cache.GetStringAsync($"feature:{featureName}");
+            cachedValue.ShouldBeNull();
+        }
+    }
+
+    public class GetDjb2HashCode(PostgresFixture fixture) : FeatureToggleRepositoryTests(fixture)
+    {
+        [Fact]
+        public async Task GetDjb2HashCode_WithMultipleRandomInputs_DistributesEvenly()
+        {
+            // Arrange
+            var buckets = new int[10];
+            const int sampleSize = 10000;
+            var featureName = "hash_distribution_test";
+            
+            await DbContext.SeedFeatureAsync(_timeProvider, featureName, true);
+            await _repository.SetRolloutPercentageAsync(featureName, 100);
+            
+            // Act
+            for (int i = 0; i < sampleSize; i++)
+            {
+                var userId = Guid.NewGuid();
+                var combinedString = $"{userId}:{featureName}";
+                var combinedHash = PgFeatureToggleRepository.GetDjb2HashCode(combinedString);
+                var normalizedHash = Math.Abs(combinedHash) % 100;
+                var bucket = normalizedHash / 10;
+                buckets[bucket]++;
+            }
+            
+            // Assert
+            // Hver bucket skal have ca. 1000 elementer (10000/10)
+            foreach (var count in buckets)
+            {
+                count.ShouldBeInRange(800, 1200);
+            }
+        } 
     }
 }

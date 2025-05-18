@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using Application.Interfaces;
+using Application.Interfaces.Data.Repositories;
 using Core.Entities;
 using Core.Extensions;
 using Infrastructure.Data.Persistence;
@@ -62,12 +64,11 @@ public class PgFeatureToggleRepository : IFeatureToggleRepository
             await _dbContext.SaveChangesAsync();
         }
         
-        string cacheKey = $"{CacheKeyPrefix}{featureName}";
-        await _cache.RemoveAsync(cacheKey);
+        await _cache.RemoveAsync($"{CacheKeyPrefix}{featureName}");
     
         return true;
     }
-
+    
     public async Task<bool> IsEnabledForUserAsync(string featureName, Guid userId)
     {
         string userCacheKey = $"{CacheKeyPrefix}{featureName}:user:{userId}";
@@ -78,8 +79,21 @@ public class PgFeatureToggleRepository : IFeatureToggleRepository
         var feature = await _dbContext.Features.FirstOrDefaultAsync(f => f.Name == featureName);
         if (feature == null) return true; 
         if (!feature.IsEnabled) return false; 
-    
-        var hasAccess = await _dbContext.FeatureUsers.AnyAsync(fu => fu.FeatureId == feature.Id && fu.UserId == userId);
+        
+        var hasAccess = false;
+        
+        if (feature.RolloutPercentage.HasValue)
+        {
+            var combinedString = $"{userId}:{featureName}";
+            var combinedHash = GetDjb2HashCode(combinedString);
+            var normalizedHash = Math.Abs(combinedHash) % 100;
+            hasAccess = normalizedHash < feature.RolloutPercentage.Value;
+        }
+        
+        if (!hasAccess)
+        {
+            hasAccess = await _dbContext.FeatureUsers.AnyAsync(fu => fu.FeatureId == feature.Id && fu.UserId == userId);
+        }
         
         await _cache.SetStringAsync(
             userCacheKey, 
@@ -114,8 +128,7 @@ public class PgFeatureToggleRepository : IFeatureToggleRepository
         await _dbContext.FeatureUsers.AddAsync(featureUser);
         await _dbContext.SaveChangesAsync();
         
-        string userCacheKey = $"{CacheKeyPrefix}{featureName}:user:{userId}";
-        await _cache.RemoveAsync(userCacheKey);
+        await _cache.RemoveAsync($"{CacheKeyPrefix}{featureName}:user:{userId}");
         
         return true;
     }
@@ -132,9 +145,41 @@ public class PgFeatureToggleRepository : IFeatureToggleRepository
         _dbContext.FeatureUsers.Remove(featureUser);
         await _dbContext.SaveChangesAsync();
         
-        string userCacheKey = $"{CacheKeyPrefix}{featureName}:user:{userId}";
-        await _cache.RemoveAsync(userCacheKey);
+        await _cache.RemoveAsync($"{CacheKeyPrefix}{featureName}:user:{userId}");
         
         return true;
+    }
+    
+    public async Task<bool> SetRolloutPercentageAsync(string featureName, int percentage)
+    {
+        var updateResult = await _dbContext.Features
+                                           .Where(f => f.Name == featureName)
+                                           .ExecuteUpdateAsync(setters => setters
+                                               .SetProperty(f => f.RolloutPercentage, percentage)
+                                               .SetProperty(f => f.LastModifiedAt, _timeProvider.Now()));
+        
+        if (updateResult == 0) return false;
+        
+        await _cache.RemoveAsync($"{CacheKeyPrefix}{featureName}");
+        
+        return true;
+    }
+    
+    internal static int GetDjb2HashCode(string str)
+    {
+        unchecked
+        {
+            int hash1 = 5381;
+            int hash2 = hash1;
+
+            for (int i = 0; i < str.Length && str[i] != '\0'; i += 2)
+            {
+                hash1 = ((hash1 << 5) + hash1) ^ str[i];
+                if (i == str.Length - 1 || str[i + 1] == '\0') break;
+                hash2 = ((hash2 << 5) + hash2) ^ str[i + 1];
+            }
+
+            return hash1 + (hash2 * 1566083941);
+        }
     }
 }

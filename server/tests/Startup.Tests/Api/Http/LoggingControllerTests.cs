@@ -24,115 +24,123 @@ public class LoggingControllerTests(StartupTestFixture fixture, ITestOutputHelpe
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
     };
 
-    [Fact]
-    public async Task GetCurrentLogLevel_WithoutAuth_Returns401()
+    public class GetCurrentLogLevel(StartupTestFixture fixture, ITestOutputHelper output) : LoggingControllerTests(fixture, output)
     {
-        // Arrange
-        var client = Factory.CreateClient();
+        [Fact]
+        public async Task GetCurrentLogLevel_WithoutAuth_Returns401()
+        {
+            // Arrange
+            var client = Factory.CreateClient();
 
-        // Act
-        var response = await client.GetAsync($"{BaseUrl}/level");
+            // Act
+            var response = await client.GetAsync($"{BaseUrl}/level");
 
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+            // Assert
+            response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        }
+
+        [Fact]
+        public async Task GetCurrentLogLevel_WithAuth_Returns200()
+        {
+            // Arrange
+            var client = Factory.CreateAuthenticatedHttpClient();
+
+            // Act
+            var response = await client.GetAsync($"{BaseUrl}/level");
+
+            // Assert
+            response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            var content = await response.Content.ReadFromJsonAsync<LogLevelResponse>(JsonOptions);
+            content.ShouldNotBeNull();
+            content.CurrentLevel.ShouldBeOneOf(
+                LoggingLevel.Verbose,
+                LoggingLevel.Debug,
+                LoggingLevel.Information,
+                LoggingLevel.Warning,
+                LoggingLevel.Error,
+                LoggingLevel.Fatal);
+        }
     }
 
-    [Fact]
-    public async Task GetCurrentLogLevel_WithAuth_Returns200()
+    public class SetLogLevel(StartupTestFixture fixture, ITestOutputHelper output) : LoggingControllerTests(fixture, output)
     {
-        // Arrange
-        var client = Factory.CreateAuthenticatedHttpClient();
+        [Fact]
+        public async Task SetLogLevel_WithoutAuth_Returns401()
+        {
+            // Arrange
+            var client = Factory.CreateClient();
+            var request = new LogLevelUpdateRequest(LoggingLevel.Debug);
 
-        // Act
-        var response = await client.GetAsync($"{BaseUrl}/level");
+            // Act
+            var response = await client.PutAsJsonAsync($"{BaseUrl}/level", request);
 
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        var content = await response.Content.ReadFromJsonAsync<LogLevelResponse>(JsonOptions);
-        content.ShouldNotBeNull();
-        content.CurrentLevel.ShouldBeOneOf(
-            LoggingLevel.Verbose, 
-            LoggingLevel.Debug, 
-            LoggingLevel.Information, 
-            LoggingLevel.Warning, 
-            LoggingLevel.Error, 
-            LoggingLevel.Fatal);
-    }
+            // Assert
+            response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        }
 
-    [Fact]
-    public async Task SetLogLevel_WithoutAuth_Returns401()
-    {
-        // Arrange
-        var client = Factory.CreateClient();
-        var request = new LogLevelUpdateRequest(LoggingLevel.Debug);
+        [Fact]
+        public async Task SetLogLevel_WithValidRequest_Returns200()
+        {
+            // Arrange
+            var client = Factory.CreateAuthenticatedHttpClient();
+            var request = new LogLevelUpdateRequest(LoggingLevel.Debug);
 
-        // Act
-        var response = await client.PutAsJsonAsync($"{BaseUrl}/level", request);
+            // Act
+            var response = await client.PutAsJsonAsync($"{BaseUrl}/level", request);
 
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-    }
+            // Assert
+            response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            var content = await response.Content.ReadFromJsonAsync<LogLevelUpdateResponse>(JsonOptions);
+            content.ShouldNotBeNull();
+            content.Message.ShouldBe("Log level updated");
+            content.CurrentLevel.ShouldBe(LoggingLevel.Debug);
+        }
 
-    [Fact]
-    public async Task SetLogLevel_WithValidRequest_Returns200()
-    {
-        // Arrange
-        var client = Factory.CreateAuthenticatedHttpClient();
-        var request = new LogLevelUpdateRequest(LoggingLevel.Debug);
+        [Fact]
+        public async Task SetLogLevel_PersistsAcrossRequests()
+        {
+            // Arrange
+            var client = Factory.CreateAuthenticatedHttpClient();
 
-        // Act
-        var response = await client.PutAsJsonAsync($"{BaseUrl}/level", request);
+            var getResponse = await client.GetAsync($"{BaseUrl}/level");
+            var originalLevel = await getResponse.Content.ReadFromJsonAsync<LogLevelResponse>(JsonOptions);
 
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        var content = await response.Content.ReadFromJsonAsync<LogLevelUpdateResponse>(JsonOptions);
-        content.ShouldNotBeNull();
-        content.Message.ShouldBe("Log level updated");
-        content.CurrentLevel.ShouldBe(LoggingLevel.Debug);
-    }
+            // Act  
+            var newLevel = originalLevel!.CurrentLevel == LoggingLevel.Debug
+                ? LoggingLevel.Warning
+                : LoggingLevel.Debug;
+            var updateRequest = new LogLevelUpdateRequest(newLevel);
+            await client.PutAsJsonAsync($"{BaseUrl}/level", updateRequest);
 
-    [Fact]
-    public async Task SetLogLevel_PersistsAcrossRequests()
-    {
-        // Arrange
-        var client = Factory.CreateAuthenticatedHttpClient();
-        
-        var getResponse = await client.GetAsync($"{BaseUrl}/level");
-        var originalLevel = await getResponse.Content.ReadFromJsonAsync<LogLevelResponse>(JsonOptions);
-        
-        // Act  
-        var newLevel = originalLevel!.CurrentLevel == LoggingLevel.Debug ? LoggingLevel.Warning : LoggingLevel.Debug;
-        var updateRequest = new LogLevelUpdateRequest(newLevel);
-        await client.PutAsJsonAsync($"{BaseUrl}/level", updateRequest);
-        
-        // Assert
-        getResponse = await client.GetAsync($"{BaseUrl}/level");
-        var currentLevel = await getResponse.Content.ReadFromJsonAsync<LogLevelResponse>(JsonOptions);
-        currentLevel!.CurrentLevel.ShouldBe(newLevel);
-        
-        // Cleanup - sæt til originale level
-        await client.PutAsJsonAsync($"{BaseUrl}/level", new LogLevelUpdateRequest(originalLevel.CurrentLevel));
-    }
+            // Assert
+            getResponse = await client.GetAsync($"{BaseUrl}/level");
+            var currentLevel = await getResponse.Content.ReadFromJsonAsync<LogLevelResponse>(JsonOptions);
+            currentLevel!.CurrentLevel.ShouldBe(newLevel);
 
-    [Theory]
-    [InlineData(LoggingLevel.Verbose)]
-    [InlineData(LoggingLevel.Debug)]
-    [InlineData(LoggingLevel.Information)]
-    [InlineData(LoggingLevel.Warning)]
-    [InlineData(LoggingLevel.Error)]
-    [InlineData(LoggingLevel.Fatal)]
-    public async Task SetLogLevel_SupportsAllLevels(LoggingLevel level)
-    {
-        // Arrange
-        var client = Factory.CreateAuthenticatedHttpClient();
-        var request = new LogLevelUpdateRequest(level);
+            // Cleanup - sæt til originale level
+            await client.PutAsJsonAsync($"{BaseUrl}/level", new LogLevelUpdateRequest(originalLevel.CurrentLevel));
+        }
 
-        // Act
-        var response = await client.PutAsJsonAsync($"{BaseUrl}/level", request);
+        [Theory]
+        [InlineData(LoggingLevel.Verbose)]
+        [InlineData(LoggingLevel.Debug)]
+        [InlineData(LoggingLevel.Information)]
+        [InlineData(LoggingLevel.Warning)]
+        [InlineData(LoggingLevel.Error)]
+        [InlineData(LoggingLevel.Fatal)]
+        public async Task SetLogLevel_SupportsAllLevels(LoggingLevel level)
+        {
+            // Arrange
+            var client = Factory.CreateAuthenticatedHttpClient();
+            var request = new LogLevelUpdateRequest(level);
 
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-        var content = await response.Content.ReadFromJsonAsync<LogLevelUpdateResponse>(JsonOptions);
-        content!.CurrentLevel.ShouldBe(level);
+            // Act
+            var response = await client.PutAsJsonAsync($"{BaseUrl}/level", request);
+
+            // Assert
+            response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            var content = await response.Content.ReadFromJsonAsync<LogLevelUpdateResponse>(JsonOptions);
+            content!.CurrentLevel.ShouldBe(level);
+        }
     }
 }

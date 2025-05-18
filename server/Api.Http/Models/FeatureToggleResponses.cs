@@ -5,6 +5,7 @@ public record FeatureToggleResponse(
     string Name,
     string? Description,
     bool IsEnabled,
+    int? RolloutPercentage,
     DateTime CreatedAt,
     DateTime? LastModifiedAt
 );

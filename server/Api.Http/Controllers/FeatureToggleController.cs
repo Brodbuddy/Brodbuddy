@@ -26,6 +26,7 @@ public class FeatureToggleController : ControllerBase
             f.Name,
             f.Description,
             f.IsEnabled,
+            f.RolloutPercentage,
             f.CreatedAt,
             f.LastModifiedAt
         ));
@@ -53,6 +54,19 @@ public class FeatureToggleController : ControllerBase
     public async Task<ActionResult> RemoveUserFromFeature(string featureName, Guid userId)
     {
         var success = await _featureToggleService.RemoveUserFromFeatureAsync(featureName, userId);
+        return success ? Ok() : NotFound();
+    }
+    
+    [HttpPut("{featureName}/rollout")]
+    [Authorize(Roles = "user")]
+    public async Task<ActionResult> SetRolloutPercentage(string featureName, [FromBody] FeatureToggleRolloutRequest request)
+    {
+        if (request.Percentage is < 0 or > 100)
+        {
+            return BadRequest("Percentage must be between 0 and 100");
+        }
+        
+        var success = await _featureToggleService.SetRolloutPercentageAsync(featureName, request.Percentage);
         return success ? Ok() : NotFound();
     }
 }

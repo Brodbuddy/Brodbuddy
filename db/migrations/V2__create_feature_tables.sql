@@ -3,6 +3,7 @@ CREATE TABLE features (
     name             VARCHAR(100) NOT NULL UNIQUE,
     description      TEXT,
     is_enabled       BOOLEAN     NOT NULL DEFAULT false,
+    rollout_percentage INTEGER    CHECK (rollout_percentage >= 0 AND rollout_percentage <= 100),
     created_at       TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_modified_at TIMESTAMPTZ
 );

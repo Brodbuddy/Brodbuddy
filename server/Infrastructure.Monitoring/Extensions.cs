@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Application;
 using Application.Interfaces;
+using Application.Interfaces.Monitoring;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

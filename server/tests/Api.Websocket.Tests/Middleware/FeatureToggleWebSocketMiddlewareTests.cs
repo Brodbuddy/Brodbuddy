@@ -85,7 +85,7 @@ public class FeatureToggleWebSocketMiddlewareTests
         {
             // Arrange
             var message = JsonSerializer.Serialize(new { Type = "TestMessage", RequestId = "123" });
-            _toggleServiceMock.Setup(s => s.IsEnabled("Websocket.TestMessage")).Returns(true);
+            _toggleServiceMock.Setup(s => s.IsEnabledAsync("Websocket.TestMessage")).ReturnsAsync(true);
             var nextCalled = false;
             Func<Task> next = () => { nextCalled = true; return Task.CompletedTask; };
 
@@ -95,7 +95,7 @@ public class FeatureToggleWebSocketMiddlewareTests
             // Assert
             result.ShouldBeTrue();
             nextCalled.ShouldBeTrue();
-            _toggleServiceMock.Verify(s => s.IsEnabled("Websocket.TestMessage"), Times.Once);
+            _toggleServiceMock.Verify(s => s.IsEnabledAsync("Websocket.TestMessage"), Times.Once);
         }
 
         [Fact]
@@ -103,7 +103,7 @@ public class FeatureToggleWebSocketMiddlewareTests
         {
             // Arrange
             var message = JsonSerializer.Serialize(new { Type = "TestMessage", RequestId = "123" });
-            _toggleServiceMock.Setup(s => s.IsEnabled("Websocket.TestMessage")).Returns(false);
+            _toggleServiceMock.Setup(s => s.IsEnabledAsync("Websocket.TestMessage")).ReturnsAsync(false);
             var nextCalled = false;
             Func<Task> next = () => { nextCalled = true; return Task.CompletedTask; };
 
@@ -129,14 +129,13 @@ public class FeatureToggleWebSocketMiddlewareTests
             });
             
             _jwtServiceMock.Setup(j => j.TryValidate("valid-token", out It.Ref<JwtClaims>.IsAny))
-                .Returns((string token, out JwtClaims claims) =>
+                .Returns((string _, out JwtClaims claims) =>
                 {
                     claims = new JwtClaims(userId.ToString(), "issuer", "audience", 0, 0, "jti", "test@example.com", "user");
                     return true;
                 });
             
-            _toggleServiceMock.Setup(s => s.IsEnabledForUser("Websocket.TestMessage", userId))
-                .Returns(true);
+            _toggleServiceMock.Setup(s => s.IsEnabledForUserAsync("Websocket.TestMessage", userId)).ReturnsAsync(true);
             
             var nextCalled = false;
             Func<Task> next = () => { nextCalled = true; return Task.CompletedTask; };
@@ -147,7 +146,7 @@ public class FeatureToggleWebSocketMiddlewareTests
             // Assert
             result.ShouldBeTrue();
             nextCalled.ShouldBeTrue();
-            _toggleServiceMock.Verify(s => s.IsEnabledForUser("Websocket.TestMessage", userId), Times.Once);
+            _toggleServiceMock.Verify(s => s.IsEnabledForUserAsync("Websocket.TestMessage", userId), Times.Once);
         }
 
         [Fact]
@@ -161,11 +160,8 @@ public class FeatureToggleWebSocketMiddlewareTests
                 RequestId = "123"
             });
             
-            _jwtServiceMock.Setup(j => j.TryValidate("invalid-token", out It.Ref<JwtClaims>.IsAny))
-                .Returns(false);
-            
-            _toggleServiceMock.Setup(s => s.IsEnabled("Websocket.TestMessage"))
-                .Returns(true);
+            _jwtServiceMock.Setup(j => j.TryValidate("invalid-token", out It.Ref<JwtClaims>.IsAny)).Returns(false);
+            _toggleServiceMock.Setup(s => s.IsEnabledAsync("Websocket.TestMessage")).ReturnsAsync(true);
             
             var nextCalled = false;
             Func<Task> next = () => { nextCalled = true; return Task.CompletedTask; };
@@ -176,8 +172,8 @@ public class FeatureToggleWebSocketMiddlewareTests
             // Assert
             result.ShouldBeTrue();
             nextCalled.ShouldBeTrue();
-            _toggleServiceMock.Verify(s => s.IsEnabled("Websocket.TestMessage"), Times.Once);
-            _toggleServiceMock.Verify(s => s.IsEnabledForUser(It.IsAny<string>(), It.IsAny<Guid>()), Times.Never);
+            _toggleServiceMock.Verify(s => s.IsEnabledAsync("Websocket.TestMessage"), Times.Once);
+            _toggleServiceMock.Verify(s => s.IsEnabledForUserAsync(It.IsAny<string>(), It.IsAny<Guid>()), Times.Never);
         }
 
         [Fact]
@@ -186,7 +182,7 @@ public class FeatureToggleWebSocketMiddlewareTests
             // Arrange
             var requestId = "test-request-123";
             var message = JsonSerializer.Serialize(new { Type = "TestMessage", RequestId = requestId });
-            _toggleServiceMock.Setup(s => s.IsEnabled("Websocket.TestMessage")).Returns(false);
+            _toggleServiceMock.Setup(s => s.IsEnabledAsync("Websocket.TestMessage")).ReturnsAsync(false);
             
             string? sentMessage = null;
             _socketMock.Setup(s => s.Send(It.IsAny<string>()))

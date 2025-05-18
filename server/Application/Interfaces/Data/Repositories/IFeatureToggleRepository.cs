@@ -1,6 +1,6 @@
 using Core.Entities;
 
-namespace Application.Interfaces;
+namespace Application.Interfaces.Data.Repositories;
 
 public interface IFeatureToggleRepository
 {
@@ -10,4 +10,5 @@ public interface IFeatureToggleRepository
     Task<IEnumerable<Feature>> GetAllFeaturesAsync();
     Task<bool> AddUserToFeatureAsync(string featureName, Guid userId);
     Task<bool> RemoveUserFromFeatureAsync(string featureName, Guid userId);
+    Task<bool> SetRolloutPercentageAsync(string featureName, int percentage);
 }

@@ -122,6 +122,7 @@ public partial class PgDbContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .HasColumnName("name");
+            entity.Property(e => e.RolloutPercentage).HasColumnName("rollout_percentage");
         });
 
         modelBuilder.Entity<FeatureUser>(entity =>

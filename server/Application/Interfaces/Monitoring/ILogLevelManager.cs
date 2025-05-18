@@ -1,6 +1,6 @@
 using Application.Models;
 
-namespace Application.Interfaces;
+namespace Application.Interfaces.Monitoring;
 
 public interface ILogLevelManager
 {

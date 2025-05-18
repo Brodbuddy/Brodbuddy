@@ -65,7 +65,7 @@ public class FeatureToggleMiddlewareTests
             // Arrange
             var context = CreateContextWithEndpoint("TestController", "TestAction");
             var featureName = "Api.TestController.TestAction";
-            _toggleServiceMock.Setup(s => s.IsEnabled(featureName)).Returns(true);
+            _toggleServiceMock.Setup(s => s.IsEnabledAsync(featureName)).ReturnsAsync(true);
 
             // Act
             await _middleware.InvokeAsync(context, _toggleServiceMock.Object);
@@ -81,7 +81,7 @@ public class FeatureToggleMiddlewareTests
             // Arrange
             var context = CreateContextWithEndpoint("TestController", "TestAction");
             var featureName = "Api.TestController.TestAction";
-            _toggleServiceMock.Setup(s => s.IsEnabled(featureName)).Returns(false);
+            _toggleServiceMock.Setup(s => s.IsEnabledAsync(featureName)).ReturnsAsync(false);
 
             // Act
             await _middleware.InvokeAsync(context, _toggleServiceMock.Object);
@@ -98,7 +98,7 @@ public class FeatureToggleMiddlewareTests
             var userId = Guid.NewGuid();
             var context = CreateContextWithEndpoint("TestController", "TestAction", userId);
             var featureName = "Api.TestController.TestAction";
-            _toggleServiceMock.Setup(s => s.IsEnabledForUser(featureName, userId)).Returns(true);
+            _toggleServiceMock.Setup(s => s.IsEnabledForUserAsync(featureName, userId)).ReturnsAsync(true);
 
             // Act
             await _middleware.InvokeAsync(context, _toggleServiceMock.Object);
@@ -115,7 +115,7 @@ public class FeatureToggleMiddlewareTests
             var userId = Guid.NewGuid();
             var context = CreateContextWithEndpoint("TestController", "TestAction", userId);
             var featureName = "Api.TestController.TestAction";
-            _toggleServiceMock.Setup(s => s.IsEnabledForUser(featureName, userId)).Returns(false);
+            _toggleServiceMock.Setup(s => s.IsEnabledForUserAsync(featureName, userId)).ReturnsAsync(false);
 
             // Act
             await _middleware.InvokeAsync(context, _toggleServiceMock.Object);
@@ -131,15 +131,15 @@ public class FeatureToggleMiddlewareTests
             // Arrange
             var context = CreateContextWithEndpoint("TestController", "TestAction", null, true);
             var featureName = "Api.TestController.TestAction";
-            _toggleServiceMock.Setup(s => s.IsEnabled(featureName)).Returns(true);
+            _toggleServiceMock.Setup(s => s.IsEnabledAsync(featureName)).ReturnsAsync(true);
 
             // Act
             await _middleware.InvokeAsync(context, _toggleServiceMock.Object);
 
             // Assert
             _nextMock.Verify(n => n(context), Times.Once);
-            _toggleServiceMock.Verify(s => s.IsEnabled(featureName), Times.Once);
-            _toggleServiceMock.Verify(s => s.IsEnabledForUser(It.IsAny<string>(), It.IsAny<Guid>()), Times.Never);
+            _toggleServiceMock.Verify(s => s.IsEnabledAsync(featureName), Times.Once);
+            _toggleServiceMock.Verify(s => s.IsEnabledForUserAsync(It.IsAny<string>(), It.IsAny<Guid>()), Times.Never);
         }
 
         private static DefaultHttpContext CreateContextWithEndpoint(string controller, string action, Guid? userId = null, bool authenticatedWithoutClaim = false)

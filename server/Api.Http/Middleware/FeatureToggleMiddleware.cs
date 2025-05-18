@@ -24,7 +24,7 @@ public class FeatureToggleMiddleware
         {
             var featureName = $"Api.{controller}.{action}";
             
-            if (!IsFeatureEnabledForContext(featureName, context, toggleService))
+            if (!await IsFeatureEnabledForContext(featureName, context, toggleService))
             {
                 context.Response.StatusCode = 404;
                 return;
@@ -34,18 +34,18 @@ public class FeatureToggleMiddleware
         await _next(context);
     }
     
-    private static bool IsFeatureEnabledForContext(string featureName, HttpContext context, IFeatureToggleService toggleService)
+    private static async Task<bool> IsFeatureEnabledForContext(string featureName, HttpContext context, IFeatureToggleService toggleService)
     {
-        if (context.User.Identity?.IsAuthenticated != true) return toggleService.IsEnabled(featureName);
+        if (context.User.Identity?.IsAuthenticated != true) return await toggleService.IsEnabledAsync(featureName);
         
         try
         {
             var userId = context.User.GetUserId();
-            return toggleService.IsEnabledForUser(featureName, userId);
+            return await toggleService.IsEnabledForUserAsync(featureName, userId);
         }
         catch (ArgumentException)
         {
-            return toggleService.IsEnabled(featureName);
+            return await toggleService.IsEnabledAsync(featureName);
         }
     }
 }

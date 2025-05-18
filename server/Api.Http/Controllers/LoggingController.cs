@@ -1,5 +1,5 @@
 using Api.Http.Models;
-using Application.Interfaces;
+using Application.Interfaces.Monitoring;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

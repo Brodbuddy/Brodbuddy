@@ -59,7 +59,7 @@ public class FeatureToggleWebSocketMiddleware : IWebSocketMiddleware
             if (!string.IsNullOrEmpty(messageType)) 
             {
                 var featureName = $"Websocket.{messageType}";
-                var isFeatureEnabled = IsFeatureEnabledForContext(featureName, token, toggleService, jwtService);
+                var isFeatureEnabled = await IsFeatureEnabledForContext(featureName, token, toggleService, jwtService);
                 
                 if (!isFeatureEnabled)
                 {
@@ -77,9 +77,9 @@ public class FeatureToggleWebSocketMiddleware : IWebSocketMiddleware
         return true;
     }
     
-    private static bool IsFeatureEnabledForContext(string featureName, string? token, IFeatureToggleService toggleService, IJwtService jwtService)
+    private static async Task<bool> IsFeatureEnabledForContext(string featureName, string? token, IFeatureToggleService toggleService, IJwtService jwtService)
     {
-        var isGloballyEnabled = toggleService.IsEnabled(featureName);
+        var isGloballyEnabled = await toggleService.IsEnabledAsync(featureName);
         
         if (string.IsNullOrEmpty(token))
         {
@@ -93,7 +93,7 @@ public class FeatureToggleWebSocketMiddleware : IWebSocketMiddleware
         
         if (jwtService.TryValidate(token, out var claims) && Guid.TryParse(claims.Sub, out var userId))
         {
-            return toggleService.IsEnabledForUser(featureName, userId);
+            return await toggleService.IsEnabledForUserAsync(featureName, userId);
         }
         
         return isGloballyEnabled;

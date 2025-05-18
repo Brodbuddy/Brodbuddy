@@ -1,16 +1,18 @@
 using Application.Interfaces;
+using Application.Interfaces.Data.Repositories;
 using Core.Entities;
 
 namespace Application.Services;
 
 public interface IFeatureToggleService
 {
-    bool IsEnabled(string featureName);
-    bool IsEnabledForUser(string featureName, Guid userId);
+    Task<bool> IsEnabledAsync(string featureName);
+    Task<bool> IsEnabledForUserAsync(string featureName, Guid userId);
     Task<IEnumerable<Feature>> GetAllFeaturesAsync();
     Task<bool> SetFeatureEnabledAsync(string featureName, bool enabled);
     Task<bool> AddUserToFeatureAsync(string featureName, Guid userId);
     Task<bool> RemoveUserFromFeatureAsync(string featureName, Guid userId);
+    Task<bool> SetRolloutPercentageAsync(string featureName, int percentage);
 }
 
 public class FeatureToggleService : IFeatureToggleService
@@ -22,14 +24,14 @@ public class FeatureToggleService : IFeatureToggleService
         _repository = repository;
     }
     
-    public bool IsEnabled(string featureName)
+    public async Task<bool> IsEnabledAsync(string featureName)
     {
-        return _repository.IsEnabledAsync(featureName).GetAwaiter().GetResult();
+        return await _repository.IsEnabledAsync(featureName);
     }
 
-    public bool IsEnabledForUser(string featureName, Guid userId)
+    public async Task<bool> IsEnabledForUserAsync(string featureName, Guid userId)
     {
-        return _repository.IsEnabledForUserAsync(featureName, userId).GetAwaiter().GetResult();
+        return await _repository.IsEnabledForUserAsync(featureName, userId);
     }
     
     public async Task<IEnumerable<Feature>> GetAllFeaturesAsync()
@@ -50,5 +52,10 @@ public class FeatureToggleService : IFeatureToggleService
     public async Task<bool> RemoveUserFromFeatureAsync(string featureName, Guid userId)
     {
         return await _repository.RemoveUserFromFeatureAsync(featureName, userId);
+    }
+    
+    public async Task<bool> SetRolloutPercentageAsync(string featureName, int percentage)
+    {
+        return await _repository.SetRolloutPercentageAsync(featureName, percentage);
     }
 }
