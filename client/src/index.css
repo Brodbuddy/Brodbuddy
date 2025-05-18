@@ -1,1 +1,78 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Core theme variables */
+    --radius: 0.5rem;
+
+    /* Main theme colors - Light Mode */
+    --background: 36 30% 96%;        /* F4F0E6 - Blødt melfarvet baggrund */
+    --foreground: 0 0% 10%;          /* 1A1A1A - Sort tekst */
+    --card: 0 0% 100%;               /* FFFFFF - Hvid kort baggrund */
+    --card-foreground: 0 0% 10%;     /* 1A1A1A - Sort tekst på kort */
+
+    /* UI Component Colors */
+    --primary: 0 0% 100%;            /* FFFFFF - Hvid til CardTitle tekst */
+    --primary-foreground: 0 0% 100%; /* FFFFFF - Hvid tekst på primær */
+    --secondary: 36 55% 92%;         /* F6F1DC - Cremet hvede sekundær */
+    --secondary-foreground: 25 60% 45%; /* B36A32 - Terrakotta tekst på sekundær */
+    --accent: 36 70% 90%;            /* F9E9C3 - Lys hvede accent */
+    --accent-foreground: 25 60% 45%; /* B36A32 - Terrakotta for overskrifter og værdier */
+    --border: 30 30% 80%;            /* DCD0BB - Hvedefarvet kant */
+    --input: 36 20% 95%;             /* F5F2EC - Lys input baggrund */
+    --ring: 25 60% 45%;              /* B36A32 - Fokusring matcher primær */
+    --muted: 36 20% 92%;             /* F1EEE6 - Dæmpet baggrund */
+    --muted-foreground: 0 0% 40%;    /* 666666 - Dæmpet tekst */
+
+    /* Chart colors */
+    --chart-temperature: 0 84% 60%;  /* EF4444 - Rød til temperatur */
+    --chart-humidity: 217 91% 60%;   /* 3B82F6 - Blå til fugtighed */
+    --chart-growth: 142 71% 45%;     /* 22C55E - Grøn til vækst */
+    --chart-4: 31 95% 58%;           /* F97316 - Orange til fermentering */
+    --chart-5: 250 95% 64%;          /* 8B5CF6 - Lilla til andre datapunkter */
+
+    /* Custom variables for component */
+    --bg-cream: 36 30% 96%;          /* F4F0E6 - Surdej baggrund */
+    --bg-white: 0 0% 100%;           /* FFFFFF - Hvid baggrund */
+    --border-brown: 30 30% 80%;      /* DCD0BB - Brun kant */
+  }
+
+  .dark {
+    /* Dark theme */
+    --background: 0 0% 13%;          /* 212121 - Mørk baggrund */
+    --foreground: 0 0% 90%;          /* E6E6E6 - Off-white tekst for body */
+    --card: 0 0% 18%;                /* 2E2E2E - Mørkt kort */
+    --card-foreground: 0 0% 90%;     /* E6E6E6 - Off-white tekst i kort */
+
+    /* UI Component Colors */
+    --primary: 0 0% 0%;              /* 000000 - Sort tekst til CardTitle */
+    --primary-foreground: 0 0% 100%; /* FFFFFF - Hvid tekst på primær knapper */
+    --secondary: 0 0% 25%;           /* 404040 - Mørkegrå sekundær */
+    --secondary-foreground: 0 0% 90%; /* E6E6E6 - Off-white tekst på sekundær */
+    --accent: 25 100% 55%;           /* FF6D33 - Orange accent */
+    --accent-foreground: 25 60% 45%; /* B36A32 - Bevar terrakotta til overskrifter/værdier */
+    --border: 0 0% 30%;              /* 4D4D4D - Mellemgrå kant */
+    --input: 0 0% 20%;               /* 333333 - Mørk input */
+    --ring: 25 100% 55%;             /* FF6D33 - Orange fokusring */
+    --muted: 0 0% 22%;               /* 383838 - Dæmpet baggrund */
+    --muted-foreground: 0 0% 70%;    /* B3B3B3 - Medium grå tekst */
+
+    /* Chart colors - Bright colors for dark mode */
+    --chart-temperature: 0 100% 65%; /* FF4D4D - Klar rød */
+    --chart-humidity: 210 100% 65%;  /* 4D94FF - Klar blå */
+    --chart-growth: 120 100% 45%;    /* 00CC00 - Klar grøn */
+    --chart-4: 35 100% 65%;          /* FFBA4D - Klar orange */
+    --chart-5: 270 100% 65%;         /* A64DFF - Klar lilla */
+
+    /* Custom variables for component */
+    --bg-cream: 0 0% 13%;            /* 212121 - Mørk baggrund */
+    --bg-white: 0 0% 18%;            /* 2E2E2E - Mørkt kort */
+    --border-brown: 0 0% 30%;        /* 4D4D4D - Mellemgrå kant */
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
