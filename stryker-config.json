@@ -24,10 +24,11 @@
       "!/**/*Exception.cs",
       "!/**/SwaggerExtensions.cs",
       "!/**/GlobalExceptionHandler.cs",
+      "!/**/GlobalWebsocketExceptionHandler.cs",
       "!/**/LoggerFactory.cs",
       "!/**/Instrumentation.cs",
       "!/**/MqttHostedService.cs",
-      "!/**/FleckWebSocketSerer.cs"
+      "!/**/FleckWebSocketServer.cs"
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest",

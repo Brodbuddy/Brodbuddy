@@ -31,6 +31,14 @@ namespace Api.Websocket.Auth
             {
                 token = token["Bearer ".Length..].Trim();
             }
+            
+            token = token.Trim();
+            
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogDebug("No token provided for message type {MessageType}", messageType);
+                return new WebSocketAuthResult(false);
+            }
 
             using var scope = _serviceProvider.CreateScope();
             var authService = scope.ServiceProvider.GetRequiredService<IAuthenticationService>();
