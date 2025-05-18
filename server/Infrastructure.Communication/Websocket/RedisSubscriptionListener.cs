@@ -139,7 +139,7 @@ public class RedisSubscriptionListener : IHostedService, IAsyncDisposable
             }
 
             if (localSends <= 0) return;
-
+            
             _logger.LogDebug(
                 "Forwarded message from channel {Channel} to {LocalSendCount} local sockets for topic {Topic}",
                 channelStr, localSends, topic);

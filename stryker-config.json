@@ -3,7 +3,9 @@
     "ignore-methods": [
       "Log*", 
       "Console.Write*",
-      "*Exception.ctor"
+      "*Exception.ctor",
+      "DisposeAsync",
+      "DisposeAsyncCore"
     ],
     "mutate": [
       "/**/*.cs",
