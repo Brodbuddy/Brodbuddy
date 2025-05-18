@@ -62,11 +62,6 @@ public class FeatureToggleController : ControllerBase
     [Authorize(Roles = Role.Admin)]
     public async Task<ActionResult> SetRolloutPercentage(string featureName, [FromBody] FeatureToggleRolloutRequest request)
     {
-        if (request.Percentage is < 0 or > 100)
-        {
-            return BadRequest("Percentage must be between 0 and 100");
-        }
-        
         var success = await _featureToggleService.SetRolloutPercentageAsync(featureName, request.Percentage);
         return success ? Ok() : NotFound();
     }

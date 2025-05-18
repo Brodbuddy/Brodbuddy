@@ -2,6 +2,8 @@
 using Api.Http.Auth;
 using Api.Http.Middleware;
 using Core.Entities;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -23,10 +25,15 @@ public static class Extensions
     
     public static IServiceCollection AddHttpApi(this IServiceCollection services)
     {
-        services.AddControllers().AddJsonOptions(options =>
-        {
-            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        });
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+            });
+        
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssembly(typeof(Extensions).Assembly);
+        
         services.AddEndpointsApiExplorer();
         services.AddOpenApiDocument(configure =>
         {

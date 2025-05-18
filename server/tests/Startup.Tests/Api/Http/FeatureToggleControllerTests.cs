@@ -225,8 +225,12 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
         }
 
-        [Fact]
-        public async Task SetRolloutPercentage_WithInvalidPercentage_Returns400()
+        [Theory]
+        [InlineData(-1)]
+        [InlineData(101)]
+        [InlineData(200)]
+        [InlineData(-50)]
+        public async Task SetRolloutPercentage_WithInvalidPercentage_Returns400(int percentage)
         {
             // Arrange
             var client = Factory.CreateAdminHttpClient();
@@ -235,14 +239,11 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
             await client.PutAsJsonAsync($"{BaseUrl}/{featureName}", new FeatureToggleUpdateRequest(true));
 
             // Act
-            var response1 = await client.PutAsJsonAsync($"{BaseUrl}/{featureName}/rollout",
-                new FeatureToggleRolloutRequest(-1));
-            var response2 = await client.PutAsJsonAsync($"{BaseUrl}/{featureName}/rollout",
-                new FeatureToggleRolloutRequest(101));
+            var response = await client.PutAsJsonAsync($"{BaseUrl}/{featureName}/rollout",
+                new FeatureToggleRolloutRequest(percentage));
 
             // Assert
-            response1.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-            response2.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+            response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
         }
 
         [Fact]

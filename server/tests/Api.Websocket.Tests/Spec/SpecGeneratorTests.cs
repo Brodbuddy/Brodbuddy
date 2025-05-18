@@ -4,7 +4,6 @@ using Brodbuddy.WebSocket.Core;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using Xunit;
 using Xunit.Abstractions;
 using Fleck;
 

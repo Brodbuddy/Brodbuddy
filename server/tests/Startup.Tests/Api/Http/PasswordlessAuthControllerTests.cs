@@ -52,12 +52,17 @@ public partial class PasswordlessAuthControllerTests(StartupTestFixture fixture,
         });
     }
 
-    [Fact]
-    public async Task InitiateLogin_InvalidEmail_ShouldReturn400()
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-an-email")]
+    [InlineData("@example.com")]
+    [InlineData("user@")]
+    [InlineData("user@.com")]
+    public async Task InitiateLogin_InvalidEmail_ShouldReturn400(string email)
     {
         // Arrange
         var client = Factory.CreateClient();
-        var request = new InitiateLoginRequest("not-an-email");
+        var request = new InitiateLoginRequest(email);
         
         // Act
         var response = await client.PostAsJsonAsync(Routes.PasswordlessAuth.Initiate, request);
@@ -186,6 +191,23 @@ public partial class PasswordlessAuthControllerTests(StartupTestFixture fixture,
         
         // Assert
         verifyResponse.IsSuccessStatusCode.ShouldBeFalse("The request should fail with a nonexistent email");
+    }
+    
+    [Theory]
+    [InlineData("invalid-email", 123456)]
+    [InlineData("test@example.com", 99999)]
+    [InlineData("test@example.com", 1000000)]
+    [InlineData("", 123456)]
+    public async Task VerifyCode_WithInvalidInput_ShouldReturn400(string email, int code)
+    {
+        // Arrange
+        var client = Factory.CreateClient();
+        
+        // Act
+        var response = await client.PostAsJsonAsync(Routes.PasswordlessAuth.Verify, new LoginVerificationRequest(email, code));
+        
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
     
     [Fact]
