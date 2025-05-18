@@ -1,4 +1,5 @@
 using Application.Models;
+using Core.Entities;
 
 namespace Application.Services;
 
@@ -15,12 +16,17 @@ public class PasswordlessAuthService : IPasswordlessAuthService
     private readonly IIdentityVerificationService _identityVerificationService;
     private readonly IMultiDeviceIdentityService _multiDeviceIdentityService;
     private readonly IUserIdentityService _userIdentityService;
+    private readonly IUserRoleService _userRoleService;
 
-    public PasswordlessAuthService(IIdentityVerificationService identityVerificationService, IMultiDeviceIdentityService multiDeviceIdentityService, IUserIdentityService userIdentityService)
+    public PasswordlessAuthService(IIdentityVerificationService identityVerificationService,
+                                   IMultiDeviceIdentityService multiDeviceIdentityService,
+                                   IUserIdentityService userIdentityService,
+                                   IUserRoleService userRoleService)
     {
         _identityVerificationService = identityVerificationService;
         _multiDeviceIdentityService = multiDeviceIdentityService;
         _userIdentityService = userIdentityService;
+        _userRoleService = userRoleService;
     }
 
     public async Task<bool> InitiateLoginAsync(string email)
@@ -50,6 +56,8 @@ public class PasswordlessAuthService : IPasswordlessAuthService
     public async Task<(string email, string role)> UserInfoAsync(Guid userId)
     {
         var user = await _userIdentityService.GetAsync(userId);
-        return (user.Email, "user");
+        var roles = await _userRoleService.GetUserRolesAsync(userId);
+        var firstRole = roles.FirstOrDefault();
+        return (user.Email, role: firstRole?.Name ?? Role.Member);
     }
 }

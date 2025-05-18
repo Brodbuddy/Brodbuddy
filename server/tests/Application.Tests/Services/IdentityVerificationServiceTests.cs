@@ -12,6 +12,7 @@ public class IdentityVerificationServiceTests
 {
     private readonly Mock<IOtpService> _mockOtpService;
     private readonly Mock<IUserIdentityService> _mockUserIdentityService;
+    private readonly Mock<IUserRoleService> _mockUserRoleService;
     private readonly FakeEmailSender _emailSender;
 
     private readonly Mock<IIdentityVerificationRepository> _mockRepository;
@@ -26,12 +27,14 @@ public class IdentityVerificationServiceTests
     {
         _mockOtpService = new Mock<IOtpService>();
         _mockUserIdentityService = new Mock<IUserIdentityService>();
+        _mockUserRoleService = new Mock<IUserRoleService>();
         _emailSender = new FakeEmailSender();
         _mockRepository = new Mock<IIdentityVerificationRepository>();
         
         _service = new IdentityVerificationService(
             _mockOtpService.Object,
             _mockUserIdentityService.Object,
+            _mockUserRoleService.Object,
             _emailSender,
             _mockRepository.Object);
     }
@@ -45,6 +48,11 @@ public class IdentityVerificationServiceTests
             _mockUserIdentityService.Setup(s => s.CreateAsync(TestEmail))
                 .ReturnsAsync(TestUserId);
 
+            _mockUserRoleService.Setup(s => s.GetUserRolesAsync(TestUserId))
+                .ReturnsAsync(new List<Role>());
+
+            _mockUserRoleService.Setup(s => s.AssignRoleAsync(TestUserId, Role.Member, null))
+                .ReturnsAsync(Guid.NewGuid());
 
             _mockOtpService.Setup(s => s.GenerateAsync())
                 .ReturnsAsync((TestOtpId, TestCode));
@@ -58,6 +66,37 @@ public class IdentityVerificationServiceTests
             // Assert
             result.ShouldBeTrue();
             _mockUserIdentityService.Verify(s => s.CreateAsync(TestEmail), Times.Once);
+            _mockUserRoleService.Verify(s => s.GetUserRolesAsync(TestUserId), Times.Once);
+            _mockUserRoleService.Verify(s => s.AssignRoleAsync(TestUserId, Role.Member, null), Times.Once);
+            _mockOtpService.Verify(s => s.GenerateAsync(), Times.Once);
+            _mockRepository.Verify(r => r.CreateAsync(TestUserId, TestOtpId), Times.Once);
+        }
+
+        [Fact]
+        public async Task SendCodeAsync_UserAlreadyHasRole_DoesNotAssignRole()
+        {
+            // Arrange
+            var existingRole = new Role { Id = Guid.NewGuid(), Name = Role.Member };
+            _mockUserIdentityService.Setup(s => s.CreateAsync(TestEmail))
+                .ReturnsAsync(TestUserId);
+
+            _mockUserRoleService.Setup(s => s.GetUserRolesAsync(TestUserId))
+                .ReturnsAsync(new List<Role> { existingRole });
+
+            _mockOtpService.Setup(s => s.GenerateAsync())
+                .ReturnsAsync((TestOtpId, TestCode));
+
+            _mockRepository.Setup(r => r.CreateAsync(TestUserId, TestOtpId))
+                .ReturnsAsync(Guid.NewGuid());
+
+            // Act
+            var result = await _service.SendCodeAsync(TestEmail);
+
+            // Assert
+            result.ShouldBeTrue();
+            _mockUserIdentityService.Verify(s => s.CreateAsync(TestEmail), Times.Once);
+            _mockUserRoleService.Verify(s => s.GetUserRolesAsync(TestUserId), Times.Once);
+            _mockUserRoleService.Verify(s => s.AssignRoleAsync(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<Guid?>()), Times.Never);
             _mockOtpService.Verify(s => s.GenerateAsync(), Times.Once);
             _mockRepository.Verify(r => r.CreateAsync(TestUserId, TestOtpId), Times.Once);
         }
@@ -69,9 +108,14 @@ public class IdentityVerificationServiceTests
             _mockUserIdentityService.Setup(s => s.CreateAsync(TestEmail))
                 .ReturnsAsync(TestUserId);
 
+            _mockUserRoleService.Setup(s => s.GetUserRolesAsync(TestUserId))
+                .ReturnsAsync(new List<Role>());
+
+            _mockUserRoleService.Setup(s => s.AssignRoleAsync(TestUserId, Role.Member, null))
+                .ReturnsAsync(Guid.NewGuid());
+
             _mockOtpService.Setup(s => s.GenerateAsync())
                 .ReturnsAsync((TestOtpId, TestCode));
-
 
             _mockRepository.Setup(r => r.CreateAsync(TestUserId, TestOtpId))
                 .ReturnsAsync(Guid.NewGuid());

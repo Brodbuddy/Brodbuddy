@@ -9,6 +9,7 @@ public static class Extensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         services.AddSingleton(TimeProvider.System);
+        
         services.AddScoped<IDeviceService, DeviceService>();
         services.AddScoped<IOtpService, OtpService>();
         services.AddScoped<IUserIdentityService, UserIdentityService>();
@@ -18,10 +19,12 @@ public static class Extensions
         services.AddScoped<IJwtService, JwtService>();
         services.AddScoped<IIdentityVerificationService, IdentityVerificationService>();
         services.AddScoped<IPasswordlessAuthService, PasswordlessAuthService>();
-        
-        services.AddScoped<IMqttTestService, MqttTestService>();
+        services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IUserRoleService, UserRoleService>();
         
         services.AddScoped<IFeatureToggleService, FeatureToggleService>();
+        
+        services.AddScoped<IMqttTestService, MqttTestService>();
         return services;
     }
 }

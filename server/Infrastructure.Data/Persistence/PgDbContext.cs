@@ -30,6 +30,10 @@ public partial class PgDbContext : DbContext
 
     public virtual DbSet<VerificationContext> VerificationContexts { get; set; }
 
+    public virtual DbSet<Role> Roles { get; set; }
+
+    public virtual DbSet<UserRole> UserRoles { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("uuid-ossp");
@@ -278,6 +282,57 @@ public partial class PgDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("verification_contexts_user_id_fkey");
+        });
+
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("roles_pkey");
+
+            entity.ToTable("roles");
+
+            entity.HasIndex(e => e.Name, "idx_roles_name");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+        });
+
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("user_roles_pkey");
+
+            entity.ToTable("user_roles");
+
+            entity.HasIndex(e => e.RoleId, "idx_user_roles_role_id");
+            entity.HasIndex(e => e.UserId, "idx_user_roles_user_id");
+            entity.HasIndex(e => new { e.UserId, e.RoleId }, "user_roles_user_id_role_id_key").IsUnique();
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("uuid_generate_v4()")
+                .HasColumnName("id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
+            entity.Property(e => e.RoleId).HasColumnName("role_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.CreatedByUser).WithMany()
+                .HasForeignKey(d => d.CreatedBy)
+                .HasConstraintName("user_roles_created_by_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserRoles)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("user_roles_user_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

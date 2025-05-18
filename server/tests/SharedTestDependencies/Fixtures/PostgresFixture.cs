@@ -149,7 +149,7 @@ public class PostgresFixture :  DbContainerFixture<PostgreSqlBuilder, PostgreSql
         {
             DbAdapter = DbAdapter.Postgres,
             SchemasToInclude = ["public"],
-            TablesToIgnore = ["flyway_schema_history"]
+            TablesToIgnore = ["flyway_schema_history", "roles"]
         });
         Log("Respawner instance created");
     }

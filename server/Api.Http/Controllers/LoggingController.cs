@@ -1,5 +1,6 @@
 using Api.Http.Models;
 using Application.Interfaces.Monitoring;
+using Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,7 +18,7 @@ public class LoggingController : ControllerBase
     }
     
     [HttpGet("level")]
-    [Authorize(Roles = "user")]
+    [Authorize(Roles = Role.Admin)]
     public ActionResult<LogLevelResponse> GetCurrentLogLevel()
     {
         var currentLevel = _logLevelManager.GetCurrentLevel();
@@ -25,7 +26,7 @@ public class LoggingController : ControllerBase
     }
     
     [HttpPut("level")]
-    [Authorize(Roles = "user")]
+    [Authorize(Roles = Role.Admin)]
     public ActionResult<LogLevelUpdateResponse> SetLogLevel([FromBody] LogLevelUpdateRequest request)
     {
         _logLevelManager.SetLogLevel(request.LogLevel);

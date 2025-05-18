@@ -1,5 +1,6 @@
 ﻿using Application.Interfaces.Data.Repositories;
 using Application.Models;
+using Core.Entities;
 
 namespace Application.Services;
 
@@ -16,19 +17,22 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
     private readonly IRefreshTokenService _refreshTokenService;
     private readonly IJwtService _jwtService;
     private readonly IUserIdentityService _userIdentityService;
+    private readonly IUserRoleService _userRoleService;
 
     public MultiDeviceIdentityService(
         IMultiDeviceIdentityRepository repository,
         IDeviceRegistryService deviceRegistryService,
         IRefreshTokenService refreshTokenService,
         IJwtService jwtService,
-        IUserIdentityService userIdentityService)
+        IUserIdentityService userIdentityService,
+        IUserRoleService userRoleService)
     {
         _repository = repository;
         _deviceRegistryService = deviceRegistryService;
         _refreshTokenService = refreshTokenService;
         _jwtService = jwtService;
         _userIdentityService = userIdentityService;
+        _userRoleService = userRoleService;
     }
 
     public async Task<(string accessToken, string refreshToken)> EstablishIdentityAsync(Guid userId,
@@ -45,7 +49,9 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
 
         await _repository.SaveIdentityAsync(userId, deviceId, tokenId);
 
-        var accessToken = _jwtService.Generate(userId.ToString(), userInfo.Email, "user");
+        var roles = await _userRoleService.GetUserRolesAsync(userId);
+        var firstRole = roles.FirstOrDefault();
+        var accessToken = _jwtService.Generate(userId.ToString(), userInfo.Email, firstRole?.Name ?? Role.Member);
 
         return (accessToken, refreshToken);
     }
@@ -71,7 +77,9 @@ public class MultiDeviceIdentityService : IMultiDeviceIdentityService
 
         await _repository.SaveIdentityAsync(tokenContext.UserId, tokenContext.DeviceId, newTokenId);
 
-        var accessToken = _jwtService.Generate(tokenContext.UserId.ToString(), tokenContext.User.Email, "user");
+        var roles = await _userRoleService.GetUserRolesAsync(tokenContext.UserId);
+        var firstRole = roles.FirstOrDefault();
+        var accessToken = _jwtService.Generate(tokenContext.UserId.ToString(), tokenContext.User.Email, firstRole?.Name ?? Role.Member);
 
         return (accessToken, newRefreshToken);
     }

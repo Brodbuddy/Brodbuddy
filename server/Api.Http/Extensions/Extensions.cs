@@ -1,6 +1,7 @@
 ﻿using System.Text.Json.Serialization;
 using Api.Http.Auth;
 using Api.Http.Middleware;
+using Core.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -17,6 +18,8 @@ public static class Extensions
     private const string ApiVersion = "v1";
     private const string ApiDescription = "API til Brodbuddy";
     private const string CorsPolicy = "CorsPolicy";
+    private const string AdminPolicy = "admin";
+    private const string MemberPolicy = "member";
     
     public static IServiceCollection AddHttpApi(this IServiceCollection services)
     {
@@ -91,8 +94,8 @@ public static class Extensions
                 })
                 .Build();
             
-            options.AddPolicy("admin", policy => policy.RequireRole("admin"));
-            options.AddPolicy("user", policy => policy.RequireRole("user"));
+            options.AddPolicy(AdminPolicy, policy => policy.RequireRole(Role.Admin));
+            options.AddPolicy(MemberPolicy, policy => policy.RequireRole(Role.Member));
         });
         
         services.AddRouting(options =>

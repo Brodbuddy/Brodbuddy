@@ -3,6 +3,7 @@ using Api.Websocket.Spec;
 using Brodbuddy.WebSocket.Auth;
 using Brodbuddy.WebSocket.Core;
 using Brodbuddy.WebSocket.State;
+using Core.Entities;
 using Fleck;
 using FluentValidation;
 
@@ -25,7 +26,7 @@ public class JoinRoomValidator : AbstractValidator<JoinRoom>
     }
 }
 
-// [Authorize(Roles = "user")]
+// [Authorize(Roles = Role.Member)]
 [AllowAnonymous]
 public class JoinRoomHandler(ISocketManager manager) : ISubscriptionHandler<JoinRoom, UserJoined>
 {

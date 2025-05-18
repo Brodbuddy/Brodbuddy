@@ -10,6 +10,7 @@ public class PasswordlessAuthServiceTests
     private readonly Mock<IIdentityVerificationService> _mockIdentityVerificationService;
     private readonly Mock<IMultiDeviceIdentityService> _mockMultiDeviceIdentityService;
     private readonly Mock<IUserIdentityService> _mockUserIdentityService;
+    private readonly Mock<IUserRoleService> _mockUserRoleService;
     private readonly PasswordlessAuthService _service;
 
     public PasswordlessAuthServiceTests()
@@ -17,10 +18,12 @@ public class PasswordlessAuthServiceTests
         _mockIdentityVerificationService = new Mock<IIdentityVerificationService>();
         _mockMultiDeviceIdentityService = new Mock<IMultiDeviceIdentityService>();
         _mockUserIdentityService = new Mock<IUserIdentityService>();
+        _mockUserRoleService = new Mock<IUserRoleService>();
         _service = new PasswordlessAuthService(
             _mockIdentityVerificationService.Object,
             _mockMultiDeviceIdentityService.Object,
-            _mockUserIdentityService.Object);
+            _mockUserIdentityService.Object,
+            _mockUserRoleService.Object);
     }
 
 

@@ -4,6 +4,7 @@ using Api.Http.Utils;
 using Application;
 using Application.Models;
 using Application.Services;
+using Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -91,11 +92,10 @@ public class PasswordlessAuthController : ControllerBase
     }
     
     [HttpGet("user-info")]
-    [Authorize(Roles = "user")]
     public async Task<UserInfoResponse> UserInfo()
     {
         var userInfo = await _authService.UserInfoAsync(HttpContext.User.GetUserId());
-        return new UserInfoResponse(Email: userInfo.email, IsAdmin: false);
+        return new UserInfoResponse(Email: userInfo.email, IsAdmin: userInfo.role == Role.Admin);
     }
     
     private CookieOptions GetRefreshTokenCookieOptions() => new()

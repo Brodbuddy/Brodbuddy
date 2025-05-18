@@ -43,7 +43,7 @@ public class LoggingControllerTests(StartupTestFixture fixture, ITestOutputHelpe
         public async Task GetCurrentLogLevel_WithAuth_Returns200()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
 
             // Act
             var response = await client.GetAsync($"{BaseUrl}/level");
@@ -82,7 +82,7 @@ public class LoggingControllerTests(StartupTestFixture fixture, ITestOutputHelpe
         public async Task SetLogLevel_WithValidRequest_Returns200()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var request = new LogLevelUpdateRequest(LoggingLevel.Debug);
 
             // Act
@@ -100,7 +100,7 @@ public class LoggingControllerTests(StartupTestFixture fixture, ITestOutputHelpe
         public async Task SetLogLevel_PersistsAcrossRequests()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
 
             var getResponse = await client.GetAsync($"{BaseUrl}/level");
             var originalLevel = await getResponse.Content.ReadFromJsonAsync<LogLevelResponse>(JsonOptions);
@@ -131,7 +131,7 @@ public class LoggingControllerTests(StartupTestFixture fixture, ITestOutputHelpe
         public async Task SetLogLevel_SupportsAllLevels(LoggingLevel level)
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var request = new LogLevelUpdateRequest(level);
 
             // Act

@@ -35,7 +35,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task GetAllFeatures_WithAuth_Returns200()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var featureName = $"test_feature_{Guid.NewGuid():N}";
 
             await client.PutAsJsonAsync($"{BaseUrl}/{featureName}", new FeatureToggleUpdateRequest(true));
@@ -62,7 +62,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task SetFeatureEnabled_WithValidRequest_Returns200()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var featureName = "test_feature";
             var request = new FeatureToggleUpdateRequest(true);
 
@@ -95,7 +95,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task AddUserToFeature_WithNonExistentUser_Returns500()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var featureName = $"test_feature_{Guid.NewGuid():N}";
             var nonExistentUserId = Guid.NewGuid();
 
@@ -113,7 +113,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task AddUserToFeature_WithNonExistentFeature_Returns404()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var featureName = "non_existent_feature";
             var userId = Guid.NewGuid();
 
@@ -128,7 +128,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task AddUserToFeature_WithActualUser_EnablesFeatureForUser()
         {
             // Arrange
-            var adminClient = Factory.CreateAuthenticatedHttpClient();
+            var adminClient = Factory.CreateAdminHttpClient();
             var featureName = $"user_feature_{Guid.NewGuid():N}";
         
             await adminClient.PutAsJsonAsync($"{BaseUrl}/{featureName}", new FeatureToggleUpdateRequest(false));
@@ -161,7 +161,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task RemoveUserFromFeature_WithNonExistentFeature_Returns404()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var featureName = "non_existent_feature";
             var userId = Guid.NewGuid();
 
@@ -176,7 +176,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task RemoveUserFromFeature_WithNonExistentUser_Returns404()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var featureName = "test_feature";
             var userId = Guid.NewGuid();
 
@@ -212,7 +212,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task SetRolloutPercentage_WithValidRequest_Returns200()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var featureName = $"rollout_feature_{Guid.NewGuid():N}";
             var request = new FeatureToggleRolloutRequest(50);
 
@@ -229,7 +229,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task SetRolloutPercentage_WithInvalidPercentage_Returns400()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var featureName = $"rollout_feature_{Guid.NewGuid():N}";
 
             await client.PutAsJsonAsync($"{BaseUrl}/{featureName}", new FeatureToggleUpdateRequest(true));
@@ -249,7 +249,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task SetRolloutPercentage_WithNonExistentFeature_Returns404()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var featureName = $"non_existent_{Guid.NewGuid():N}";
             var request = new FeatureToggleRolloutRequest(50);
 
@@ -283,7 +283,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         {
             // Arrange
             var featureName = "Api.PasswordlessAuth.InitiateLogin";
-            var adminClient = Factory.CreateAuthenticatedHttpClient();
+            var adminClient = Factory.CreateAdminHttpClient();
             var regularClient = Factory.CreateClient();
             var request = new InitiateLoginRequest("test@example.com");
 
@@ -307,7 +307,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         public async Task FullCycle_CreateFeatureAndManageUsers_WorksCorrectly()
         {
             // Arrange
-            var client = Factory.CreateAuthenticatedHttpClient();
+            var client = Factory.CreateAdminHttpClient();
             var featureName = $"test_feature_{Guid.NewGuid():N}";
 
             // Act & Assert

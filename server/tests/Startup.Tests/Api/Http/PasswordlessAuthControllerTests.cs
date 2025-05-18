@@ -194,7 +194,7 @@ public partial class PasswordlessAuthControllerTests(StartupTestFixture fixture,
         // Arrange
         var userId = Guid.NewGuid().ToString();
         var email = GetUniqueEmail();
-        var client = Factory.CreateAuthenticatedHttpClient(userId, email, "user");
+        var client = Factory.CreateMemberHttpClient(userId, email, "user");
         
         await WithDbContextAsync(async dbContext =>
         {
@@ -235,7 +235,7 @@ public partial class PasswordlessAuthControllerTests(StartupTestFixture fixture,
     public async Task Logout_ShouldClearRefreshTokenCookie()
     {
         // Arrange
-        var client = Factory.CreateAuthenticatedHttpClient();
+        var client = Factory.CreateMemberHttpClient();
         
         // Act
         var response = await client.PostAsync(Routes.PasswordlessAuth.Logout, null);

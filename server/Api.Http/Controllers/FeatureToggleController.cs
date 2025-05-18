@@ -1,5 +1,6 @@
 using Api.Http.Models;
 using Application.Services;
+using Core.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,7 +18,7 @@ public class FeatureToggleController : ControllerBase
     }
     
     [HttpGet]
-    [Authorize(Roles = "user")]
+    [Authorize(Roles = Role.Admin)]
     public async Task<ActionResult<FeatureToggleListResponse>> GetAllFeatures()
     {
         var features = await _featureToggleService.GetAllFeaturesAsync();
@@ -34,7 +35,7 @@ public class FeatureToggleController : ControllerBase
     }
     
     [HttpPut("{featureName}")]
-    [Authorize(Roles = "user")]
+    [Authorize(Roles = Role.Admin)]
     public async Task<ActionResult> SetFeatureEnabled(string featureName, [FromBody] FeatureToggleUpdateRequest request)
     {
         var success = await _featureToggleService.SetFeatureEnabledAsync(featureName, request.IsEnabled);
@@ -42,7 +43,7 @@ public class FeatureToggleController : ControllerBase
     }
     
     [HttpPost("{featureName}/users/{userId:guid}")]
-    [Authorize(Roles = "user")]
+    [Authorize(Roles = Role.Admin)]
     public async Task<ActionResult> AddUserToFeature(string featureName, Guid userId)
     {
         var success = await _featureToggleService.AddUserToFeatureAsync(featureName, userId);
@@ -50,7 +51,7 @@ public class FeatureToggleController : ControllerBase
     }
     
     [HttpDelete("{featureName}/users/{userId:guid}")]
-    [Authorize(Roles = "user")]
+    [Authorize(Roles = Role.Admin)]
     public async Task<ActionResult> RemoveUserFromFeature(string featureName, Guid userId)
     {
         var success = await _featureToggleService.RemoveUserFromFeatureAsync(featureName, userId);
@@ -58,7 +59,7 @@ public class FeatureToggleController : ControllerBase
     }
     
     [HttpPut("{featureName}/rollout")]
-    [Authorize(Roles = "user")]
+    [Authorize(Roles = Role.Admin)]
     public async Task<ActionResult> SetRolloutPercentage(string featureName, [FromBody] FeatureToggleRolloutRequest request)
     {
         if (request.Percentage is < 0 or > 100)

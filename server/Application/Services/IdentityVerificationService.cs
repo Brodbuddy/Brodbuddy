@@ -13,17 +13,20 @@ public class IdentityVerificationService : IIdentityVerificationService
 {
     private readonly IOtpService _otpService;
     private readonly IUserIdentityService _userIdentityService;
+    private readonly IUserRoleService _userRoleService;
     private readonly IEmailSender _emailService;
     private readonly IIdentityVerificationRepository _identityVerificationRepository;
     
     public IdentityVerificationService(
         IOtpService otpService,
         IUserIdentityService userIdentityService,
+        IUserRoleService userRoleService,
         IEmailSender emailService,
         IIdentityVerificationRepository identityVerificationRepository)
     {
         _otpService = otpService;
         _userIdentityService = userIdentityService;
+        _userRoleService = userRoleService;
         _identityVerificationRepository = identityVerificationRepository;
         _emailService = emailService;
     }
@@ -31,6 +34,9 @@ public class IdentityVerificationService : IIdentityVerificationService
     public async Task<bool> SendCodeAsync(string email)
     {
         var userId = await _userIdentityService.CreateAsync(email);
+        
+        var userRoles = await _userRoleService.GetUserRolesAsync(userId);
+        if (!userRoles.Any()) await _userRoleService.AssignRoleAsync(userId, Core.Entities.Role.Member);
 
         var (otpId, code) = await _otpService.GenerateAsync();
 

@@ -1,5 +1,6 @@
 using Application;
 using Application.Services;
+using Core.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Startup.Tests.Infrastructure.Factories;
@@ -19,13 +20,30 @@ public static class WebSocketTestExtensions
         return new WebSocketTestClient(wsUri, output, clientId);
     }
     
-    public static WebSocketTestClient CreateAuthenticatedWebSocketClient(
+    public static WebSocketTestClient CreateMemberWebSocketClient(
         this CustomWebApplicationFactory factory,
         ITestOutputHelper output,
         string? clientId = null,
         string userId = "test-user", 
         string email = "test@example.com", 
-        string role = "user")
+        string role = Role.Member)
+    {
+        var jwtService = factory.Services.GetRequiredService<IJwtService>();
+        var token = jwtService.Generate(userId, email, role);
+        
+        var wsClient = factory.CreateWebSocketClient(output, clientId);
+        wsClient.WithAuth(token);
+        
+        return wsClient;
+    }
+    
+    public static WebSocketTestClient CreateAdminWebSocketClient(
+        this CustomWebApplicationFactory factory,
+        ITestOutputHelper output,
+        string? clientId = null,
+        string userId = "test-user", 
+        string email = "test@example.com", 
+        string role = Role.Admin)
     {
         var jwtService = factory.Services.GetRequiredService<IJwtService>();
         var token = jwtService.Generate(userId, email, role);

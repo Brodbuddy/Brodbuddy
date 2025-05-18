@@ -15,7 +15,7 @@ public class JoinRoomTests(StartupTestFixture fixture, ITestOutputHelper output)
     [Fact]
     public async Task JoinRoom_ShouldSucceed_WhenValidRequest()
     {
-        await using var client = Factory.CreateAuthenticatedWebSocketClient(Output, "vanvittigtjo");
+        await using var client = Factory.CreateMemberWebSocketClient(Output, "vanvittigtjo");
     
         var response = await client.SendAndWaitAsync<JoinRoom, UserJoined>("JoinRoom", new JoinRoom("room1", "Alice"));
     
@@ -27,7 +27,7 @@ public class JoinRoomTests(StartupTestFixture fixture, ITestOutputHelper output)
     [Fact]
     public async Task JoinRoom_ShouldSucceed_WithScenario()
     {
-        await using var client = Factory.CreateAuthenticatedWebSocketClient(Output, "okiiii");
+        await using var client = Factory.CreateMemberWebSocketClient(Output, "okiiii");
 
         await client.CreateScenario("Alice joins room")
             .Send("JoinRoom", new JoinRoom("room1", "Alice"))
@@ -42,7 +42,7 @@ public class JoinRoomTests(StartupTestFixture fixture, ITestOutputHelper output)
     [Fact]
     public async Task JoinRoom_ShouldHandleMultipleUsersWithChaining()
     {
-        await using var client = Factory.CreateAuthenticatedWebSocketClient(Output, "hallo");
+        await using var client = Factory.CreateMemberWebSocketClient(Output, "hallo");
 
         await client.CreateScenario("Multiple users join the same room")
             .SendAndExpect<JoinRoom, UserJoined>("JoinRoom",
@@ -60,7 +60,7 @@ public class JoinRoomTests(StartupTestFixture fixture, ITestOutputHelper output)
     [Fact]
     public async Task JoinRoom_ShouldHandleErrorScenarios()
     {
-        await using var client = Factory.CreateAuthenticatedWebSocketClient(Output, "hejmeddig");
+        await using var client = Factory.CreateMemberWebSocketClient(Output, "hejmeddig");
 
         await client.CreateScenario("Test validation errors")
             .Send("JoinRoom", new JoinRoom("room1", ""))
@@ -75,9 +75,9 @@ public class JoinRoomTests(StartupTestFixture fixture, ITestOutputHelper output)
     [Fact]
     public async Task MultipleClients_ShouldJoinRoom_Simultaneously()
     {
-        await using var alice = Factory.CreateAuthenticatedWebSocketClient(Output, "ostehaps");
-        await using var bob = Factory.CreateAuthenticatedWebSocketClient(Output, "chokoladestang");
-        await using var charlie = Factory.CreateAuthenticatedWebSocketClient(Output, "kanelkartoffel");
+        await using var alice = Factory.CreateMemberWebSocketClient(Output, "ostehaps");
+        await using var bob = Factory.CreateMemberWebSocketClient(Output, "chokoladestang");
+        await using var charlie = Factory.CreateMemberWebSocketClient(Output, "kanelkartoffel");
 
         var aliceScenario = alice.CreateScenario("Alice joins")
             .SendAndExpect<JoinRoom, UserJoined>("JoinRoom", 

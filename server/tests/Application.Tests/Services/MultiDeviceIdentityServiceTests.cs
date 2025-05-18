@@ -17,6 +17,7 @@ public class MultiDeviceIdentityServiceTests
     private readonly Mock<IRefreshTokenService> _refreshTokenServiceMock;
     private readonly Mock<IJwtService> _jwtServiceMock;
     private readonly Mock<IUserIdentityService> _userIdentityServiceMock;
+    private readonly Mock<IUserRoleService> _userRoleServiceMock;
     private readonly IMultiDeviceIdentityService _multiDeviceIdentityService;
 
 
@@ -28,12 +29,14 @@ public class MultiDeviceIdentityServiceTests
         _refreshTokenServiceMock = new Mock<IRefreshTokenService>();
         _jwtServiceMock = new Mock<IJwtService>();
         _userIdentityServiceMock = new Mock<IUserIdentityService>();
+        _userRoleServiceMock = new Mock<IUserRoleService>();
         _multiDeviceIdentityService = new MultiDeviceIdentityService(
             _repositoryMock.Object,
             _deviceRegistryServiceMock.Object,
             _refreshTokenServiceMock.Object,
             _jwtServiceMock.Object,
-            _userIdentityServiceMock.Object);
+            _userIdentityServiceMock.Object,
+            _userRoleServiceMock.Object);
     }
 
     public class EstablishIdentityAsync(ITestOutputHelper outputHelper) : MultiDeviceIdentityServiceTests(outputHelper)
@@ -57,7 +60,8 @@ public class MultiDeviceIdentityServiceTests
             _userIdentityServiceMock.Setup(x => x.GetAsync(userId)).ReturnsAsync(userInfo);
             _refreshTokenServiceMock.Setup(x => x.GenerateAsync()).ReturnsAsync((expectedRefreshToken, refreshTokenId));
             _repositoryMock.Setup(x => x.SaveIdentityAsync(userId, deviceId, refreshTokenId)).ReturnsAsync(Guid.NewGuid());
-            _jwtServiceMock.Setup(x => x.Generate(userId.ToString(), email, "user")).Returns(expectedAccessToken);
+            _userRoleServiceMock.Setup(x => x.GetUserRolesAsync(userId)).ReturnsAsync(new List<Role> { new Role { Name = Role.Member } });
+            _jwtServiceMock.Setup(x => x.Generate(userId.ToString(), email, Role.Member)).Returns(expectedAccessToken);
 
             // Act
             var result = await _multiDeviceIdentityService.EstablishIdentityAsync(userId, deviceDetails);
@@ -70,7 +74,7 @@ public class MultiDeviceIdentityServiceTests
             _userIdentityServiceMock.Verify(x => x.GetAsync(userId), Times.Once);
             _refreshTokenServiceMock.Verify(x => x.GenerateAsync(), Times.Once);
             _repositoryMock.Verify(x => x.SaveIdentityAsync(userId, deviceId, refreshTokenId), Times.Once);
-            _jwtServiceMock.Verify(x => x.Generate(userId.ToString(), email, "user"), Times.Once);
+            _jwtServiceMock.Verify(x => x.Generate(userId.ToString(), email, Role.Member), Times.Once);
         }
 
         [Fact]
@@ -214,9 +218,15 @@ public class MultiDeviceIdentityServiceTests
                 .ReturnsAsync(Guid.NewGuid())
                 .Verifiable("Saving new identity context must be attempted");
 
-            // 7. Opsæt generering af NY access token  -> Success
+            // 7. Opsæt hentning af brugerens roller -> Success
+            _userRoleServiceMock
+                .Setup(x => x.GetUserRolesAsync(userId))
+                .ReturnsAsync(new List<Role> { new Role { Name = Role.Member } })
+                .Verifiable("Fetching user roles must be attempted");
+                
+            // 8. Opsæt generering af NY access token  -> Success
             _jwtServiceMock
-                .Setup(x => x.Generate(userId.ToString(), email, "user"))
+                .Setup(x => x.Generate(userId.ToString(), email, Role.Member))
                 .Returns(expectedAccessToken)
                 .Verifiable("Generation of new JWT must be attempted");
 
