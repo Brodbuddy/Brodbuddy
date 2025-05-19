@@ -6,6 +6,7 @@ import { AuthContext } from './AuthContext';
 import { useSidebar } from "./components/ui/sidebar";
 import { RequireAuth } from "./components/RequireAuth";
 import { Toaster} from 'sonner';
+import { WebSocketTest } from "./components/WebSocketTest";
 
 export default function App() {
     const auth = useAuth();
@@ -25,6 +26,8 @@ export default function App() {
                         <Route path={AppRoutes.homeDashboard} element={
                             <RequireAuth accessLevel={AccessLevel.Protected} element={<HomeDashboard />}/>
                         }/>
+                        
+                        <Route path="/ws-test" element={<WebSocketTest />} />
                         
                         <Route path={AppRoutes.login} element={
                             auth.isAuthenticated?

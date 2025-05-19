@@ -20,8 +20,7 @@ public static class SpecGenerator
         
         var handlers = assembly.GetTypes().Where(t => t is { IsAbstract: false, IsInterface: false })
                                                           .Where(t => t.GetInterfaces()
-                                                                            .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IWebSocketHandler<,>)))
-                                                          .Where(t => t.Name != "PingHandler");
+                                                                       .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IWebSocketHandler<,>)));
         
         foreach (var handlerType in handlers)
         {
