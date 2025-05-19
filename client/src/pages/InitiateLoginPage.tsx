@@ -44,7 +44,7 @@ export default function InitiateLoginPage() {
             } else {
                 setError('Failed to send verification code. Please try again.');
             }
-        } catch (err) {
+        } catch {
             setError('An error occurred. Please try again later.');
         } finally {
             setIsLoading(false);

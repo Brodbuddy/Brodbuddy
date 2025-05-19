@@ -2,9 +2,8 @@ import { useAtom } from 'jotai';
 import { AxiosError } from 'axios';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { api, REDIRECT_PATH_KEY } from "../hooks/useHttp";
-import { jwtAtom, tokenStorage, TOKEN_KEY, userInfoAtom } from '../atoms/auth';
-import { AppRoutes } from "../helpers/appRoutes.ts";
+import { api, REDIRECT_PATH_KEY } from "./useHttp";
+import { jwtAtom, tokenStorage, TOKEN_KEY, userInfoAtom, AppRoutes } from './import';
 import { UserInfoResponse, InitiateLoginRequest } from '../api/Api';
 
 type AuthHook = {
@@ -17,7 +16,7 @@ type AuthHook = {
 };
 
 export const useAuth = (): AuthHook => {
-    const [_, setJwt] = useAtom(jwtAtom);
+    const [, setJwt] = useAtom(jwtAtom);
     const [user, setUser] = useAtom(userInfoAtom);
     const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();

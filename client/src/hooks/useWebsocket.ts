@@ -1,9 +1,8 @@
 import { useAtomValue } from 'jotai';
-import { clientIdAtom } from './import';
+import { clientIdAtom, tokenStorage, TOKEN_KEY, jwtAtom } from './import';
 import { useEffect, useState, useMemo } from 'react';
 import { WebSocketClient, WebSocketError, ErrorCodes } from '../api/websocket-client';
 import { refreshToken } from "./useHttp";
-import { tokenStorage, TOKEN_KEY, jwtAtom } from '../atoms/auth';
 import config from '../config';
 
 export function useWebSocket() {

@@ -61,7 +61,7 @@ export default function CompleteLoginPage() {
             if (!success) {
                 setError('Invalid verification code. Please try again.');
             }
-        } catch (err) {
+        } catch {
             setError('An error occurred. Please try again later.');
         } finally {
             setIsLoading(false);
