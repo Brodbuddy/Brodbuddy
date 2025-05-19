@@ -1,4 +1,5 @@
 ﻿using Application;
+using Application.Interfaces;
 using Application.Interfaces.Communication.Mail;
 using Brodbuddy.WebSocket.State;
 using FluentEmail.Core;
@@ -7,6 +8,7 @@ using Infrastructure.Communication.Mail;
 using Infrastructure.Communication.Websocket;
 using Application.Interfaces.Communication.Publishers;
 using Infrastructure.Communication.Mqtt;
+using Infrastructure.Communication.Notifiers;
 using Infrastructure.Communication.Publishers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -21,6 +23,7 @@ public static class Extensions
         services.AddMail();
         services.AddSocketManager();
         services.AddMqttPublisher();
+        services.AddNotifiers();
         return services;
     }
 
@@ -66,6 +69,12 @@ public static class Extensions
     {
         services.AddScoped<IMqttPublisher, HiveMqttPublisher>();
         services.AddScoped<IDevicePublisher, TestMqttDevicePublisher>();
+        return services;
+    }
+
+    private static IServiceCollection AddNotifiers(this IServiceCollection services)
+    {
+        services.AddScoped<ITestNotifier, WsTestNotifier>();
         return services;
     }
 }

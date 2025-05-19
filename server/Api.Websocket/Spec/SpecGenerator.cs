@@ -1,4 +1,5 @@
 using System.Reflection;
+using Application.Models;
 using Brodbuddy.WebSocket.Core;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,7 +8,7 @@ namespace Api.Websocket.Spec;
 
 public static class SpecGenerator
 {
-    public static WebSocketSpec GenerateSpec(Assembly assembly, IServiceProvider serviceProvider)
+    public static WebSocketSpec GenerateSpec(Assembly[] assemblies, IServiceProvider serviceProvider)
     {
         var requestTypes = new Dictionary<string, string>();
         var responseTypes = new Dictionary<string, string>();
@@ -17,58 +18,86 @@ public static class SpecGenerator
         var unsubscriptionMethods = new Dictionary<string, string>();
         var types = new Dictionary<string, TypeDefinition>();
         var requestResponses = new Dictionary<string, RequestResponseMapping>();
-        
-        var handlers = assembly.GetTypes().Where(t => t is { IsAbstract: false, IsInterface: false })
-                                                          .Where(t => t.GetInterfaces()
-                                                                       .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IWebSocketHandler<,>)));
-        
-        foreach (var handlerType in handlers)
+        var enums = new Dictionary<string, EnumDefinition>();
+
+        foreach (var assembly in assemblies)
         {
-            if (ActivatorUtilities.CreateInstance(serviceProvider, handlerType) is not IWebSocketHandler handler) continue;
-            var handlerInterface = handlerType.GetInterfaces().First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IWebSocketHandler<,>));
-            
-            var requestType = handlerInterface.GetGenericArguments()[0];
-            var responseType = handlerInterface.GetGenericArguments()[1];
-            
-            requestTypes[ToCamelCase(handler.MessageType)] = handler.MessageType;
-            responseTypes[ToCamelCase(responseType.Name)] = responseType.Name;
-            
-            types[requestType.Name] = GenerateTypeDefinition(requestType);
-            types[responseType.Name] = GenerateTypeDefinition(responseType);
-            
-            requestResponses[handler.MessageType] = new RequestResponseMapping(
-                RequestType: requestType.Name,
-                ResponseType: responseType.Name,
-                Validation: GenerateValidationDefinition(requestType, assembly)
-            );
-            
-            var subscriptionInterface = handlerType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ISubscriptionHandler<,>));
-            if (subscriptionInterface != null) subscriptionMethods[ToCamelCase(handler.MessageType)] = handler.MessageType;
-            
-            var unsubscriptionInterface = handlerType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IUnsubscriptionHandler<,>));
-            if (unsubscriptionInterface != null) unsubscriptionMethods[ToCamelCase(handler.MessageType)] = handler.MessageType;
+            var handlers = assembly.GetTypes().Where(t => t is { IsAbstract: false, IsInterface: false })
+            .Where(t => t.GetInterfaces()
+                    .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IWebSocketHandler<,>)));
+
+            foreach (var handlerType in handlers)
+            {
+                if (ActivatorUtilities.CreateInstance(serviceProvider, handlerType) is not IWebSocketHandler handler)
+                    continue;
+                var handlerInterface = handlerType.GetInterfaces().First(i =>
+                    i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IWebSocketHandler<,>));
+
+                var requestType = handlerInterface.GetGenericArguments()[0];
+                var responseType = handlerInterface.GetGenericArguments()[1];
+
+                requestTypes[ToCamelCase(handler.MessageType)] = handler.MessageType;
+                responseTypes[ToCamelCase(responseType.Name)] = responseType.Name;
+
+                types[requestType.Name] = GenerateTypeDefinition(requestType);
+                types[responseType.Name] = GenerateTypeDefinition(responseType);
+
+                requestResponses[handler.MessageType] = new RequestResponseMapping(
+                    RequestType: requestType.Name,
+                    ResponseType: responseType.Name,
+                    Validation: GenerateValidationDefinition(requestType, assembly)
+                );
+
+                var subscriptionInterface = handlerType.GetInterfaces().FirstOrDefault(i =>
+                    i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ISubscriptionHandler<,>));
+                if (subscriptionInterface != null)
+                    subscriptionMethods[ToCamelCase(handler.MessageType)] = handler.MessageType;
+
+                var unsubscriptionInterface = handlerType.GetInterfaces().FirstOrDefault(i =>
+                    i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IUnsubscriptionHandler<,>));
+                if (unsubscriptionInterface != null)
+                    unsubscriptionMethods[ToCamelCase(handler.MessageType)] = handler.MessageType;
+            }
+
+            var broadcastMessages = assembly.GetTypes()
+                .Where(t => typeof(IBroadcastMessage).IsAssignableFrom(t) && !t.IsInterface);
+            foreach (var broadcastMessage in broadcastMessages)
+            {
+                broadcastTypes[ToCamelCase(broadcastMessage.Name)] = broadcastMessage.Name;
+                types[broadcastMessage.Name] = GenerateTypeDefinition(broadcastMessage);
+            }
+
+            var errorCodesType = typeof(WebSocketErrorCodes);
+            var constantFields = errorCodesType
+                .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                .Where(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(string));
+
+            foreach (var field in constantFields)
+            {
+                var value = (string)field.GetValue(null)!;
+                var name = ToCamelCase(field.Name);
+                errorCodes[name] = value;
+            }
+
+            var enumTypes = assembly.GetTypes().Where(t => t.IsEnum);
+    
+            foreach (var enumType in enumTypes)
+            {
+                var enumValues = new Dictionary<string, object>();
+                var names = Enum.GetNames(enumType);
+                var values = Enum.GetValues(enumType);
+        
+                for (int i = 0; i < names.Length; i++)
+                {
+                    var name = names[i];
+                    var value = values.GetValue(i);
+                    enumValues[name] = value!;
+                }
+        
+                enums[enumType.Name] = new EnumDefinition(enumValues);
+            }
         }
 
-        var broadcastMessages = assembly.GetTypes().Where(t => typeof(IBroadcastMessage).IsAssignableFrom(t) && !t.IsInterface); 
-        foreach (var broadcastMessage in broadcastMessages) 
-        {
-            broadcastTypes[ToCamelCase(broadcastMessage.Name)] = broadcastMessage.Name;
-            types[broadcastMessage.Name] = GenerateTypeDefinition(broadcastMessage);
-        }
-        
-        var errorCodesType = typeof(WebSocketErrorCodes);
-        var constantFields = errorCodesType.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-            .Where(fi => fi.IsLiteral && !fi.IsInitOnly && fi.FieldType == typeof(string));
-    
-        foreach (var field in constantFields)
-        {
-            var value = (string)field.GetValue(null)!;
-            var name = ToCamelCase(field.Name);
-            errorCodes[name] = value;
-        }
-        
-        var enums = CollectEnums(assembly);
-        
         return new WebSocketSpec(
             Version: "1.0",
             RequestTypes: requestTypes,
@@ -210,32 +239,6 @@ public static class SpecGenerator
             _ => "any"
         };
     }
-    
-    private static Dictionary<string, EnumDefinition> CollectEnums(Assembly assembly)
-    {
-        var enums = new Dictionary<string, EnumDefinition>();
-    
-        var enumTypes = assembly.GetTypes().Where(t => t.IsEnum);
-    
-        foreach (var enumType in enumTypes)
-        {
-            var enumValues = new Dictionary<string, object>();
-            var names = Enum.GetNames(enumType);
-            var values = Enum.GetValues(enumType);
-        
-            for (int i = 0; i < names.Length; i++)
-            {
-                var name = names[i];
-                var value = values.GetValue(i);
-                enumValues[name] = value!;
-            }
-        
-            enums[enumType.Name] = new EnumDefinition(enumValues);
-        }
-    
-        return enums;
-    }
-
     
     private static bool IsNullableType(Type type)
     {

@@ -5,6 +5,7 @@ using Api.Websocket.Spec;
 using Application;
 using Infrastructure.Auth;
 using Infrastructure.Communication;
+using Infrastructure.Communication.Websocket;
 using Infrastructure.Data;
 using Infrastructure.Monitoring;
 using Microsoft.Extensions.Options;
@@ -48,7 +49,13 @@ public class Program
         var outputDir = Path.Combine(baseDir, "../../client/src/api");
         Directory.CreateDirectory(outputDir);
     
-        var spec = SpecGenerator.GenerateSpec(typeof(FleckWebSocketServer).Assembly, services.BuildServiceProvider());
+        var assemblies = new[]
+        {
+            typeof(FleckWebSocketServer).Assembly,
+            typeof(RedisSocketManager).Assembly 
+        };
+
+        var spec = SpecGenerator.GenerateSpec(assemblies, services.BuildServiceProvider());
         TypeScriptGenerator.Generate(spec, templatesDir, outputDir);
         
         const string outputFile = "/client/src/api/websocket-client.ts"; // Skal gerne findes dynamisk i stedet, men nu blir det lige sådan her. 

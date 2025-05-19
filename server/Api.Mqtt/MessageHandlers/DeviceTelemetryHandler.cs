@@ -17,7 +17,9 @@ public class DeviceTelemetryHandler(IMqttTestService service, ILogger<DeviceTele
     {
         var topic = args.PublishMessage.Topic;
         logger.LogInformation("Topic: {Topic}", topic);
-        
-        await service.ProcessTelemetryAsync(message.DeviceId, message.Temperature, message.Humidity, message.Timestamp);
+       
+        // Vi opretter en ESP32 og tilføjer til databasen
+        Guid esp32Id = Guid.Parse("a170f053-61cf-4ad7-8ece-c54aaa91869c");
+        await service.ProcessTelemetryAsync(esp32Id, message.Temperature, message.Humidity, message.Timestamp);
     }
 }

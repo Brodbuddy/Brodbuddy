@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from 'sonner';
 import {
+    Home, 
     AppRoutes, 
     AccessLevel,
     HomeDashboard, 
@@ -36,9 +37,7 @@ export default function App() {
                     <div className={sidebarClass}>
                         <div className="p-4">
                             <Routes>
-                                <Route path={AppRoutes.home} element={
-                                    <RequireAuth accessLevel={AccessLevel.Protected} element={<HomeDashboard />} />
-                                } />
+                                <Route path={AppRoutes.home} element={<Home />} />
                                 <Route path={AppRoutes.homeDashboard} element={
                                     <RequireAuth accessLevel={AccessLevel.Protected} element={<HomeDashboard />}/>
                                 }/>

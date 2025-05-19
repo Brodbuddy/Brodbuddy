@@ -32,4 +32,8 @@
         <ProjectReference Include="..\..\Startup\Startup.csproj"/>
         <ProjectReference Include="..\SharedTestDependencies\SharedTestDependencies.csproj"/>
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Api\Websocket\" />
+    </ItemGroup>
 </Project>

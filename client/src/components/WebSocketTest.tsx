@@ -1,20 +1,31 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useWebSocket } from '../hooks/useWebsocket';
+import { Broadcasts } from '../api/websocket-client';
 
 export function WebSocketTest() {
     const { client, connected, error } = useWebSocket();
-    const [joinResult, setJoinResult] = useState<string>('');
+    const [telemetryResult, setTelemetryResult] = useState<string>('');
     const [pingResult, setPingResult] = useState<string>('');
+    const [readings, setReadings] = useState<string[]>([]);
 
-    const handleJoinRoom = async () => {
+    useEffect(() => {
+        if (!client) return;
+        
+        const unsubscribe = client.on(Broadcasts.sourdoughReading, (payload: any) => {
+            setReadings(prev => [...prev, `Temperature: ${payload.Temperature}`]);
+        });
+        
+        return () => unsubscribe();
+    }, [client]);
+
+    const handleTelemetrySubscribe = async () => {
         try {
-            const result = await client.send.joinRoom({
-                RoomId: 'test-room',
-                Username: 'TestUser'
+            const result = await client.send.telemetry({
+                UserId: '38915d56-2322-4a6b-8506-a1831535e62b'
             });
-            setJoinResult(`Joined room: ${result.RoomId} as ${result.Username}`);
+            setTelemetryResult(`Connected: ${result.ConnectionId} for User: ${result.UserId}`);
         } catch (err) {
-            setJoinResult(`Join error: ${JSON.stringify(err)}`);
+            setTelemetryResult(`Telemetry error: ${JSON.stringify(err)}`);
         }
     };
 
@@ -43,10 +54,10 @@ export function WebSocketTest() {
             )}
             
             <div style={{ marginTop: '20px' }}>
-                <button onClick={handleJoinRoom} disabled={!connected}>
-                    Join Room
+                <button onClick={handleTelemetrySubscribe} disabled={!connected}>
+                    Subscribe to Telemetry
                 </button>
-                <div>{joinResult}</div>
+                <div>{telemetryResult}</div>
             </div>
             
             <div style={{ marginTop: '20px' }}>
@@ -54,6 +65,32 @@ export function WebSocketTest() {
                     Send Ping
                 </button>
                 <div>{pingResult}</div>
+            </div>
+            
+            <div style={{ marginTop: '20px' }}>
+                <h3>Sourdough Readings:</h3>
+                <div style={{ 
+                    height: '200px', 
+                    overflowY: 'auto', 
+                    border: '1px solid #ccc', 
+                    padding: '10px',
+                    backgroundColor: '#f9f9f9'
+                }}>
+                    {readings.length === 0 ? (
+                        <div style={{ color: '#666' }}>No readings yet. Subscribe to telemetry first.</div>
+                    ) : (
+                        readings.map((reading, idx) => (
+                            <div key={idx} style={{ 
+                                marginBottom: '5px', 
+                                padding: '5px',
+                                backgroundColor: '#fff',
+                                borderRadius: '3px'
+                            }}>
+                                {reading}
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
         </div>
     );

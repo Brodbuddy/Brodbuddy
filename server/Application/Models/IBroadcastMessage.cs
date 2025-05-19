@@ -1,3 +1,3 @@
-namespace Api.Websocket.Spec;
+namespace Application.Models;
 
 public interface IBroadcastMessage { }

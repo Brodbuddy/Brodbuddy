@@ -15,24 +15,25 @@ export const ErrorCodes = {
 
 // Request type constants
 export const Requests = {
-    joinRoom: "JoinRoom",
     ping: "Ping",
+    telemetry: "Telemetry",
 } as const;
 
 // Response type constants
 export const Responses = {
-    userJoined: "UserJoined",
     pong: "Pong",
+    connectionEstablished: "ConnectionEstablished",
 } as const;
 
 // Broadcast type constants
 export const Broadcasts = {
-    broadcastTest: "BroadcastTest",
+    sourdoughReading: "SourdoughReading",
+    testBroadcast: "TestBroadcast",
 } as const;
 
 // Subscription methods
 export const SubscriptionMethods = {
-    joinRoom: "JoinRoom",
+    telemetry: "Telemetry",
 } as const;
 
 // Unsubscription methods
@@ -53,17 +54,6 @@ export interface BaseBroadcast {
 }
 
 // Message interfaces
-export interface JoinRoom extends BaseRequest {
-    RoomId: string;
-    Username: string;
-}
-
-export interface UserJoined extends BaseResponse {
-    RoomId: string;
-    Username: string;
-    ConnectionId: string;
-}
-
 export interface Ping extends BaseRequest {
     Timestamp: number;
 }
@@ -73,15 +63,28 @@ export interface Pong extends BaseResponse {
     ServerTimestamp: number;
 }
 
-export interface BroadcastTest extends BaseBroadcast {
-    RoomId: string;
-    Status: string;
+export interface EstablishConnection extends BaseBroadcast {
+    UserId: string;
+}
+
+export interface ConnectionEstablished extends BaseResponse {
+    UserId: string;
+    ConnectionId: string;
+}
+
+export interface SourdoughReading extends BaseBroadcast {
+    Temperature: string;
+}
+
+export interface TestBroadcast extends BaseBroadcast {
+    Message: string;
+    Timestamp: string;
 }
 
 // Request-response type mapping
 export type RequestResponseMap = {
-    [Requests.joinRoom]: [JoinRoom, UserJoined];
     [Requests.ping]: [Ping, Pong];
+    [Requests.telemetry]: [EstablishConnection, ConnectionEstablished];
 };
 
 
@@ -362,11 +365,11 @@ export class WebSocketClient {
 
 
     send = {
-    joinRoom: (payload: Omit<JoinRoom, 'requestId'>): Promise<UserJoined> => {
-        return this.sendRequest<UserJoined>('JoinRoom', payload);
-    },
     ping: (payload: Omit<Ping, 'requestId'>): Promise<Pong> => {
         return this.sendRequest<Pong>('Ping', payload);
+    },
+    telemetry: (payload: Omit<EstablishConnection, 'requestId'>): Promise<ConnectionEstablished> => {
+        return this.sendRequest<ConnectionEstablished>('Telemetry', payload);
     },
 };
 
