@@ -1,6 +1,9 @@
 using Application.Interfaces;
+using Application.Interfaces.Data;
 using Application.Interfaces.Data.Repositories;
+using Application.Interfaces.Data.Repositories.Auth;
 using Application.Services;
+using Application.Services.Auth;
 using Application.Tests.Fakes;
 using Core.Entities;
 using Moq;

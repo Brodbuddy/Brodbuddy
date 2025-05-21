@@ -11,7 +11,7 @@ export default function Home() {
         if (!client) return;
         
         const unsubscribe = client.on(Broadcasts.sourdoughReading, (payload: any) => {
-            setJoinedUsers(prev => [...prev, `Temperature reading: ${payload.Temperature}`]);
+            setJoinedUsers(prev => [...prev, `Temperature reading: ${payload.TemperatureCelsius}`]);
         });
         
         return () => unsubscribe();
@@ -19,7 +19,7 @@ export default function Home() {
 
     const handleJoinRoom = () => {
         if (!client || !connected) return;
-        client.send.telemetry({
+        client.send.sourdoughData({
             UserId: "38915d56-2322-4a6b-8506-a1831535e62b"
         }).then(response => {
             setIsJoined(true);

@@ -1,6 +1,7 @@
 using Application.Interfaces.Auth;
 using Application.Models;
 using Application.Services;
+using Application.Services.Auth;
 
 namespace Infrastructure.Auth;
 

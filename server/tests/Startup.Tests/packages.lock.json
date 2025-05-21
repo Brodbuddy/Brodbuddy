@@ -1644,6 +1644,7 @@
         "type": "Project",
         "dependencies": {
           "Application": "[1.0.0, )",
+          "FluentValidation": "[11.11.0, )",
           "HiveMQtt": "[0.26.1, )",
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.3, )",

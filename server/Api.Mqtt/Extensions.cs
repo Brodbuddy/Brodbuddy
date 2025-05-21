@@ -3,6 +3,7 @@ using Api.Mqtt.Core;
 using Api.Mqtt.Routing;
 using Api.Mqtt.Service;
 using Application;
+using FluentValidation;
 using HiveMQtt.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +49,15 @@ public static class Extensions
         foreach (var handlerType in HandlerTypeHelpers.GetMqttMessageHandlers(assembly))
         {
             services.AddScoped(handlerType);
+        }
+        
+        var validatorTypes = assembly.GetTypes()
+                                     .Where(t => t is { IsClass: true, IsAbstract: false, BaseType.IsGenericType: true } && 
+                                                 t.BaseType.GetGenericTypeDefinition() == typeof(AbstractValidator<>));
+                                                 
+        foreach (var validatorType in validatorTypes)
+        {
+            services.AddScoped(validatorType);
         }
     }
     

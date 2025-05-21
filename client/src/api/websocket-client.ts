@@ -1,5 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 
+export enum LoggingLevel {
+    Verbose = "Verbose",
+    Debug = "Debug",
+    Information = "Information",
+    Warning = "Warning",
+    Error = "Error",
+    Fatal = "Fatal",
+}
+
 // WebSocket Error Codes
 export const ErrorCodes = {
     invalidMessage: "INVALID_MESSAGE",
@@ -16,24 +25,23 @@ export const ErrorCodes = {
 // Request type constants
 export const Requests = {
     ping: "Ping",
-    telemetry: "Telemetry",
+    sourdoughData: "SourdoughData",
 } as const;
 
 // Response type constants
 export const Responses = {
     pong: "Pong",
-    connectionEstablished: "ConnectionEstablished",
+    sourdoughDataSubscribed: "SourdoughDataSubscribed",
 } as const;
 
 // Broadcast type constants
 export const Broadcasts = {
     sourdoughReading: "SourdoughReading",
-    testBroadcast: "TestBroadcast",
 } as const;
 
 // Subscription methods
 export const SubscriptionMethods = {
-    telemetry: "Telemetry",
+    sourdoughData: "SourdoughData",
 } as const;
 
 // Unsubscription methods
@@ -41,11 +49,7 @@ export const UnsubscriptionMethods = {
 } as const;
 
 // Base interfaces
-export interface BaseRequest {
-    requestId?: string;
-}
-
-export interface BaseResponse {
+export interface BaseMessage {
     requestId?: string;
 }
 
@@ -54,37 +58,35 @@ export interface BaseBroadcast {
 }
 
 // Message interfaces
-export interface Ping extends BaseRequest {
+export interface Ping extends BaseMessage {
     Timestamp: number;
 }
 
-export interface Pong extends BaseResponse {
+export interface Pong extends BaseMessage {
     Timestamp: number;
     ServerTimestamp: number;
 }
-
-export interface EstablishConnection extends BaseBroadcast {
+ 
+export interface SubscribeToSourdoughData extends BaseMessage {
     UserId: string;
 }
 
-export interface ConnectionEstablished extends BaseResponse {
+export interface SourdoughDataSubscribed extends BaseMessage {
     UserId: string;
     ConnectionId: string;
 }
 
 export interface SourdoughReading extends BaseBroadcast {
-    Temperature: string;
-}
-
-export interface TestBroadcast extends BaseBroadcast {
-    Message: string;
+    RisePercent: number;
+    TemperatureCelsius: number;
+    HumidityPercent: number;
     Timestamp: string;
 }
 
 // Request-response type mapping
 export type RequestResponseMap = {
     [Requests.ping]: [Ping, Pong];
-    [Requests.telemetry]: [EstablishConnection, ConnectionEstablished];
+    [Requests.sourdoughData]: [SubscribeToSourdoughData, SourdoughDataSubscribed];
 };
 
 
@@ -368,8 +370,8 @@ export class WebSocketClient {
     ping: (payload: Omit<Ping, 'requestId'>): Promise<Pong> => {
         return this.sendRequest<Pong>('Ping', payload);
     },
-    telemetry: (payload: Omit<EstablishConnection, 'requestId'>): Promise<ConnectionEstablished> => {
-        return this.sendRequest<ConnectionEstablished>('Telemetry', payload);
+    sourdoughData: (payload: Omit<SubscribeToSourdoughData, 'requestId'>): Promise<SourdoughDataSubscribed> => {
+        return this.sendRequest<SourdoughDataSubscribed>('SourdoughData', payload);
     },
 };
 

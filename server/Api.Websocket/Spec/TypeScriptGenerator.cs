@@ -89,12 +89,7 @@ public static class TypeScriptGenerator
         sb.AppendLine();
         
         sb.AppendLine("// Base interfaces");
-        sb.AppendLine("export interface BaseRequest {");
-        sb.AppendLine("    requestId?: string;");
-        sb.AppendLine("}");
-        sb.AppendLine();
-        
-        sb.AppendLine("export interface BaseResponse {");
+        sb.AppendLine("export interface BaseMessage {");
         sb.AppendLine("    requestId?: string;");
         sb.AppendLine("}");
         sb.AppendLine();
@@ -109,10 +104,12 @@ public static class TypeScriptGenerator
         {
             string baseInterface = "BaseBroadcast"; 
             
-            if (spec.RequestTypes.ContainsValue(typeName))
-                baseInterface = "BaseRequest";
-            else if (spec.ResponseTypes.ContainsValue(typeName))
-                baseInterface = "BaseResponse";
+            // Check if this type is used as request or response in any request/response mapping
+            bool isRequestOrResponse = spec.RequestResponses.Values.Any(mapping => 
+                mapping.RequestType == typeName || mapping.ResponseType == typeName);
+            
+            if (isRequestOrResponse)
+                baseInterface = "BaseMessage";
             
             sb.AppendLine(string.Format(culture, "export interface {0} extends {1} {{", typeName, baseInterface));
             foreach (var (propName, propDef) in typeDefinition.Properties)

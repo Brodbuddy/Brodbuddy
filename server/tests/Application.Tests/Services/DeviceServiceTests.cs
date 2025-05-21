@@ -1,5 +1,8 @@
 ﻿using Application.Interfaces.Data.Repositories;
+using Application.Interfaces.Data.Repositories.Auth;
+using Application.Models.DTOs;
 using Application.Services;
+using Application.Services.Auth;
 using Core.Entities;
 using Moq;
 using SharedTestDependencies.Fakes;
@@ -40,7 +43,7 @@ public class DeviceServiceTests
                 .Callback<Device>(d => capturedDevice = d)
                 .ReturnsAsync(expectedId);
 
-            var deviceDetails = new Models.DeviceDetails(browser, os, "Some user agent", "127.0.0.1");
+            var deviceDetails = new DeviceDetails(browser, os, "Some user agent", "127.0.0.1");
 
             // Act 
             var result = await _service.CreateAsync(deviceDetails);

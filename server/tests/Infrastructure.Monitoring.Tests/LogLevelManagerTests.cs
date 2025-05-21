@@ -1,4 +1,5 @@
 using Application.Models;
+using Core.Enums;
 using Infrastructure.Monitoring;
 using Microsoft.Extensions.Logging;
 using Moq;

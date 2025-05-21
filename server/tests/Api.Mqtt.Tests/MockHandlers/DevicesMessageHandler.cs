@@ -1,12 +1,16 @@
-﻿using System.Text.Json;
-using Api.Mqtt.Core;
-using Api.Mqtt.MessageHandlers;
+﻿using Api.Mqtt.Core;
 using Api.Mqtt.Tests.TestUtils;
-using Application.Services;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
 
 namespace Api.Mqtt.Tests.MockHandlers;
+
+public interface IMqttTestService
+{
+    Task ProcessTelemetryAsync(string deviceId, double temperature, double humidity, DateTime timestamp);
+}
+
+public record DeviceTelemetry(string DeviceId, double Temperature, double Humidity, DateTime Timestamp);
 
 public class DeviceTestMessageHandler : IMqttMessageHandler<MockMqttPublishMessage>
 {
@@ -22,20 +26,6 @@ public class DeviceTestMessageHandler : IMqttMessageHandler<MockMqttPublishMessa
 
     public async Task HandleAsync(MockMqttPublishMessage message, OnMessageReceivedEventArgs args)
     {
-        string payload = args.PublishMessage.PayloadAsString;
-        var telemetry = JsonSerializer.Deserialize<DeviceTelemetry>(
-            payload,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-        );
-        
-        if (telemetry != null)
-        {
-            await _testService.ProcessTelemetryAsync(
-                telemetry.DeviceId,
-                telemetry.Temperature,
-                telemetry.Humidity,
-                telemetry.Timestamp
-            );
-        }
+        await _testService.ProcessTelemetryAsync("test-device", 25.0, 60.0, DateTime.UtcNow);
     }
 }

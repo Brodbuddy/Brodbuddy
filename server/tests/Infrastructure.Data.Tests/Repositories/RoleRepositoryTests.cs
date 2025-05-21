@@ -1,6 +1,7 @@
 using Core.Exceptions;
 using Core.Extensions;
 using Infrastructure.Data.Repositories;
+using Infrastructure.Data.Repositories.Auth;
 using Infrastructure.Data.Tests.Bases;
 using Infrastructure.Data.Tests.Database;
 using Microsoft.EntityFrameworkCore;

@@ -1,5 +1,8 @@
 ﻿using Application.Interfaces;
+using Application.Interfaces.Data;
+using Application.Models.DTOs;
 using Application.Services;
+using Application.Services.Auth;
 using Moq;
 using Xunit;
 using Shouldly;
@@ -71,7 +74,7 @@ public class PasswordlessAuthServiceTests
             _identityVerificationServiceMock.Setup(s => s.TryVerifyCodeAsync(email, code))
                 .ReturnsAsync((true, userId));
             _multiDeviceIdentityServiceMock
-                .Setup(s => s.EstablishIdentityAsync(userId, It.IsAny<Models.DeviceDetails>()))
+                .Setup(s => s.EstablishIdentityAsync(userId, It.IsAny<DeviceDetails>()))
                 .ReturnsAsync(expectedTokens);
 
             _transactionManagerMock
@@ -80,14 +83,14 @@ public class PasswordlessAuthServiceTests
 
             // Act
             var result = await _passwordlessAuthService.CompleteLoginAsync(email, code,
-                new Models.DeviceDetails(browser, os, "Mozilla/5.0", "127.0.0.1"));
+                new DeviceDetails(browser, os, "Mozilla/5.0", "127.0.0.1"));
 
             // Assert
             result.accessToken.ShouldBe(expectedTokens.Item1);
             result.refreshToken.ShouldBe(expectedTokens.Item2);
             _identityVerificationServiceMock.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);
             _multiDeviceIdentityServiceMock.Verify(
-                s => s.EstablishIdentityAsync(userId, It.IsAny<Models.DeviceDetails>()), Times.Once);
+                s => s.EstablishIdentityAsync(userId, It.IsAny<DeviceDetails>()), Times.Once);
             _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
                 Times.Once);
         }
@@ -98,7 +101,7 @@ public class PasswordlessAuthServiceTests
             // Arrange
             string email = "test@example.com";
             int code = 123456;
-            var deviceDetails = new Models.DeviceDetails("Chrome", "Windows", "Mozilla/5.0", "127.0.0.1");
+            var deviceDetails = new DeviceDetails("Chrome", "Windows", "Mozilla/5.0", "127.0.0.1");
 
             _identityVerificationServiceMock.Setup(s => s.TryVerifyCodeAsync(email, code))
                 .ReturnsAsync((false, Guid.Empty));
@@ -114,7 +117,7 @@ public class PasswordlessAuthServiceTests
             exception.ShouldBeOfType<ArgumentException>();
             _identityVerificationServiceMock.Verify(s => s.TryVerifyCodeAsync(email, code), Times.Once);
             _multiDeviceIdentityServiceMock.Verify(
-                s => s.EstablishIdentityAsync(It.IsAny<Guid>(), It.IsAny<Models.DeviceDetails>()), Times.Never);
+                s => s.EstablishIdentityAsync(It.IsAny<Guid>(), It.IsAny<DeviceDetails>()), Times.Never);
 
             _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()),
                 Times.Once);

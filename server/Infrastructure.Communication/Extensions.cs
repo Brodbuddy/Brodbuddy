@@ -1,6 +1,8 @@
 ﻿using Application;
 using Application.Interfaces;
+using Application.Interfaces.Communication;
 using Application.Interfaces.Communication.Mail;
+using Application.Interfaces.Communication.Notifiers;
 using Brodbuddy.WebSocket.State;
 using FluentEmail.Core;
 using FluentEmail.MailKitSmtp;
@@ -74,7 +76,7 @@ public static class Extensions
 
     private static IServiceCollection AddNotifiers(this IServiceCollection services)
     {
-        services.AddScoped<ITestNotifier, WsTestNotifier>();
+        services.AddScoped<IUserNotifier, WsUserNotifier>();
         return services;
     }
 }

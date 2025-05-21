@@ -1,5 +1,6 @@
 using Application;
 using Application.Services;
+using Application.Services.Auth;
 using Core.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;

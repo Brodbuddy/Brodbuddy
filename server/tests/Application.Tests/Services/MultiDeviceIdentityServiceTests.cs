@@ -1,6 +1,10 @@
 ﻿using Application.Interfaces;
+using Application.Interfaces.Data;
 using Application.Interfaces.Data.Repositories;
+using Application.Interfaces.Data.Repositories.Auth;
+using Application.Models.DTOs;
 using Application.Services;
+using Application.Services.Auth;
 using Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -51,7 +55,7 @@ public class MultiDeviceIdentityServiceTests
         {
             // Arrange
             var deviceId = Guid.NewGuid();
-            var deviceDetails = new Models.DeviceDetails("chrome", "macos", "Mozilla/5.0", "127.0.0.1");
+            var deviceDetails = new DeviceDetails("chrome", "macos", "Mozilla/5.0", "127.0.0.1");
 
             var userId = Guid.NewGuid();
             const string email = "test@email.com";
@@ -61,7 +65,7 @@ public class MultiDeviceIdentityServiceTests
             const string expectedAccessToken = "access-token-123";
             const string expectedRefreshToken = "refresh-token-abc";
 
-            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, It.IsAny<Models.DeviceDetails>())).ReturnsAsync(deviceId);
+            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, It.IsAny<DeviceDetails>())).ReturnsAsync(deviceId);
             _userIdentityServiceMock.Setup(x => x.GetAsync(userId)).ReturnsAsync(userInfo);
             _refreshTokenServiceMock.Setup(x => x.GenerateAsync()).ReturnsAsync((expectedRefreshToken, refreshTokenId));
             _repositoryMock.Setup(x => x.SaveIdentityAsync(userId, deviceId, refreshTokenId)).ReturnsAsync(Guid.NewGuid());
@@ -79,7 +83,7 @@ public class MultiDeviceIdentityServiceTests
             result.accessToken.ShouldBe(expectedAccessToken);
             result.refreshToken.ShouldBe(expectedRefreshToken);
 
-            _deviceRegistryServiceMock.Verify(x => x.AssociateDeviceAsync(userId, It.IsAny<Models.DeviceDetails>()), Times.Once);
+            _deviceRegistryServiceMock.Verify(x => x.AssociateDeviceAsync(userId, It.IsAny<DeviceDetails>()), Times.Once);
             _userIdentityServiceMock.Verify(x => x.GetAsync(userId), Times.Once);
             _refreshTokenServiceMock.Verify(x => x.GenerateAsync(), Times.Once);
             _repositoryMock.Verify(x => x.SaveIdentityAsync(userId, deviceId, refreshTokenId), Times.Once);
@@ -94,7 +98,7 @@ public class MultiDeviceIdentityServiceTests
         {
             // Arrange
             var emptyUserId = Guid.Empty;
-            var deviceDetails = new Models.DeviceDetails("chrome", "macos", "Mozilla/5.0", "127.0.0.1");
+            var deviceDetails = new DeviceDetails("chrome", "macos", "Mozilla/5.0", "127.0.0.1");
 
             _transactionManagerMock
                 .Setup(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<(string, string)>>>()))
@@ -134,9 +138,9 @@ public class MultiDeviceIdentityServiceTests
             // Arrange
             var userId = Guid.NewGuid();
             var deviceId = Guid.NewGuid();
-            var deviceDetails = new Models.DeviceDetails("safari", "freebsd", "Mozilla/5.0", "127.0.0.1");
+            var deviceDetails = new DeviceDetails("safari", "freebsd", "Mozilla/5.0", "127.0.0.1");
 
-            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, It.IsAny<Models.DeviceDetails>())).ReturnsAsync(deviceId);
+            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, It.IsAny<DeviceDetails>())).ReturnsAsync(deviceId);
 
             // Simulering af fejl
             _userIdentityServiceMock.Setup(x => x.GetAsync(userId)).ThrowsAsync(new ArgumentException("User lookup failed"));
@@ -166,12 +170,12 @@ public class MultiDeviceIdentityServiceTests
             var userInfo = new User { Id = userId, Email = email };
 
             var deviceId = Guid.NewGuid();
-            var deviceDetails = new Models.DeviceDetails("firefox", "windows vista", "Mozilla/5.0", "127.0.0.1");
+            var deviceDetails = new DeviceDetails("firefox", "windows vista", "Mozilla/5.0", "127.0.0.1");
 
             var refreshTokenId = Guid.NewGuid();
             const string expectedRefreshToken = "refresh-token-xyz";
 
-            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, It.IsAny<Models.DeviceDetails>())).ReturnsAsync(deviceId);
+            _deviceRegistryServiceMock.Setup(x => x.AssociateDeviceAsync(userId, It.IsAny<DeviceDetails>())).ReturnsAsync(deviceId);
             _userIdentityServiceMock.Setup(x => x.GetAsync(userId)).ReturnsAsync(userInfo);
             _refreshTokenServiceMock.Setup(x => x.GenerateAsync()).ReturnsAsync((expectedRefreshToken, refreshTokenId));
 
@@ -186,7 +190,7 @@ public class MultiDeviceIdentityServiceTests
             // Act & Assert
             await Should.ThrowAsync<DbUpdateException>(() => _multiDeviceIdentityService.EstablishIdentityAsync(userId, deviceDetails));
 
-            _deviceRegistryServiceMock.Verify(x => x.AssociateDeviceAsync(userId, It.IsAny<Models.DeviceDetails>()), Times.Once);
+            _deviceRegistryServiceMock.Verify(x => x.AssociateDeviceAsync(userId, It.IsAny<DeviceDetails>()), Times.Once);
             _userIdentityServiceMock.Verify(x => x.GetAsync(userId), Times.Once);
             _refreshTokenServiceMock.Verify(x => x.GenerateAsync(), Times.Once);
             _repositoryMock.Verify(x => x.SaveIdentityAsync(userId, deviceId, refreshTokenId), Times.Once); // Burde være kaldt 1 gang (fejl)

@@ -12,7 +12,7 @@ export function WebSocketTest() {
         if (!client) return;
         
         const unsubscribe = client.on(Broadcasts.sourdoughReading, (payload: any) => {
-            setReadings(prev => [...prev, `Temperature: ${payload.Temperature}`]);
+            setReadings(prev => [...prev, `Temperature: ${payload.temperatureCelsius}`]);
         });
         
         return () => unsubscribe();
@@ -20,7 +20,7 @@ export function WebSocketTest() {
 
     const handleTelemetrySubscribe = async () => {
         try {
-            const result = await client.send.telemetry({
+            const result = await client.send.sourdoughData({
                 UserId: '38915d56-2322-4a6b-8506-a1831535e62b'
             });
             setTelemetryResult(`Connected: ${result.ConnectionId} for User: ${result.UserId}`);

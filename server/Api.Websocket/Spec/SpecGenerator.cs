@@ -1,6 +1,7 @@
 using System.Reflection;
 using Application.Models;
 using Brodbuddy.WebSocket.Core;
+using Core.Interfaces;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 

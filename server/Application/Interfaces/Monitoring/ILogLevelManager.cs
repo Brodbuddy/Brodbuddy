@@ -1,4 +1,5 @@
 using Application.Models;
+using Core.Enums;
 
 namespace Application.Interfaces.Monitoring;
 

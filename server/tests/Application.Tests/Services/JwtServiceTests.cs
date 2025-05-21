@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Application.Services;
+using Application.Services.Auth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;

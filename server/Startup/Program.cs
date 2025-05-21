@@ -3,6 +3,7 @@ using Api.Websocket;
 using Api.Mqtt;
 using Api.Websocket.Spec;
 using Application;
+using Core.Interfaces;
 using Infrastructure.Auth;
 using Infrastructure.Communication;
 using Infrastructure.Communication.Websocket;
@@ -52,7 +53,8 @@ public class Program
         var assemblies = new[]
         {
             typeof(FleckWebSocketServer).Assembly,
-            typeof(RedisSocketManager).Assembly 
+            typeof(RedisSocketManager).Assembly,
+            typeof(IBroadcastMessage).Assembly,
         };
 
         var spec = SpecGenerator.GenerateSpec(assemblies, services.BuildServiceProvider());

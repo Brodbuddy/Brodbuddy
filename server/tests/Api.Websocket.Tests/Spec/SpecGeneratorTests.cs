@@ -2,6 +2,7 @@ using System.Reflection;
 using Api.Websocket.Spec;
 using Application.Models;
 using Brodbuddy.WebSocket.Core;
+using Core.Interfaces;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -31,7 +32,7 @@ public class SpecGeneratorTests
             var assembly = Assembly.GetExecutingAssembly();
             
             // Act
-            var spec = SpecGenerator.GenerateSpec(assembly, _serviceProvider);
+            var spec = SpecGenerator.GenerateSpec([assembly], _serviceProvider);
             
             // Assert
             spec.ShouldNotBeNull();
@@ -52,7 +53,7 @@ public class SpecGeneratorTests
             var assembly = typeof(TestHandler).Assembly;
             
             // Act
-            var spec = SpecGenerator.GenerateSpec(assembly, serviceProvider);
+            var spec = SpecGenerator.GenerateSpec([assembly], serviceProvider);
             
             // Assert
             spec.RequestTypes.ShouldContainKey("test");
@@ -66,7 +67,7 @@ public class SpecGeneratorTests
             var assembly = typeof(TestBroadcastMessage).Assembly;
             
             // Act
-            var spec = SpecGenerator.GenerateSpec(assembly, _serviceProvider);
+            var spec = SpecGenerator.GenerateSpec([assembly], _serviceProvider);
             
             // Assert
             spec.BroadcastTypes.ShouldContainKey("testBroadcastMessage");
@@ -86,7 +87,7 @@ public class SpecGeneratorTests
             var assembly = typeof(TestHandler).Assembly;
             
             // Act
-            var spec = SpecGenerator.GenerateSpec(assembly, serviceProvider);
+            var spec = SpecGenerator.GenerateSpec([assembly], serviceProvider);
             
             // Assert
             var mapping = spec.RequestResponses["Test"];
@@ -146,7 +147,7 @@ public class SpecGeneratorTests
             
             // Act
             var assembly = typeof(TestRequest).Assembly;
-            var spec = SpecGenerator.GenerateSpec(assembly, serviceProvider);
+            var spec = SpecGenerator.GenerateSpec([assembly], serviceProvider);
             
             // Assert
             var validation = spec.RequestResponses["Test"].Validation;

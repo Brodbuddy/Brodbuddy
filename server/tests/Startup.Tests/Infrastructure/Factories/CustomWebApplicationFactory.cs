@@ -2,6 +2,7 @@ using System.Globalization;
 using Application.Interfaces;
 using Application.Interfaces.Communication.Mail;
 using Application.Services;
+using Application.Services.Auth;
 using Infrastructure.Data;
 using Infrastructure.Data.Persistence;
 using Microsoft.AspNetCore.Hosting;

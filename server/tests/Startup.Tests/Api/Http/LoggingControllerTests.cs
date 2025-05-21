@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Api.Http.Models;
 using Application.Models;
+using Core.Enums;
 using SharedTestDependencies.Constants;
 using Shouldly;
 using Startup.Tests.Infrastructure.Bases;

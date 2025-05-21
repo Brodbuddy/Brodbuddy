@@ -1,10 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using Api.Mqtt.Core;
-using Api.Mqtt.MessageHandlers;
 using Api.Mqtt.Tests.MockHandlers;
 using Application.Interfaces.Communication.Publishers;
-using Application.Services;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,7 +30,6 @@ public class MqttDispatcherTests
         services.AddSingleton(_mqttTestServiceMock.Object);
         services.AddSingleton(devicePublisherMock.Object);
 
-        services.AddScoped<DeviceTelemetryHandler>();
         services.AddScoped<SensorsMessageHandler>();
         services.AddScoped<DeviceTestMessageHandler>();
 
@@ -241,10 +238,9 @@ public class MqttDispatcherTests
             var subscriptions = _dispatcher.GetSubscriptions();
 
             // Assert
-            subscriptions.ShouldContain(s =>
-                s.TopicFilter == "devices/+/telemetry" && s.QoS == QualityOfService.AtLeastOnceDelivery);
-            subscriptions.ShouldContain(s =>
-                s.TopicFilter == "sensors/+/telemetry" && s.QoS == QualityOfService.AtMostOnceDelivery);
+            var subs = subscriptions.ToList();
+            subs.ShouldContain(s => s.TopicFilter == "devices/+/telemetry" && s.QoS == QualityOfService.AtLeastOnceDelivery);
+            subs.ShouldContain(s => s.TopicFilter == "sensors/+/telemetry" && s.QoS == QualityOfService.AtMostOnceDelivery);
         }
     }
 
@@ -261,9 +257,10 @@ public class MqttDispatcherTests
             var subscriptions = _dispatcher.GetSubscriptions();
 
             // Assert
-            subscriptions.ShouldNotBeEmpty();
-            subscriptions.ShouldContain(s => s.TopicFilter == "sensors/+/telemetry");
-            subscriptions.ShouldContain(s => s.TopicFilter == "devices/+/telemetry");
+            var subs = subscriptions.ToList();
+            subs.ShouldNotBeEmpty();
+            subs.ShouldContain(s => s.TopicFilter == "sensors/+/telemetry");
+            subs.ShouldContain(s => s.TopicFilter == "devices/+/telemetry");
         }
 
 

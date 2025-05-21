@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Application.Services;
+using Application.Services.Auth;
 using Brodbuddy.WebSocket.Core;
 using Fleck;
 using Microsoft.Extensions.DependencyInjection;
