@@ -16,7 +16,6 @@ CREATE TABLE feature_users (
     UNIQUE(feature_id, user_id)
 );
 
-
 CREATE INDEX idx_features_name ON features (name);
 CREATE INDEX idx_feature_users_feature_id ON feature_users(feature_id);
 CREATE INDEX idx_feature_users_user_id ON feature_users(user_id);

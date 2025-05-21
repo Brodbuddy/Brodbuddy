@@ -12,7 +12,7 @@ public partial class Feature
     public string? Description { get; set; }
 
     public bool IsEnabled { get; set; }
-    
+
     public int? RolloutPercentage { get; set; }
 
     public DateTime CreatedAt { get; set; }
