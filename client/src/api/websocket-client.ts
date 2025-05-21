@@ -66,7 +66,7 @@ export interface Pong extends BaseMessage {
     Timestamp: number;
     ServerTimestamp: number;
 }
- 
+
 export interface SubscribeToSourdoughData extends BaseMessage {
     UserId: string;
 }

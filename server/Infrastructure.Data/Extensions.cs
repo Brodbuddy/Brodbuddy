@@ -2,9 +2,11 @@
 using Application.Interfaces.Data;
 using Application.Interfaces.Data.Repositories;
 using Application.Interfaces.Data.Repositories.Auth;
+using Application.Interfaces.Data.Repositories.Sourdough;
 using Infrastructure.Data.Persistence;
 using Infrastructure.Data.Repositories;
 using Infrastructure.Data.Repositories.Auth;
+using Infrastructure.Data.Repositories.Sourdough;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -28,6 +30,7 @@ public static class Extensions
             options.Configuration = appOptions.Dragonfly.ConnectionString;
         });
         
+        // Generelt
         services.AddScoped<ITransactionManager, EfTransactionManager>();
         
         // Auth
@@ -40,6 +43,10 @@ public static class Extensions
         services.AddScoped<IIdentityVerificationRepository, PgIdentityVerificationRepository>();
         services.AddScoped<IRoleRepository, PgRoleRepository>();
         services.AddScoped<IUserRoleRepository, PgUserRoleRepository>();
+        
+        // Surdej
+        services.AddScoped<ISourdoughAnalyzerRepository, PgSourdoughAnalyzerRepository>();
+        services.AddScoped<IUserAnalyzerRepository, PgUserAnalyzerRepository>();
         
         // Andet
         services.AddScoped<IFeatureToggleRepository, PgFeatureToggleRepository>();

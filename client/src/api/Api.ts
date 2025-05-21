@@ -86,6 +86,43 @@ export interface UserInfoResponse {
   isAdmin: boolean;
 }
 
+export interface RegisterAnalyzerResponse {
+  /** @format guid */
+  analyzerId: string;
+  name: string;
+  nickname: string | null;
+  isNewAnalyzer: boolean;
+  isOwner: boolean;
+}
+
+export interface RegisterAnalyzerRequest {
+  activationCode: string;
+  nickname: string | null;
+}
+
+export interface AnalyzerListResponse {
+  /** @format guid */
+  id: string;
+  name: string;
+  nickname: string | null;
+  /** @format date-time */
+  lastSeen: string | null;
+  isOwner: boolean;
+}
+
+export interface CreateAnalyzerResponse {
+  /** @format guid */
+  id: string;
+  macAddress: string;
+  name: string;
+  activationCode: string;
+}
+
+export interface CreateAnalyzerRequest {
+  macAddress: string;
+  name: string;
+}
+
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -526,6 +563,68 @@ export class Api<
         path: `/api/passwordless-auth/user-info`,
         method: "GET",
         secure: true,
+        format: "json",
+        ...params,
+      }),
+  };
+  analyzers = {
+    /**
+     * No description
+     *
+     * @tags SourdoughAnalyzer
+     * @name SourdoughAnalyzerRegisterAnalyzer
+     * @request POST:/api/analyzers/register
+     * @secure
+     */
+    sourdoughAnalyzerRegisterAnalyzer: (
+      data: RegisterAnalyzerRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<RegisterAnalyzerResponse, any>({
+        path: `/api/analyzers/register`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SourdoughAnalyzer
+     * @name SourdoughAnalyzerGetUserAnalyzers
+     * @request GET:/api/analyzers
+     * @secure
+     */
+    sourdoughAnalyzerGetUserAnalyzers: (params: RequestParams = {}) =>
+      this.request<AnalyzerListResponse[], any>({
+        path: `/api/analyzers`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags SourdoughAnalyzer
+     * @name SourdoughAnalyzerCreateAnalyzer
+     * @request POST:/api/analyzers/admin/create
+     * @secure
+     */
+    sourdoughAnalyzerCreateAnalyzer: (
+      data: CreateAnalyzerRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<CreateAnalyzerResponse, any>({
+        path: `/api/analyzers/admin/create`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),

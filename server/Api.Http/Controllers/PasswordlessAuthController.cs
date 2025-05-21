@@ -40,7 +40,7 @@ public class PasswordlessAuthController : ControllerBase
     [AllowAnonymous]
     public TestTokenResponse TestToken()
     {
-        var accessToken = _jwtService.Generate("kakao", "kakao@mælk.dk", "user");
+        var accessToken = _jwtService.Generate(Guid.NewGuid().ToString(), "kakao@mælk.dk", Role.Admin);
         return new TestTokenResponse(AccessToken: accessToken);
     }
 

@@ -1,5 +1,4 @@
-﻿using Application.Interfaces;
-using Application.Services;
+﻿using Application.Services;
 using Application.Services.Auth;
 using Application.Services.Sourdough;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +27,7 @@ public static class Extensions
         
         // Sourdough
         services.AddScoped<ISourdoughTelemetryService, SourdoughTelemetryService>();
+        services.AddScoped<ISourdoughAnalyzerService, SourdoughAnalyzerService>();
         
         // Andet
         services.AddScoped<IFeatureToggleService, FeatureToggleService>();
