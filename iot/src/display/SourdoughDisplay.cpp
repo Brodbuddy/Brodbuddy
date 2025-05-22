@@ -1,4 +1,5 @@
 #include "display/SourdoughDisplay.h"
+#include "utils/constants.h"
 
 SourdoughDisplay::SourdoughDisplay() : Adafruit_GFX(EPD_HEIGHT, EPD_WIDTH) {}
 
@@ -7,13 +8,13 @@ void SourdoughDisplay::begin()
     Serial.println("Initializing E-Paper Display...");
 
     // Initialiser pins
-    pinMode(EINK_BUSY, INPUT);
-    pinMode(EINK_RESET, OUTPUT);
-    pinMode(EINK_DC, OUTPUT);
-    pinMode(EINK_CS, OUTPUT);
+    pinMode(Pins::EINK_BUSY, INPUT);
+    pinMode(Pins::EINK_RESET, OUTPUT);
+    pinMode(Pins::EINK_DC, OUTPUT);
+    pinMode(Pins::EINK_CS, OUTPUT);
 
     // Initialiser SPI
-    SPI.begin(EINK_SCLK, EINK_MISO, EINK_MOSI, EINK_CS);
+    SPI.begin(Pins::EINK_SCLK, -1, Pins::EINK_SDI, Pins::EINK_CS);
     SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE0));
 
     // Nulstil og initialiser
@@ -38,11 +39,11 @@ void SourdoughDisplay::begin()
 void SourdoughDisplay::hardwareReset()
 {
     Serial.println("Performing extended hardware reset...");
-    digitalWrite(EINK_RESET, HIGH);
+    digitalWrite(Pins::EINK_RESET, HIGH);
     delay(200);
-    digitalWrite(EINK_RESET, LOW);
+    digitalWrite(Pins::EINK_RESET, LOW);
     delay(500);
-    digitalWrite(EINK_RESET, HIGH);
+    digitalWrite(Pins::EINK_RESET, HIGH);
     delay(200);
 }
 
@@ -105,24 +106,24 @@ void SourdoughDisplay::updateDisplay()
 
 void SourdoughDisplay::sendCommand(uint8_t command)
 {
-    digitalWrite(EINK_DC, LOW);
-    digitalWrite(EINK_CS, LOW);
+    digitalWrite(Pins::EINK_DC, LOW);
+    digitalWrite(Pins::EINK_CS, LOW);
     SPI.transfer(command);
-    digitalWrite(EINK_CS, HIGH);
+    digitalWrite(Pins::EINK_CS, HIGH);
 }
 
 void SourdoughDisplay::sendData(uint8_t data)
 {
-    digitalWrite(EINK_DC, HIGH);
-    digitalWrite(EINK_CS, LOW);
+    digitalWrite(Pins::EINK_DC, HIGH);
+    digitalWrite(Pins::EINK_CS, LOW);
     SPI.transfer(data);
-    digitalWrite(EINK_CS, HIGH);
+    digitalWrite(Pins::EINK_CS, HIGH);
 }
 
 void SourdoughDisplay::waitUntilIdle()
 {
     unsigned long start = millis();
-    while (digitalRead(EINK_BUSY) == LOW)
+    while (digitalRead(Pins::EINK_BUSY) == LOW)
     {
         delay(10);
         if (millis() - start > 5000)

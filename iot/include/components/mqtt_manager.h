@@ -8,9 +8,9 @@
 
 class MqttManager {
 private:
-    WiFiClientSecure espClient;
+    WiFiClientSecure _wifiClientSecure;
     WiFiClient _wifiClient;
-    PubSubClient mqttClient;
+    PubSubClient _mqttClient;
 
     String _server;
     int _port;

@@ -1,4 +1,5 @@
 #include "components/sensor_manager.h"
+#include "utils/constants.h"
 
 SensorManager::SensorManager() 
     : _lastReadTime(0),
@@ -22,7 +23,8 @@ bool SensorManager::begin() {
     _health.tofConnected = true;
     return true;
 #else
-    Wire.begin();
+    Wire.begin(Pins::I2C_SDA, Pins::I2C_SCL);
+
 
     unsigned status = _bme.begin(0x76, &Wire);
     if (!status) {
@@ -41,6 +43,11 @@ bool SensorManager::begin() {
         delay(5000);
     }
 
+    pinMode(Pins::XSHUT, OUTPUT);
+    digitalWrite(Pins::XSHUT, LOW);
+    delay(100);
+    digitalWrite(Pins::XSHUT, HIGH);
+    delay(100);
     _health.tofConnected = _tof.init();
     if (_health.tofConnected) {
         _tof.startContinuous();
@@ -80,8 +87,8 @@ bool SensorManager::readAllSensors() {
     }
 #endif
 
-    _lastReadTime = millis();
-    return success;
+_lastReadTime = millis();
+return success;
 }
 
 bool SensorManager::shouldRead() const {

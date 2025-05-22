@@ -29,9 +29,7 @@ extern const char *NTP_SERVER;
 extern const long GMT_OFFSET_SEC;
 extern const int DAYLIGHT_OFFSET_SEC;
 
-// I2C pins
-#define I2C_SDA 25
-#define I2C_SCL 26
+// I2C configuration
 #define I2C_CLOCK_SPEED 50000
 
 // BME280 Kalibrering

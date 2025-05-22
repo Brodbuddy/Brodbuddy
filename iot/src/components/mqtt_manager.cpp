@@ -5,7 +5,7 @@
 
 static const char* TAG = "MqttManager";
 
-MqttManager::MqttManager() : mqttClient(_wifiClient),
+MqttManager::MqttManager() : _mqttClient(_wifiClientSecure),
                              lastReconnectAttempt(0),
                              ntpConfigured(false)
 {
@@ -18,35 +18,27 @@ bool MqttManager::begin(const char* server, int port, const char* user, const ch
     _password = password;
     _clientId = clientId;
 
-    mqttClient.setServer(server, port);
-    mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
+    _wifiClientSecure.setInsecure();
+    _mqttClient.setServer(server, port);
+    _mqttClient.setKeepAlive(60);
+    _mqttClient.setSocketTimeout(30);
+    _mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
                            { this->processMessage(topic, payload, length); });
     
     return reconnect();
 }
 
-
-void MqttManager::loop()
-{
-    // Check MQTT forbindelse
-    if (!mqttClient.connected())
-    {
+void MqttManager::loop() {
+    if (!_mqttClient.connected()) {
         unsigned long currentMillis = millis();
-        if (currentMillis - lastReconnectAttempt > 5000)
-        {
+        if (currentMillis - lastReconnectAttempt > 5000)  {
             lastReconnectAttempt = currentMillis;
-            // Forsøg at genforbinde
-            bool reconnected = reconnect();
-            if (reconnected)
-            {
+            if (reconnect()) {
                 lastReconnectAttempt = 0;
             }
         }
-    }
-    else
-    {
-        // Klient er tilsluttet
-        mqttClient.loop();
+    } else {
+        _mqttClient.loop();
     }
 }
 
@@ -57,11 +49,11 @@ bool MqttManager::publish(const char* topic, const JsonDocument& data) {
 }
 
 bool MqttManager::publish(const char* topic, const char* payload) {
-    if (!mqttClient.connected()) {
+    if (!_mqttClient.connected()) {
         return false;
     }
 
-    return mqttClient.publish(topic, payload);
+    return _mqttClient.publish(topic, payload);
 }
 
 void MqttManager::processMessage(char *topic, byte *payload, unsigned int length)
@@ -136,7 +128,7 @@ JsonVariant MqttManager::getLastToFData()
 
 bool MqttManager::isConnected()
 {
-    return mqttClient.connected();
+    return _mqttClient.connected();
 }
 
 void MqttManager::configureNTP()
@@ -172,7 +164,7 @@ void MqttManager::configureNTP()
 
 bool MqttManager::reconnect()
 {
-    if (mqttClient.connected()) {
+    if (_mqttClient.connected()) {
         return true;
     }
 
@@ -182,11 +174,10 @@ bool MqttManager::reconnect()
 
     LOG_I(TAG, "Attempting MQTT connection to %s:%d", _server.c_str(), _port);
 
-    if (mqttClient.connect(_clientId.c_str(), _user.c_str(), _password.c_str())) {
+    if (_mqttClient.connect(_clientId.c_str(), _user.c_str(), _password.c_str())) {
         LOG_I(TAG, "MQTT connected");
         return true;
     } else {
-        LOG_E(TAG, "MQTT connection failed, state: %d", mqttClient.state());
         return false;
     }
     // int retries = 0;
@@ -315,7 +306,7 @@ bool MqttManager::publishBME280Data(float temperature, float humidity, float pre
     Serial.println(MQTT_TOPIC_BME280);
 
     // Publicer med retained flag for persistens
-    bool success = mqttClient.publish(MQTT_TOPIC_BME280, buffer, true);
+    bool success = _mqttClient.publish(MQTT_TOPIC_BME280, buffer, true);
 
     if (success)
     {
@@ -330,13 +321,13 @@ bool MqttManager::publishBME280Data(float temperature, float humidity, float pre
     {
         Serial.println("FEJL: Kunne ikke publicere BME280 data");
         Serial.print("MQTT-tilstand: ");
-        Serial.println(mqttClient.state());
+        Serial.println(_mqttClient.state());
 
         // Prøv igen efter genopkobling
         bool reconnected = reconnect();
         if (reconnected)
         {
-            bool retrySuccess = mqttClient.publish(MQTT_TOPIC_BME280, buffer, true);
+            bool retrySuccess = _mqttClient.publish(MQTT_TOPIC_BME280, buffer, true);
             if (retrySuccess)
             {
                 Serial.println("===== BME280 data publiceret ved andet forsøg =====");
@@ -392,7 +383,7 @@ bool MqttManager::publishToFData(int currentDistance, int initialHeight, int ris
     Serial.println(MQTT_TOPIC_TOF);
 
     // Publicer med retained flag for persistens
-    bool success = mqttClient.publish(MQTT_TOPIC_TOF, buffer, true);
+    bool success = _mqttClient.publish(MQTT_TOPIC_TOF, buffer, true);
 
     if (success)
     {
@@ -407,13 +398,13 @@ bool MqttManager::publishToFData(int currentDistance, int initialHeight, int ris
     {
         Serial.println("FEJL: Kunne ikke publicere ToF data");
         Serial.print("MQTT-tilstand: ");
-        Serial.println(mqttClient.state());
+        Serial.println(_mqttClient.state());
 
         // Prøv igen efter genopkobling
         bool reconnected = reconnect();
         if (reconnected)
         {
-            bool retrySuccess = mqttClient.publish(MQTT_TOPIC_TOF, buffer, true);
+            bool retrySuccess = _mqttClient.publish(MQTT_TOPIC_TOF, buffer, true);
             if (retrySuccess)
             {
                 Serial.println("===== ToF data publiceret ved andet forsøg =====");
@@ -485,7 +476,7 @@ bool MqttManager::publishTelemetry(
     Serial.println(MQTT_TOPIC_TELEMETRY);
 
     // Publicer med retained flag
-    bool success = mqttClient.publish(MQTT_TOPIC_TELEMETRY, buffer, true);
+    bool success = _mqttClient.publish(MQTT_TOPIC_TELEMETRY, buffer, true);
 
     if (success)
     {
@@ -499,7 +490,7 @@ bool MqttManager::publishTelemetry(
         bool reconnected = reconnect();
         if (reconnected)
         {
-            bool retrySuccess = mqttClient.publish(MQTT_TOPIC_TELEMETRY, buffer, true);
+            bool retrySuccess = _mqttClient.publish(MQTT_TOPIC_TELEMETRY, buffer, true);
             if (retrySuccess)
             {
                 Serial.println("===== Telemetri data publiceret ved andet forsøg =====");

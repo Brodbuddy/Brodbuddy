@@ -2,12 +2,13 @@
 #include "../include/config.h"
 #include <Arduino.h>
 #include <Wire.h>
+#include "utils/constants.h"
 
 // Centraliseret I2C scanning funktion
 void scanI2CBus()
 {
     Serial.println("\n========= I2C Scanner =========");
-    Serial.printf("SDA: GPIO%d, SCL: GPIO%d, Clock: %d Hz\n", I2C_SDA, I2C_SCL, I2C_CLOCK_SPEED);
+    Serial.printf("SDA: GPIO%d, SCL: GPIO%d, Clock: %d Hz\n", Pins::I2C_SDA, Pins::I2C_SCL, I2C_CLOCK_SPEED);
 
     byte error, address;
     int nDevices = 0;
@@ -63,10 +64,9 @@ void scanI2CBus()
 // Initialisering af I2C-bus én gang
 void initI2C()
 {
-    Wire.begin(I2C_SDA, I2C_SCL);
+    Wire.begin(Pins::I2C_SDA, Pins::I2C_SCL);
     delay(50);
     Wire.setClock(I2C_CLOCK_SPEED);
     delay(50);
-    Serial.printf("I2C initialiseret: SDA=%d, SCL=%d, Hastighed=%d Hz\n",
-                  I2C_SDA, I2C_SCL, I2C_CLOCK_SPEED);
+    Serial.printf("I2C initialiseret: SDA=%d, SCL=%d, Hastighed=%d Hz\n", Pins::I2C_SDA, Pins::I2C_SCL, I2C_CLOCK_SPEED);
 }

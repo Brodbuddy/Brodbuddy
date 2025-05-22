@@ -5,9 +5,10 @@
 #include <DNSServer.h>
 #include <Preferences.h>
 #include "config.h"
+#include <utils/constants.h>
 
-#define LED_PIN 2      // Onboard LED pin 
-#define BUTTON_PIN 13  // Onboard button pin
+#define LED_PIN Pins::LED    
+#define BUTTON_PIN Pins::RESET_BUTTON 
 
 enum WiFiStatus {
   WIFI_DISCONNECTED,

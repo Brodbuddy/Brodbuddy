@@ -1,6 +1,7 @@
 #include "components/wifi_manager.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <utils/constants.h>
 
 // Custom HTML page for the captive portal
 const char html_page[] PROGMEM = R"rawliteral(

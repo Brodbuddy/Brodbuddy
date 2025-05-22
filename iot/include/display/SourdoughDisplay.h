@@ -4,15 +4,16 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <Adafruit_GFX.h>
+#include <utils/constants.h>
 
 // Pins for E-paper display
-#define EINK_MISO -1  // Vi bruger ikke MISO, da e-paper displayet ikke sender data tilbage til ESP32
-#define EINK_BUSY 4   // Pin der fortæller om displayet er optaget (LOW = optaget)
-#define EINK_RESET 21 // Pin til hardware reset
-#define EINK_DC 17    // Data/Command vælger (LOW = kommando, HIGH = data)
-#define EINK_CS 15    // Chip Select for SPI kommunikation
-#define EINK_SCLK 18  // SPI Clock
-#define EINK_MOSI 23  // SPI Data (Master Out Slave In)
+// #define EINK_MISO  -1                // Vi bruger ikke MISO, da e-paper displayet ikke sender data tilbage til ESP32
+// #define EINK_BUSY  Pins::EINK_BUSY   // Pin der fortæller om displayet er optaget (LOW = optaget)
+// #define EINK_RESET Pins::EINK_RESET  // Pin til hardware reset
+// #define EINK_DC    Pins::EINK_DC     // Data/Command vælger (LOW = kommando, HIGH = data)
+// #define EINK_CS    Pins::EINK_CS     // Chip Select for SPI kommunikation
+// #define EINK_SCLK  Pins::EINK_SCLK   // SPI Clock
+// #define EINK_MOSI  Pins::EINK_SPI    // SPI Data (Master Out Slave In)
 
 // E-paper display opløsning (2.9" = 128x296)
 #define EPD_WIDTH 128

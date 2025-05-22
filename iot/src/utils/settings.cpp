@@ -1,4 +1,5 @@
 #include "utils/settings.h"
+#include "utils/logger.h"
 
 const char* Settings::SETTINGS_FILE = "/settings.json";
 
@@ -6,10 +7,12 @@ Settings::Settings() : _doc(1024), _loaded(false) {}
 
 bool Settings::begin() {
     if (!LittleFS.begin(true)) {
+        LOG_E("Settings", "Failed to mount LittleFS");
         return false;
     }
 
     if (!load()) {
+        LOG_W("Settings", "No settings file found, creating defaults");
         setDefaults();
         return save();
     }
@@ -44,12 +47,14 @@ void Settings::setDefaults() {
 bool Settings::saveToFile() {
     File file = LittleFS.open(SETTINGS_FILE, "w");
     if (!file) {
+        LOG_E("Settings", "Failed to open settings for writing");
         return false;
     }
 
     serializeJson(_doc, file);
     file.close();
 
+    LOG_I("Settings", "Settings saved successfully");
     return true;
 }
 
@@ -60,6 +65,7 @@ bool Settings::loadFromFile() {
 
     File file = LittleFS.open(SETTINGS_FILE, "r");
     if (!file) {
+        LOG_E("Settings", "Failed to open settings file for reading");
         return false;
     }
 
@@ -67,10 +73,12 @@ bool Settings::loadFromFile() {
     file.close();
 
     if (error) {
+        LOG_E("Settings", "Failed to parse settings: %s", error.c_str());
         return false;
     }
 
     _loaded = true;
+    LOG_I("Settings", "Settings loaded successfully");
     return _loaded;
 }
 
@@ -113,6 +121,7 @@ String Settings::getMqttPassword() const {
         #ifdef MQTT_PASSWORD
             return String(MQTT_PASSWORD);
         #else
+            LOG_W("Settings", "MQTT_PASSWORD not defined at compile time!");
             return "";
         #endif
     }
