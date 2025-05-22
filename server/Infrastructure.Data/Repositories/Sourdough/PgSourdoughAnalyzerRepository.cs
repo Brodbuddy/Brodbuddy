@@ -38,4 +38,10 @@ public class PgSourdoughAnalyzerRepository : ISourdoughAnalyzerRepository
                                                 .Where(a => a.UserAnalyzers.Any(ua => ua.UserId == userId))
                                                 .ToListAsync();
     }
+
+    public async Task<IEnumerable<SourdoughAnalyzer>> GetAllAsync()
+    {
+        return await _context.SourdoughAnalyzers.Include(a => a.UserAnalyzers)
+                                                .ToListAsync();
+    }
 }

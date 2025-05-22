@@ -22,3 +22,14 @@ public record CreateAnalyzerResponse(
     string Name,
     string ActivationCode
 );
+
+public record AdminAnalyzerListResponse(
+    Guid Id,
+    string Name,
+    string MacAddress,
+    string? FirmwareVersion,
+    bool IsActivated,
+    DateTime? ActivatedAt,
+    DateTime? LastSeen,
+    DateTime CreatedAt
+);

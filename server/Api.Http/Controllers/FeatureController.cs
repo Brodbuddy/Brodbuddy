@@ -7,12 +7,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Http.Controllers;
 
 [ApiController]
-[Route("api/features")]
-public class FeatureToggleController : ControllerBase
+[Route("api/[controller]")]
+public class FeatureController : ControllerBase
 {
     private readonly IFeatureToggleService _featureToggleService;
     
-    public FeatureToggleController(IFeatureToggleService featureToggleService)
+    public FeatureController(IFeatureToggleService featureToggleService)
     {
         _featureToggleService = featureToggleService;
     }

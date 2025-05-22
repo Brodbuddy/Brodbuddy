@@ -18,8 +18,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {Droplet, Thermometer, TrendingUp} from 'lucide-react';
-import {ThemeToggle} from "@/components/ThemeToggle";
 import {sourdoughHistoricalData} from '@/data/sourdoughData';
+import SourdoughManager from '@/components/analyzer/SourdoughManager';
 
 const HomeDashboard: React.FC = () => {
     const [timeRange, setTimeRange] = useState("30d");
@@ -47,10 +47,9 @@ const HomeDashboard: React.FC = () => {
 
     return (
         <>
-            <div className="flex justify-end mr-4 mt-2">
-                <ThemeToggle className="scale-150"/>
-            </div>
-            <Card className="border-border-brown bg-bg-cream shadow-md mt-10 ">
+            <SourdoughManager />
+            
+            <Card className="border-border-brown bg-bg-cream shadow-md mt-6">
 
                 <CardContent className="p-4 ">
 
@@ -251,6 +250,8 @@ const HomeDashboard: React.FC = () => {
                     </div>
                 </CardContent>
             </Card>
+            
+
         </>
     );
 };

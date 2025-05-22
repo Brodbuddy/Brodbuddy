@@ -19,6 +19,58 @@ export enum LoggingLevel {
   Fatal = "Fatal",
 }
 
+export interface RegisterAnalyzerResponse {
+  /** @format guid */
+  analyzerId: string;
+  name: string;
+  nickname?: string | null;
+  isNewAnalyzer: boolean;
+  isOwner: boolean;
+}
+
+export interface RegisterAnalyzerRequest {
+  activationCode: string;
+  nickname?: string | null;
+}
+
+export interface AnalyzerListResponse {
+  /** @format guid */
+  id: string;
+  name: string;
+  nickname?: string | null;
+  /** @format date-time */
+  lastSeen: string | null;
+  isOwner: boolean;
+}
+
+export interface AdminAnalyzerListResponse {
+  /** @format guid */
+  id: string;
+  name: string;
+  macAddress: string;
+  firmwareVersion: string | null;
+  isActivated: boolean;
+  /** @format date-time */
+  activatedAt: string | null;
+  /** @format date-time */
+  lastSeen: string | null;
+  /** @format date-time */
+  createdAt: string;
+}
+
+export interface CreateAnalyzerResponse {
+  /** @format guid */
+  id: string;
+  macAddress: string;
+  name: string;
+  activationCode: string;
+}
+
+export interface CreateAnalyzerRequest {
+  macAddress: string;
+  name: string;
+}
+
 export interface FeatureToggleListResponse {
   features: FeatureToggleResponse[];
 }
@@ -84,43 +136,6 @@ export interface RefreshTokenResponse {
 export interface UserInfoResponse {
   email: string;
   isAdmin: boolean;
-}
-
-export interface RegisterAnalyzerResponse {
-  /** @format guid */
-  analyzerId: string;
-  name: string;
-  nickname: string | null;
-  isNewAnalyzer: boolean;
-  isOwner: boolean;
-}
-
-export interface RegisterAnalyzerRequest {
-  activationCode: string;
-  nickname: string | null;
-}
-
-export interface AnalyzerListResponse {
-  /** @format guid */
-  id: string;
-  name: string;
-  nickname: string | null;
-  /** @format date-time */
-  lastSeen: string | null;
-  isOwner: boolean;
-}
-
-export interface CreateAnalyzerResponse {
-  /** @format guid */
-  id: string;
-  macAddress: string;
-  name: string;
-  activationCode: string;
-}
-
-export interface CreateAnalyzerRequest {
-  macAddress: string;
-  name: string;
 }
 
 import type {
@@ -323,18 +338,40 @@ export class Api<
       ...params,
     });
 
-  features = {
+  analyzer = {
     /**
      * No description
      *
-     * @tags FeatureToggle
-     * @name FeatureToggleGetAllFeatures
-     * @request GET:/api/features
+     * @tags Analyzer
+     * @name RegisterAnalyzer
+     * @request POST:/api/analyzer/register
      * @secure
      */
-    featureToggleGetAllFeatures: (params: RequestParams = {}) =>
-      this.request<FeatureToggleListResponse, any>({
-        path: `/api/features`,
+    registerAnalyzer: (
+      data: RegisterAnalyzerRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<RegisterAnalyzerResponse, any>({
+        path: `/api/analyzer/register`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Analyzer
+     * @name GetUserAnalyzers
+     * @request GET:/api/analyzer
+     * @secure
+     */
+    getUserAnalyzers: (params: RequestParams = {}) =>
+      this.request<AnalyzerListResponse[], any>({
+        path: `/api/analyzer`,
         method: "GET",
         secure: true,
         format: "json",
@@ -344,18 +381,72 @@ export class Api<
     /**
      * No description
      *
-     * @tags FeatureToggle
-     * @name FeatureToggleSetFeatureEnabled
-     * @request PUT:/api/features/{featureName}
+     * @tags Analyzer
+     * @name GetAllAnalyzers
+     * @request GET:/api/analyzer/admin/all
      * @secure
      */
-    featureToggleSetFeatureEnabled: (
+    getAllAnalyzers: (params: RequestParams = {}) =>
+      this.request<AdminAnalyzerListResponse[], any>({
+        path: `/api/analyzer/admin/all`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Analyzer
+     * @name CreateAnalyzer
+     * @request POST:/api/analyzer/admin/create
+     * @secure
+     */
+    createAnalyzer: (data: CreateAnalyzerRequest, params: RequestParams = {}) =>
+      this.request<CreateAnalyzerResponse, any>({
+        path: `/api/analyzer/admin/create`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  feature = {
+    /**
+     * No description
+     *
+     * @tags Feature
+     * @name GetAllFeatures
+     * @request GET:/api/feature
+     * @secure
+     */
+    getAllFeatures: (params: RequestParams = {}) =>
+      this.request<FeatureToggleListResponse, any>({
+        path: `/api/feature`,
+        method: "GET",
+        secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Feature
+     * @name SetFeatureEnabled
+     * @request PUT:/api/feature/{featureName}
+     * @secure
+     */
+    setFeatureEnabled: (
       featureName: string,
       data: FeatureToggleUpdateRequest,
       params: RequestParams = {},
     ) =>
       this.request<File, any>({
-        path: `/api/features/${featureName}`,
+        path: `/api/feature/${featureName}`,
         method: "PUT",
         body: data,
         secure: true,
@@ -366,18 +457,18 @@ export class Api<
     /**
      * No description
      *
-     * @tags FeatureToggle
-     * @name FeatureToggleAddUserToFeature
-     * @request POST:/api/features/{featureName}/users/{userId}
+     * @tags Feature
+     * @name AddUserToFeature
+     * @request POST:/api/feature/{featureName}/users/{userId}
      * @secure
      */
-    featureToggleAddUserToFeature: (
+    addUserToFeature: (
       featureName: string,
       userId: string,
       params: RequestParams = {},
     ) =>
       this.request<File, any>({
-        path: `/api/features/${featureName}/users/${userId}`,
+        path: `/api/feature/${featureName}/users/${userId}`,
         method: "POST",
         secure: true,
         ...params,
@@ -386,18 +477,18 @@ export class Api<
     /**
      * No description
      *
-     * @tags FeatureToggle
-     * @name FeatureToggleRemoveUserFromFeature
-     * @request DELETE:/api/features/{featureName}/users/{userId}
+     * @tags Feature
+     * @name RemoveUserFromFeature
+     * @request DELETE:/api/feature/{featureName}/users/{userId}
      * @secure
      */
-    featureToggleRemoveUserFromFeature: (
+    removeUserFromFeature: (
       featureName: string,
       userId: string,
       params: RequestParams = {},
     ) =>
       this.request<File, any>({
-        path: `/api/features/${featureName}/users/${userId}`,
+        path: `/api/feature/${featureName}/users/${userId}`,
         method: "DELETE",
         secure: true,
         ...params,
@@ -406,18 +497,18 @@ export class Api<
     /**
      * No description
      *
-     * @tags FeatureToggle
-     * @name FeatureToggleSetRolloutPercentage
-     * @request PUT:/api/features/{featureName}/rollout
+     * @tags Feature
+     * @name SetRolloutPercentage
+     * @request PUT:/api/feature/{featureName}/rollout
      * @secure
      */
-    featureToggleSetRolloutPercentage: (
+    setRolloutPercentage: (
       featureName: string,
       data: FeatureToggleRolloutRequest,
       params: RequestParams = {},
     ) =>
       this.request<File, any>({
-        path: `/api/features/${featureName}/rollout`,
+        path: `/api/feature/${featureName}/rollout`,
         method: "PUT",
         body: data,
         secure: true,
@@ -563,68 +654,6 @@ export class Api<
         path: `/api/passwordless-auth/user-info`,
         method: "GET",
         secure: true,
-        format: "json",
-        ...params,
-      }),
-  };
-  analyzers = {
-    /**
-     * No description
-     *
-     * @tags SourdoughAnalyzer
-     * @name SourdoughAnalyzerRegisterAnalyzer
-     * @request POST:/api/analyzers/register
-     * @secure
-     */
-    sourdoughAnalyzerRegisterAnalyzer: (
-      data: RegisterAnalyzerRequest,
-      params: RequestParams = {},
-    ) =>
-      this.request<RegisterAnalyzerResponse, any>({
-        path: `/api/analyzers/register`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags SourdoughAnalyzer
-     * @name SourdoughAnalyzerGetUserAnalyzers
-     * @request GET:/api/analyzers
-     * @secure
-     */
-    sourdoughAnalyzerGetUserAnalyzers: (params: RequestParams = {}) =>
-      this.request<AnalyzerListResponse[], any>({
-        path: `/api/analyzers`,
-        method: "GET",
-        secure: true,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags SourdoughAnalyzer
-     * @name SourdoughAnalyzerCreateAnalyzer
-     * @request POST:/api/analyzers/admin/create
-     * @secure
-     */
-    sourdoughAnalyzerCreateAnalyzer: (
-      data: CreateAnalyzerRequest,
-      params: RequestParams = {},
-    ) =>
-      this.request<CreateAnalyzerResponse, any>({
-        path: `/api/analyzers/admin/create`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
         format: "json",
         ...params,
       }),

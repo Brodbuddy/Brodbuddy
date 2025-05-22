@@ -8,12 +8,14 @@ import {
     InitiateLoginPage, 
     CompleteLoginPage,
     NotFound,
+    AdminPage,
     useAuth,
     AuthContext,
     RequireAuth,
     WebSocketTest,
     useSidebar,
-    AppSidebar
+    AppSidebar,
+    ThemeToggle
 } from "./import";
 
 export default function App() {
@@ -33,7 +35,10 @@ export default function App() {
                         <AppSidebar />
                     </div>
                 )}
-                <main className="flex-1">
+                <main className="flex-1 relative">
+                    <div className="absolute top-6 right-6 z-50">
+                        <ThemeToggle className="scale-150" />
+                    </div>
                     <div className={sidebarClass}>
                         <div className="p-4">
                             <Routes>
@@ -41,6 +46,7 @@ export default function App() {
                                 <Route path={AppRoutes.homeDashboard} element={
                                     <RequireAuth accessLevel={AccessLevel.Protected} element={<HomeDashboard />}/>
                                 }/>
+                                <Route path={AppRoutes.admin} element={<AdminPage />} />
                                 <Route path="/ws-test" element={<WebSocketTest />} />
                                 <Route path={AppRoutes.login} element={<InitiateLoginPage />} />
                                 <Route path={AppRoutes.verifyLogin} element={<CompleteLoginPage />} />

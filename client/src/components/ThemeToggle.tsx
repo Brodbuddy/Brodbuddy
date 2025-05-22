@@ -4,17 +4,27 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 
+const getInitialTheme = (): "light" | "dark" => {
+    if (typeof window === "undefined") return "light";
+    
+    const storedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+    if (storedTheme) {
+        return storedTheme;
+    }
+    
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+};
+
 export function ThemeToggle({ className }: { className?: string }) {
-    const [theme, setTheme] = useState<"light" | "dark">("light");
+    const [theme, setTheme] = useState<"light" | "dark">(getInitialTheme);
 
     useEffect(() => {
-        const storedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
-
-        if (storedTheme) {
-            setTheme(storedTheme);
-        } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-            setTheme("dark");
-        }
+        const initialTheme = getInitialTheme();
+        setTheme(initialTheme);
+        
+        const root = window.document.documentElement;
+        root.classList.remove("light", "dark");
+        root.classList.add(initialTheme);
     }, []);
 
     useEffect(() => {

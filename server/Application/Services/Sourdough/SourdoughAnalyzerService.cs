@@ -14,6 +14,7 @@ public interface ISourdoughAnalyzerService
 {
     Task<RegisterAnalyzerResult> RegisterAnalyzerAsync(RegisterAnalyzerInput input);
     Task<IEnumerable<SourdoughAnalyzer>> GetUserAnalyzersAsync(Guid userId);
+    Task<IEnumerable<SourdoughAnalyzer>> GetAllAnalyzersAsync();
     Task<SourdoughAnalyzer> CreateAnalyzerAsync(string macAddress, string name);
 }
 
@@ -44,7 +45,7 @@ public class SourdoughAnalyzerService : ISourdoughAnalyzerService
         if (string.IsNullOrWhiteSpace(input.ActivationCode)) throw new ArgumentException("Activation code is required");
         if (!await _userRepository.ExistsAsync(input.UserId)) throw new EntityNotFoundException("User not found");
 
-        var normalizedCode = input.ActivationCode.ToUpperInvariant();
+        var normalizedCode = input.ActivationCode.Replace("-", "").ToUpperInvariant();
         
         return await _transactionManager.ExecuteInTransactionAsync(async () =>
         {
@@ -81,6 +82,11 @@ public class SourdoughAnalyzerService : ISourdoughAnalyzerService
         return await _analyzerRepository.GetByUserIdAsync(userId);
     }
 
+    public async Task<IEnumerable<SourdoughAnalyzer>> GetAllAnalyzersAsync()
+    {
+        return await _analyzerRepository.GetAllAsync();
+    }
+
     public async Task<SourdoughAnalyzer> CreateAnalyzerAsync(string macAddress, string name)
     {
         var activationCode = GenerateActivationCode();
@@ -104,23 +110,25 @@ public class SourdoughAnalyzerService : ISourdoughAnalyzerService
         const int codeLength = 12;
         
         var codeBytes = new byte[codeLength];
-        var result = new char[codeLength + 2];
+        var result = new char[codeLength];
         
         using (var rng = RandomNumberGenerator.Create())
         {
             rng.GetBytes(codeBytes);
         }
         
-        int resultIndex = 0;
         for (int i = 0; i < codeLength; i++)
         {
-            result[resultIndex++] = charset[codeBytes[i] % charset.Length];
-            if (i == 3 || i == 7)
-            {
-                result[resultIndex++] = '-';
-            }
+            result[i] = charset[codeBytes[i] % charset.Length];
         }
         
         return new string(result);
+    }
+    
+    public static string FormatActivationCodeForDisplay(string code)
+    {
+        if (string.IsNullOrEmpty(code) || code.Length != 12) return code;
+        
+        return $"{code.Substring(0, 4)}-{code.Substring(4, 4)}-{code.Substring(8, 4)}";
     }
 }

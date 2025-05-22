@@ -8,7 +8,7 @@ import { SidebarProvider } from "./import"
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <BrowserRouter>
-            <SidebarProvider>
+            <SidebarProvider defaultOpen={false}>
                 <App />
             </SidebarProvider>
         </BrowserRouter>

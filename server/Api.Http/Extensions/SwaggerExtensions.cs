@@ -10,9 +10,13 @@ public class MakeAllPropertiesRequiredProcessor : IDocumentProcessor
     {
         foreach (var schema in context.Document.Definitions.Values)
         {
-            foreach (var property in schema.Properties)
+            var requiredProperties = schema.Properties
+                .Where(property => !property.Key.Equals("nickname", StringComparison.OrdinalIgnoreCase))
+                .Select(property => property.Key);
+                
+            foreach (var propertyKey in requiredProperties)
             {
-                schema.RequiredProperties.Add(property.Key);
+                schema.RequiredProperties.Add(propertyKey);
             }
         }
     } 

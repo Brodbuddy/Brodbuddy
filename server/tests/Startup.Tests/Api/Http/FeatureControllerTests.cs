@@ -12,11 +12,11 @@ using Xunit.Abstractions;
 namespace Startup.Tests.Api.Http;
 
 [Collection(TestCollections.Startup)]
-public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutputHelper output) : ApiTestBase(fixture, output)
+public class FeatureControllerTests(StartupTestFixture fixture, ITestOutputHelper output) : ApiTestBase(fixture, output)
 {
     private const string BaseUrl = "/api/features";
 
-    public class GetAllFeatures(StartupTestFixture fixture, ITestOutputHelper output) : FeatureToggleControllerTests(fixture, output)
+    public class GetAllFeatures(StartupTestFixture fixture, ITestOutputHelper output) : FeatureControllerTests(fixture, output)
     {
         [Fact]
         public async Task GetAllFeatures_WithoutAuth_Returns401()
@@ -56,7 +56,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         }
     }
 
-    public class SetFeatureEnabled(StartupTestFixture fixture, ITestOutputHelper output) : FeatureToggleControllerTests(fixture, output)
+    public class SetFeatureEnabled(StartupTestFixture fixture, ITestOutputHelper output) : FeatureControllerTests(fixture, output)
     {
         [Fact]
         public async Task SetFeatureEnabled_WithValidRequest_Returns200()
@@ -89,7 +89,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         }
     }
 
-    public class AddUserToFeature(StartupTestFixture fixture, ITestOutputHelper output) : FeatureToggleControllerTests(fixture, output)
+    public class AddUserToFeature(StartupTestFixture fixture, ITestOutputHelper output) : FeatureControllerTests(fixture, output)
     {
         [Fact]
         public async Task AddUserToFeature_WithNonExistentUser_Returns500()
@@ -155,7 +155,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         }
     }
 
-    public class RemoveUserFromFeature(StartupTestFixture fixture, ITestOutputHelper output) : FeatureToggleControllerTests(fixture, output)
+    public class RemoveUserFromFeature(StartupTestFixture fixture, ITestOutputHelper output) : FeatureControllerTests(fixture, output)
     {
         [Fact]
         public async Task RemoveUserFromFeature_WithNonExistentFeature_Returns404()
@@ -206,7 +206,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         }
     }
     
-    public class SetRolloutPercentage(StartupTestFixture fixture, ITestOutputHelper output) : FeatureToggleControllerTests(fixture, output)
+    public class SetRolloutPercentage(StartupTestFixture fixture, ITestOutputHelper output) : FeatureControllerTests(fixture, output)
     {
         [Fact]
         public async Task SetRolloutPercentage_WithValidRequest_Returns200()
@@ -277,7 +277,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         }
     }
     
-    public class FeatureToggleMiddleware(StartupTestFixture fixture, ITestOutputHelper output) : FeatureToggleControllerTests(fixture, output)
+    public class FeatureMiddleware(StartupTestFixture fixture, ITestOutputHelper output) : FeatureControllerTests(fixture, output)
     {
         [Fact]
         public async Task FeatureToggleMiddleware_DisabledEndpoint_Returns404()
@@ -302,7 +302,7 @@ public class FeatureToggleControllerTests(StartupTestFixture fixture, ITestOutpu
         }
     }
 
-    public class FullCycle(StartupTestFixture fixture, ITestOutputHelper output) : FeatureToggleControllerTests(fixture, output)
+    public class FullCycle(StartupTestFixture fixture, ITestOutputHelper output) : FeatureControllerTests(fixture, output)
     {
         [Fact]
         public async Task FullCycle_CreateFeatureAndManageUsers_WorksCorrectly()

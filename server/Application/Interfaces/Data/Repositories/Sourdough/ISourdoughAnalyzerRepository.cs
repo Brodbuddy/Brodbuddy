@@ -8,4 +8,5 @@ public interface ISourdoughAnalyzerRepository
     Task<SourdoughAnalyzer?> GetByActivationCodeAsync(string activationCode);
     Task<Guid> SaveAsync(SourdoughAnalyzer analyzer);
     Task<IEnumerable<SourdoughAnalyzer>> GetByUserIdAsync(Guid userId);
+    Task<IEnumerable<SourdoughAnalyzer>> GetAllAsync();
 }

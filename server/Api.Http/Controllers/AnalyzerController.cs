@@ -9,12 +9,12 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Http.Controllers;
 
 [ApiController]
-[Route("api/analyzers")]
-public class SourdoughAnalyzerController : ControllerBase
+[Route("api/[controller]")]
+public class AnalyzerController : ControllerBase
 {
     private readonly ISourdoughAnalyzerService _analyzerService;
 
-    public SourdoughAnalyzerController(ISourdoughAnalyzerService analyzerService)
+    public AnalyzerController(ISourdoughAnalyzerService analyzerService)
     {
         _analyzerService = analyzerService;
     }
@@ -59,17 +59,39 @@ public class SourdoughAnalyzerController : ControllerBase
         return Ok(response);
     }
     
+    [HttpGet("admin/all")]
+    [Authorize(Roles = Role.Admin)]
+    public async Task<ActionResult<IEnumerable<AdminAnalyzerListResponse>>> GetAllAnalyzers()
+    {
+        var analyzers = await _analyzerService.GetAllAnalyzersAsync();
+        
+        var response = analyzers.Select(a => new AdminAnalyzerListResponse(
+            a.Id,
+            a.Name ?? string.Empty,
+            a.MacAddress,
+            a.FirmwareVersion,
+            a.IsActivated,
+            a.ActivatedAt,
+            a.LastSeen,
+            a.CreatedAt
+        ));
+        
+        return Ok(response);
+    }
+    
     [HttpPost("admin/create")]
     [Authorize(Roles = Role.Admin)]
     public async Task<ActionResult<CreateAnalyzerResponse>> CreateAnalyzer(CreateAnalyzerRequest request)
     {
         var analyzer = await _analyzerService.CreateAnalyzerAsync(request.MacAddress, request.Name);
         
+        var formattedActivationCode = SourdoughAnalyzerService.FormatActivationCodeForDisplay(analyzer.ActivationCode ?? string.Empty);
+        
         return Ok(new CreateAnalyzerResponse(
             analyzer.Id,
             analyzer.MacAddress,
             analyzer.Name ?? string.Empty,
-            analyzer.ActivationCode ?? string.Empty
+            formattedActivationCode
         ));
     }
 }
