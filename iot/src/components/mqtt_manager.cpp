@@ -1,14 +1,31 @@
 // mqtt_manager.cpp
-#include "mqtt_manager.h"
-#include "../include/config.h"
+#include "components/mqtt_manager.h"
+#include "utils/logger.h"
+#include "config.h"
 
-MQTTManager::MQTTManager() : mqttClient(espClient),
+static const char* TAG = "MqttManager";
+
+MqttManager::MqttManager() : mqttClient(_wifiClient),
                              lastReconnectAttempt(0),
                              ntpConfigured(false)
 {
 }
 
-void MQTTManager::setup()
+bool MqttManager::begin(const char* server, int port, const char* user, const char* password, const char* clientId) {
+    _server = server;
+    _port = port;
+    _user = user;
+    _password = password;
+    _clientId = clientId;
+
+    mqttClient.setServer(server, port);
+    mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
+                           { this->processMessage(topic, payload, length); });
+    
+    return reconnect();
+}
+
+bool MqttManager::setup()
 {
     // Opsæt NTP
     configureNTP();
@@ -29,9 +46,10 @@ void MQTTManager::setup()
 
     // Forsøg at oprette forbindelse til MQTT
     bool connected = reconnect();
+    return connected;
 }
 
-void MQTTManager::loop()
+void MqttManager::loop()
 {
     // Check MQTT forbindelse
     if (!mqttClient.connected())
@@ -55,7 +73,21 @@ void MQTTManager::loop()
     }
 }
 
-void MQTTManager::processMessage(char *topic, byte *payload, unsigned int length)
+bool MqttManager::publish(const char* topic, const JsonDocument& data) {
+    String json;
+    serializeJson(data, json);
+    return publish(topic, json.c_str());
+}
+
+bool MqttManager::publish(const char* topic, const char* payload) {
+    if (!mqttClient.connected()) {
+        return false;
+    }
+
+    return mqttClient.publish(topic, payload);
+}
+
+void MqttManager::processMessage(char *topic, byte *payload, unsigned int length)
 {
     // Konverter payload til null-termineret streng
     char message[length + 1];
@@ -115,22 +147,22 @@ void MQTTManager::processMessage(char *topic, byte *payload, unsigned int length
     }
 }
 
-JsonVariant MQTTManager::getLastBME280Data()
+JsonVariant MqttManager::getLastBME280Data()
 {
     return lastBME280Data.as<JsonVariant>();
 }
 
-JsonVariant MQTTManager::getLastToFData()
+JsonVariant MqttManager::getLastToFData()
 {
     return lastToFData.as<JsonVariant>();
 }
 
-bool MQTTManager::isConnected()
+bool MqttManager::isConnected()
 {
     return mqttClient.connected();
 }
 
-void MQTTManager::configureNTP()
+void MqttManager::configureNTP()
 {
     // Konfigurer tid med NTP
     configTime(GMT_OFFSET_SEC, DAYLIGHT_OFFSET_SEC, NTP_SERVER);
@@ -161,71 +193,88 @@ void MQTTManager::configureNTP()
     }
 }
 
-bool MQTTManager::reconnect()
+bool MqttManager::reconnect()
 {
-    int retries = 0;
-    while (!mqttClient.connected() && retries < 3)
-    {
-        Serial.print("Forsøger at oprette MQTT-forbindelse til ");
-        Serial.print(MQTT_SERVER);
-        Serial.print(":");
-        Serial.print(MQTT_PORT);
-        Serial.print("...");
-
-        // Opret et klient-ID med tilfældigt suffiks for bedre forbindelsespålidelighed
-        String clientId = DEVICE_ID;
-        clientId += "-";
-        clientId += String(random(0xffff), HEX);
-
-        if (mqttClient.connect(clientId.c_str(), MQTT_USER, MQTT_PASSWORD))
-        {
-            Serial.println("forbundet");
-
-            // Abonner på alle sensortopics
-            mqttClient.subscribe(MQTT_TOPIC_BME280);
-            mqttClient.subscribe(MQTT_TOPIC_TOF);
-
-            Serial.println("Abonnerer på følgende emner:");
-            Serial.println(MQTT_TOPIC_BME280);
-            Serial.println(MQTT_TOPIC_TOF);
-
-            // Publicer en forbindelsesstatusmeddelelse
-            DynamicJsonDocument statusDoc(128);
-            statusDoc["device_id"] = DEVICE_ID;
-            statusDoc["status"] = "connected";
-            statusDoc["ipAddress"] = WiFi.localIP().toString();
-            statusDoc["rssi"] = WiFi.RSSI();
-
-            char statusBuffer[128];
-            serializeJson(statusDoc, statusBuffer);
-
-            bool statusPublished = mqttClient.publish(MQTT_STATUS_TOPIC, statusBuffer, true);
-            if (statusPublished)
-            {
-                Serial.println("Status-besked publiceret:");
-                Serial.println(statusBuffer);
-            }
-            else
-            {
-                Serial.println("Kunne ikke publicere status-besked!");
-            }
-
-            return true;
-        }
-        else
-        {
-            Serial.print("mislykkedes, rc=");
-            Serial.print(mqttClient.state());
-            Serial.println(" prøver igen om 5 sekunder");
-            retries++;
-            delay(5000);
-        }
+    if (mqttClient.connected()) {
+        return true;
     }
 
-    return false;
+    if (_server.length() == 0) {
+        return false;
+    }
+
+    LOG_I(TAG, "Attempting MQTT connection to %s:%d", _server.c_str(), _port);
+
+    if (mqttClient.connect(_clientId.c_str(), _user.c_str(), _password.c_str())) {
+        LOG_I(TAG, "MQTT connected");
+        return true;
+    } else {
+        LOG_E(TAG, "MQTT connection failed, state: %d", mqttClient.state());
+        return false;
+    }
+    // int retries = 0;
+    // while (!mqttClient.connected() && retries < 3)
+    // {
+    //     Serial.print("Forsøger at oprette MQTT-forbindelse til ");
+    //     Serial.print(MQTT_SERVER);
+    //     Serial.print(":");
+    //     Serial.print(MQTT_PORT);
+    //     Serial.print("...");
+
+    //     // Opret et klient-ID med tilfældigt suffiks for bedre forbindelsespålidelighed
+    //     String clientId = DEVICE_ID;
+    //     clientId += "-";
+    //     clientId += String(random(0xffff), HEX);
+
+    //     if (mqttClient.connect(clientId.c_str(), MQTT_USER, MQTT_PASSWORD))
+    //     {
+    //         Serial.println("forbundet");
+
+    //         // Abonner på alle sensortopics
+    //         mqttClient.subscribe(MQTT_TOPIC_BME280);
+    //         mqttClient.subscribe(MQTT_TOPIC_TOF);
+
+    //         Serial.println("Abonnerer på følgende emner:");
+    //         Serial.println(MQTT_TOPIC_BME280);
+    //         Serial.println(MQTT_TOPIC_TOF);
+
+    //         // Publicer en forbindelsesstatusmeddelelse
+    //         DynamicJsonDocument statusDoc(128);
+    //         statusDoc["device_id"] = DEVICE_ID;
+    //         statusDoc["status"] = "connected";
+    //         statusDoc["ipAddress"] = WiFi.localIP().toString();
+    //         statusDoc["rssi"] = WiFi.RSSI();
+
+    //         char statusBuffer[128];
+    //         serializeJson(statusDoc, statusBuffer);
+
+    //         bool statusPublished = mqttClient.publish(MQTT_STATUS_TOPIC, statusBuffer, true);
+    //         if (statusPublished)
+    //         {
+    //             Serial.println("Status-besked publiceret:");
+    //             Serial.println(statusBuffer);
+    //         }
+    //         else
+    //         {
+    //             Serial.println("Kunne ikke publicere status-besked!");
+    //         }
+
+    //         return true;
+    //     }
+    //     else
+    //     {
+    //         Serial.print("mislykkedes, rc=");
+    //         Serial.print(mqttClient.state());
+    //         Serial.println(" prøver igen om 5 sekunder");
+    //         retries++;
+    //         delay(5000);
+    //     }
+    // }
+
+    // return false;
 }
 
-void MQTTManager::printLocalTime()
+void MqttManager::printLocalTime()
 {
     struct tm timeinfo;
     if (!getLocalTime(&timeinfo))
@@ -240,7 +289,7 @@ void MQTTManager::printLocalTime()
     Serial.println(timeStringBuf);
 }
 
-bool MQTTManager::getFormattedTime(char *buffer, size_t bufferSize)
+bool MqttManager::getFormattedTime(char *buffer, size_t bufferSize)
 {
     struct tm timeinfo;
     if (getLocalTime(&timeinfo))
@@ -253,7 +302,7 @@ bool MQTTManager::getFormattedTime(char *buffer, size_t bufferSize)
 }
 
 // BME280 sensor data publicering
-bool MQTTManager::publishBME280Data(float temperature, float humidity, float pressure)
+bool MqttManager::publishBME280Data(float temperature, float humidity, float pressure)
 {
     DynamicJsonDocument doc(256);
 
@@ -327,7 +376,7 @@ bool MQTTManager::publishBME280Data(float temperature, float humidity, float pre
 }
 
 // Time of Flight sensor data
-bool MQTTManager::publishToFData(int currentDistance, int initialHeight, int riseAmount,
+bool MqttManager::publishToFData(int currentDistance, int initialHeight, int riseAmount,
                                  float risePercentage, float riseRate)
 {
     DynamicJsonDocument doc(256);
@@ -404,7 +453,7 @@ bool MQTTManager::publishToFData(int currentDistance, int initialHeight, int ris
 }
 
 // Samlet telemetri med data fra alle sensorer
-bool MQTTManager::publishTelemetry(
+bool MqttManager::publishTelemetry(
     int currentDistance, int initialHeight, int riseAmount, float risePercentage, float riseRate,
     float temperature, float humidity, float pressure)
 {

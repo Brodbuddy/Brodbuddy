@@ -1,5 +1,5 @@
-#include "tof_sensor.h"
-#include "../include/config.h"
+#include "components/tof_sensor.h"
+#include "config.h"
 
 ToFSensor::ToFSensor() : sensorConnected(false),
                          lastReadTime(0),

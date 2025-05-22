@@ -1,0 +1,21 @@
+{
+  "deviceId": "sourdough_monitor_01",
+  "mqtt": {
+    "server": "91.99.24.238",
+    "port": 1883,
+    "user": "pepsi",
+    "password": "lime"
+  },
+  "sensor": {
+    "interval": 15
+  },
+  "display": {
+    "interval": 300
+  },
+  "calibration": {
+    "tempOffset": -1.7,
+    "humOffset": 7.3,
+    "containerHeight": 200
+  },
+  "lowPowerMode": false
+}

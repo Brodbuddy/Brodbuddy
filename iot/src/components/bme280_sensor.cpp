@@ -1,5 +1,5 @@
-#include "bme280_sensor.h"
-#include "../include/config.h"
+#include "components/bme280_sensor.h"
+#include "config.h"
 
 BME280Sensor::BME280Sensor() : sensorConnected(false),
                                lastReadTime(0),

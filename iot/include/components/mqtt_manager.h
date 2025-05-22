@@ -1,17 +1,45 @@
 #pragma once
 
 #include <WiFiClientSecure.h>
+#include <WiFiClient.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <time.h>
 
-class MQTTManager
-{
+class MqttManager {
+private:
+    WiFiClientSecure espClient;
+    WiFiClient _wifiClient;
+    PubSubClient mqttClient;
+
+    String _server;
+    int _port;
+    String _user;
+    String _password;
+    String _clientId;
+
+    unsigned long lastReconnectAttempt;
+    bool ntpConfigured;
+
+    // Buffer for seneste modtagne beskeder
+    DynamicJsonDocument lastBME280Data{256};
+    DynamicJsonDocument lastToFData{256};
+
+    bool reconnect();
+    void configureNTP();
+    bool getFormattedTime(char *buffer, size_t bufferSize);
+
+    // Callback funktion til håndtering af indkommende beskeder
+    void processMessage(char *topic, byte *payload, unsigned int length);
 public:
-    MQTTManager();
-    void setup();
+    MqttManager();
+    bool begin(const char* server, int port, const char* user, const char* password, const char* clientId);
+    bool setup();
     void loop();
     bool isConnected();
+
+    bool publish(const char* topic, const JsonDocument& data);
+    bool publish(const char* topic, const char* payload);
 
     // Sensor-specifikke publiceringsmetoder
     bool publishBME280Data(float temperature, float humidity, float pressure);
@@ -38,22 +66,4 @@ public:
 
     // Hjælpe-metode til tidsstempel
     void printLocalTime();
-
-private:
-    WiFiClientSecure espClient;
-    PubSubClient mqttClient;
-
-    unsigned long lastReconnectAttempt;
-    bool ntpConfigured;
-
-    // Buffer for seneste modtagne beskeder
-    DynamicJsonDocument lastBME280Data{256};
-    DynamicJsonDocument lastToFData{256};
-
-    bool reconnect();
-    void configureNTP();
-    bool getFormattedTime(char *buffer, size_t bufferSize);
-
-    // Callback funktion til håndtering af indkommende beskeder
-    void processMessage(char *topic, byte *payload, unsigned int length);
 };
