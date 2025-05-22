@@ -34,7 +34,6 @@ private:
 public:
     MqttManager();
     bool begin(const char* server, int port, const char* user, const char* password, const char* clientId);
-    bool setup();
     void loop();
     bool isConnected();
 

@@ -25,29 +25,6 @@ bool MqttManager::begin(const char* server, int port, const char* user, const ch
     return reconnect();
 }
 
-bool MqttManager::setup()
-{
-    // Opsæt NTP
-    configureNTP();
-
-    // Opsæt MQTT
-    espClient.setInsecure(); // Deaktiver certifikatvalidering (skift til certifikat i produktion)
-    mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
-    mqttClient.setKeepAlive(60);     // Hold forbindelsen i live i 60 sekunder
-    mqttClient.setSocketTimeout(30); // Socket timeout på 30 sekunder
-    mqttClient.setBufferSize(512);   // Forøg buffer størrelse for større beskeder
-
-    // Registrer callback funktion for indkommende meddelelser
-    mqttClient.setCallback([this](char *topic, byte *payload, unsigned int length)
-                           { this->processMessage(topic, payload, length); });
-
-    // Initialiser tilfældig seed til klient-ID generering
-    randomSeed(micros());
-
-    // Forsøg at oprette forbindelse til MQTT
-    bool connected = reconnect();
-    return connected;
-}
 
 void MqttManager::loop()
 {
