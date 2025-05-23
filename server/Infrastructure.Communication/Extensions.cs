@@ -35,7 +35,7 @@ public static class Extensions
         var serviceProvider = services.BuildServiceProvider();
         var appOptions = serviceProvider.GetRequiredService<IOptions<AppOptions>>().Value;
         
-        if (environment.IsDevelopment() && !string.IsNullOrEmpty(appOptions.Email.SendGridApiKey))
+        if (environment.IsProduction() && !string.IsNullOrEmpty(appOptions.Email.SendGridApiKey))
         {
             services.AddFluentEmail(appOptions.Email.FromEmail, appOptions.Email.Sender)
                     .AddRazorRenderer()
