@@ -6,8 +6,8 @@
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
-#include "i2c_utils.h"
 #include "data_types.h"
+#include "utils/constants.h"
 
 struct SensorHealth {
     bool bme280Connected;
@@ -28,18 +28,29 @@ private:
 
     float _tempOffset;
     float _humOffset;
+    
+    bool _firstReading;
+    float _filteredTemp;
+    float _filteredHum;
+    int _baselineDistance;
 
 #ifdef SIMULATE_SENSORS
     float _simTemp;
     float _simHum;
     int _simDistance;
 #endif
+    
+    float calculateMedian(float arr[], int size);
+    int calculateMedianInt(int arr[], int size);
+    void removeOutliers(float arr[], int& size, float minVal, float maxVal);
+    void removeOutliersInt(int arr[], int& size, int minVal, int maxVal);
 
 public:
     SensorManager();
 
     bool begin();
     bool readAllSensors();
+    bool collectMultipleSamples();
 
     const SensorData& getCurrentData() const { return _currentData; }
     const SensorHealth& getHealth() const { return _health; }

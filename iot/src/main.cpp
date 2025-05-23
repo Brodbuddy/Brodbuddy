@@ -104,7 +104,8 @@ void loop()
 
       case STATE_SENSING:
         if (sensorManager.shouldRead()) {
-          if (sensorManager.readAllSensors()) {
+          LOG_I(TAG, "Collecting sensor samples...");
+          if (sensorManager.collectMultipleSamples()) {
             LOG_I(TAG, "Sensor reading complete");
             stateMachine.transitionTo(STATE_UPDATING_DISPLAY);
           }
