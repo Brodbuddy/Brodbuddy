@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'server/**'
+      - 'client/**'
+      - 'PlaywrightTests/**'
       - 'Directory.Build.props'
       - '.github/**'
     branches:
