@@ -4,10 +4,7 @@
 
 static const char* TAG = "MqttManager";
 
-MqttManager::MqttManager() : _mqttClient(_wifiClientSecure),
-                             lastReconnectAttempt(0)
-{
-}
+MqttManager::MqttManager() : _mqttClient(_wifiClientSecure), lastReconnectAttempt(0) {}
 
 bool MqttManager::begin(const char* server, int port, const char* user, const char* password, const char* clientId) {
     _server = server;
@@ -20,14 +17,14 @@ bool MqttManager::begin(const char* server, int port, const char* user, const ch
     _mqttClient.setServer(server, port);
     _mqttClient.setKeepAlive(TimeUtils::to_seconds(TimeConstants::MQTT_KEEP_ALIVE));
     _mqttClient.setSocketTimeout(TimeUtils::to_seconds(TimeConstants::MQTT_SOCKET_TIMEOUT_DURATION));
-    
+
     return reconnect();
 }
 
 void MqttManager::loop() {
     if (!_mqttClient.connected()) {
         unsigned long currentMillis = millis();
-        if (currentMillis - lastReconnectAttempt > TimeUtils::to_ms(TimeConstants::MQTT_RETRY_DELAY))  {
+        if (currentMillis - lastReconnectAttempt > TimeUtils::to_ms(TimeConstants::MQTT_RETRY_DELAY)) {
             lastReconnectAttempt = currentMillis;
             if (reconnect()) {
                 lastReconnectAttempt = 0;
@@ -53,14 +50,14 @@ bool MqttManager::publish(const char* topic, const char* payload) {
         LOG_W(TAG, "Not connected, cannot publish to %s", topic);
         return false;
     }
-    
+
     LOG_D(TAG, "Publishing to %s: %s", topic, payload);
     return _mqttClient.publish(topic, payload);
 }
 
 bool MqttManager::reconnect() {
     LOG_I(TAG, "Attempting MQTT connection...");
-    
+
     if (_mqttClient.connect(_clientId.c_str(), _user.c_str(), _password.c_str())) {
         LOG_I(TAG, "Connected to MQTT broker");
         return true;

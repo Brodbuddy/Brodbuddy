@@ -3,29 +3,29 @@
 #include <Arduino.h>
 
 // WiFi
-extern const char *AP_NAME;
-extern const char *AP_PASSWORD;
-extern const char *HOSTNAME;
+extern const char* AP_NAME;
+extern const char* AP_PASSWORD;
+extern const char* HOSTNAME;
 
 // MQTT Broker settings
-extern const char *MQTT_SERVER;
+extern const char* MQTT_SERVER;
 extern const int MQTT_PORT;
-extern const char *MQTT_USER;
-extern const char *MQTT_PASSWORD;
-extern const char *DEVICE_ID;
+extern const char* MQTT_USER;
+extern const char* MQTT_PASSWORD;
+extern const char* DEVICE_ID;
 
 // Separate topics for different sensor types
-extern const char *MQTT_TOPIC_BME280;
-extern const char *MQTT_TOPIC_TOF;
-extern const char *MQTT_STATUS_TOPIC;
-extern const char *MQTT_TOPIC_TELEMETRY;
-extern const char *MQTT_TOPIC_DHT22; // New topic for DHT22 sensor
+extern const char* MQTT_TOPIC_BME280;
+extern const char* MQTT_TOPIC_TOF;
+extern const char* MQTT_STATUS_TOPIC;
+extern const char* MQTT_TOPIC_TELEMETRY;
+extern const char* MQTT_TOPIC_DHT22; // New topic for DHT22 sensor
 
 // Backward compatibility - for legacy code
-extern const char *MQTT_TOPIC;
+extern const char* MQTT_TOPIC;
 
 // NTP server indstillinger
-extern const char *NTP_SERVER;
+extern const char* NTP_SERVER;
 extern const long GMT_OFFSET_SEC;
 extern const int DAYLIGHT_OFFSET_SEC;
 

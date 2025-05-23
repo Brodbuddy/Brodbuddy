@@ -11,33 +11,33 @@
 #define LED_PIN Pins::LED
 
 class BroadBuddyWiFiManager {
-public:
-  BroadBuddyWiFiManager();
-  void begin();
-  void loop();
-  WiFiStatus getStatus() const;
-  void resetSettings();
-  bool hasError() const;
-  void startCaptivePortal();
-  
-private:
-  Preferences preferences; 
-  WiFiStatus currentStatus;
-  unsigned long connectStartTime;
-  unsigned long previousMillis;
-  bool ledState;
-  unsigned long lastWiFiCheck;
-  
-  CaptivePortalManager captivePortalManager;
-  
-  unsigned long apModeStartTime;
-  bool apModeTimeoutEnabled;
-  bool apModeTimeoutOccurred;
-  
-  void createBlinkTask();
-  void checkWiFiStatus();
-  void saveWiFiCredentials(const String& ssid, const String& password);
-  
-  void enableAPModeTimeout();
-  void disableAPModeTimeout();
+  public:
+    BroadBuddyWiFiManager();
+    void begin();
+    void loop();
+    WiFiStatus getStatus() const;
+    void resetSettings();
+    bool hasError() const;
+    void startCaptivePortal();
+
+  private:
+    Preferences preferences;
+    WiFiStatus currentStatus;
+    unsigned long connectStartTime;
+    unsigned long previousMillis;
+    bool ledState;
+    unsigned long lastWiFiCheck;
+
+    CaptivePortalManager captivePortalManager;
+
+    unsigned long apModeStartTime;
+    bool apModeTimeoutEnabled;
+    bool apModeTimeoutOccurred;
+
+    void createBlinkTask();
+    void checkWiFiStatus();
+    void saveWiFiCredentials(const String& ssid, const String& password);
+
+    void enableAPModeTimeout();
+    void disableAPModeTimeout();
 };

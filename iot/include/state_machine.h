@@ -15,13 +15,13 @@ enum AppState {
 };
 
 class StateMachine {
-private:
+  private:
     AppState _currentState;
     AppState _previousState;
     unsigned long _stateStartTime;
     static const char* _stateNames[];
-    
-public:
+
+  public:
     StateMachine();
 
     AppState getCurrentState() const { return _currentState; }

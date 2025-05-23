@@ -6,7 +6,7 @@
 #include <ArduinoJson.h>
 
 class MqttManager {
-private:
+  private:
     WiFiClientSecure _wifiClientSecure;
     WiFiClient _wifiClient;
     PubSubClient _mqttClient;
@@ -21,7 +21,7 @@ private:
 
     bool reconnect();
 
-public:
+  public:
     MqttManager();
     bool begin(const char* server, int port, const char* user, const char* password, const char* clientId);
     void loop();

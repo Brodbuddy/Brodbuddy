@@ -13,7 +13,9 @@ Checks: >
   -readability-identifier-length,
   -hicpp-vararg,
   -cert-dcl50-cpp,
-  -cert-dcl59-cpp
+  -cert-dcl59-cpp,
+  -misc-unused-parameters,
+  -readability-static-accessed-through-instance
 
 WarningsAsErrors: ''
 HeaderFilterRegex: 'src/.*\.h$'
