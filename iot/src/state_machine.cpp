@@ -1,6 +1,8 @@
 #include "state_machine.h"
 #include "utils/logger.h"
 
+static const char* TAG = "StateMachine";
+
 const char* StateMachine::_stateNames[] = {
     "BOOT", "CONNECTING_WIFI", "CONNECTING_MQTT", "SENSING", "UPDATING_DISPLAY", "PUBLISHING_DATA", "SLEEP", "ERROR"};
 
@@ -13,7 +15,7 @@ void StateMachine::transitionTo(AppState newState) {
     _currentState = newState;
     _stateStartTime = millis();
 
-    LOG_I("StateMachine", "Transition: %s -> %s", getStateName(_previousState), getStateName(_currentState));
+    LOG_I(TAG, "Transition: %s -> %s", getStateName(_previousState), getStateName(_currentState));
 }
 
 unsigned long StateMachine::timeInCurrentState() const {

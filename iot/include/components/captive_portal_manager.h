@@ -39,7 +39,6 @@ private:
   String lastConnectionStatus;
   
   unsigned long apModeStartTime;
-  const unsigned long AP_MODE_TIMEOUT = 300000;
   bool apModeTimeoutEnabled;
   
   std::function<void(const String&, const String&)> saveCredentialsCallback;

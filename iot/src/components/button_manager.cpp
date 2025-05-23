@@ -1,30 +1,31 @@
 #include "components/button_manager.h"
 #include <utils/time_utils.h>
+#include <utils/constants.h>
 
 static const char* TAG = "ButtonManager";
 
 ButtonManager::ButtonManager() : buttonPressed(false), buttonPressStart(0), resetRequest(false), portalRequest(false) {}
 
 void ButtonManager::begin() {
-    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    pinMode(Pins::RESET_BUTTON, INPUT_PULLUP);
 }
 
 bool ButtonManager::isStartupResetPressed() const {
-    return digitalRead(BUTTON_PIN) == LOW;
+    return digitalRead(Pins::RESET_BUTTON) == LOW;
 }
 
 void ButtonManager::loop() {
-    if (digitalRead(BUTTON_PIN) == LOW) {
+    if (digitalRead(Pins::RESET_BUTTON) == LOW) {
         if (!buttonPressed) {
             buttonPressStart = millis();
             buttonPressed = true;
         } else if (millis() - buttonPressStart > TimeUtils::to_ms(TimeConstants::BUTTON_LONG_PRESS)) {
             LOG_W(TAG, "Factory reset initiated");
 
-            for (int i = 0; i < 40; i++) {
-                digitalWrite(LED_PIN, HIGH);
+            for (int i = 0; i < UIConstants::FACTORY_RESET_BLINK_COUNT; i++) {
+                digitalWrite(Pins::LED, HIGH);
                 TimeUtils::delay_for(TimeConstants::BUTTON_LED_BLINK);
-                digitalWrite(LED_PIN, LOW);
+                digitalWrite(Pins::LED, LOW);
                 TimeUtils::delay_for(TimeConstants::BUTTON_LED_BLINK);
             }
 

@@ -1,5 +1,6 @@
 #include "components/sensor_manager.h"
 #include "utils/constants.h"
+#include "utils/time_utils.h"
 
 SensorManager::SensorManager() 
     : _lastReadTime(0),
@@ -28,9 +29,9 @@ bool SensorManager::begin() {
     return true;
 #else
     Wire.begin(Pins::I2C_SDA, Pins::I2C_SCL);
-    delay(Sensors::I2C_INIT_DELAY_MS);
+    TimeUtils::delay_for(TimeConstants::I2C_INIT_DELAY);
     Wire.setClock(Sensors::I2C_CLOCK_SPEED);
-    delay(Sensors::I2C_INIT_DELAY_MS);
+    TimeUtils::delay_for(TimeConstants::I2C_INIT_DELAY);
 
     unsigned status = _bme.begin(Sensors::BME280_ADDR_PRIMARY, &Wire);
     if (!status) {
@@ -46,21 +47,21 @@ bool SensorManager::begin() {
                          Adafruit_BME280::SAMPLING_X16,
                          Adafruit_BME280::FILTER_X16,
                          Adafruit_BME280::STANDBY_MS_0_5);
-        delay(Sensors::BME280_STABILIZATION_MS);
+        TimeUtils::delay_for(TimeConstants::BME280_STABILIZATION_DELAY);
     }
 
     pinMode(Pins::XSHUT, OUTPUT);
     digitalWrite(Pins::XSHUT, LOW);
-    delay(Sensors::XSHUT_RESET_DELAY_MS);
+    TimeUtils::delay_for(TimeConstants::XSHUT_RESET_DELAY);
     digitalWrite(Pins::XSHUT, HIGH);
-    delay(Sensors::XSHUT_RESET_DELAY_MS);
+    TimeUtils::delay_for(TimeConstants::XSHUT_RESET_DELAY);
     
     _health.tofConnected = _tof.init();
     if (_health.tofConnected) {
-        _tof.setTimeout(Sensors::VL53L0X_TIMEOUT_MS);
-        _tof.setMeasurementTimingBudget(Sensors::VL53L0X_TIMING_BUDGET_MS);
+        _tof.setTimeout(TimeUtils::to_ms(TimeConstants::VL53L0X_TIMEOUT));
+        _tof.setMeasurementTimingBudget(TimeUtils::to_us(TimeConstants::VL53L0X_TIMING_BUDGET));
         _tof.startContinuous();
-        delay(Sensors::VL53L0X_STABILIZATION_MS);
+        TimeUtils::delay_for(TimeConstants::VL53L0X_STABILIZATION_DELAY);
     }
 
     return _health.bme280Connected || _health.tofConnected;
@@ -170,7 +171,7 @@ bool SensorManager::collectMultipleSamples() {
         }
         
         if (i < Sensors::MAX_SAMPLES - 1) {
-            delay(Sensors::SAMPLE_INTERVAL_MS);
+            TimeUtils::delay_for(TimeConstants::SENSOR_SAMPLE_INTERVAL);
         }
     }
     

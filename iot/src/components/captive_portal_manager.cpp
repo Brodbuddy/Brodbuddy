@@ -27,10 +27,10 @@ void CaptivePortalManager::startCustomPortal() {
   LOG_I(TAG, "AP IP address: %s", WiFi.softAPIP().toString().c_str());
   
   if (dns == nullptr) dns = new DNSServer();
-  if (server == nullptr) server = new WebServer(80);
+  if (server == nullptr) server = new WebServer(NetworkConstants::HTTP_PORT);
   
   dns->setErrorReplyCode(DNSReplyCode::NoError);
-  dns->start(53, "*", WiFi.softAPIP());
+  dns->start(NetworkConstants::DNS_PORT, "*", WiFi.softAPIP());
   
   setupWebServer();
   
@@ -77,19 +77,19 @@ void CaptivePortalManager::loop() {
 }
 
 void CaptivePortalManager::setupWebServer() {
-  server->on("/", HTTP_GET, [this]() {
+  server->on(NetworkConstants::ROUTE_ROOT, HTTP_GET, [this]() {
     this->handleRoot();
   });
   
-  server->on("/scan", HTTP_GET, [this]() {
+  server->on(NetworkConstants::ROUTE_SCAN, HTTP_GET, [this]() {
     this->handleScan();
   });
   
-  server->on("/connect", HTTP_POST, [this]() {
+  server->on(NetworkConstants::ROUTE_CONNECT, HTTP_POST, [this]() {
     this->handleConnect();
   });
   
-  server->on("/connection-status", HTTP_GET, [this]() {
+  server->on(NetworkConstants::ROUTE_STATUS, HTTP_GET, [this]() {
     this->handleConnectionStatus();
   });
   
@@ -105,7 +105,7 @@ void CaptivePortalManager::handleRoot() {
 void CaptivePortalManager::handleScan() {
   int n = WiFi.scanNetworks();
   
-  DynamicJsonDocument doc(4096);
+  DynamicJsonDocument doc(NetworkConstants::PORTAL_SCAN_JSON_SIZE);
   JsonArray networksArray = doc.createNestedArray("networks");
   
   for (int i = 0; i < n; i++) {
@@ -125,7 +125,7 @@ void CaptivePortalManager::handleScan() {
 
 void CaptivePortalManager::handleConnect() {
   String data = server->arg("plain");
-  DynamicJsonDocument doc(512);
+  DynamicJsonDocument doc(NetworkConstants::PORTAL_CONNECT_JSON_SIZE);
   DeserializationError error = deserializeJson(doc, data);
   
   if (error) {
@@ -172,7 +172,7 @@ void CaptivePortalManager::handleConnect() {
     
     WiFi.setAutoReconnect(true);
     
-    DynamicJsonDocument responseDoc(256);
+    DynamicJsonDocument responseDoc(NetworkConstants::PORTAL_JSON_SIZE);
     responseDoc["success"] = true;
     responseDoc["ip"] = WiFi.localIP().toString();
     responseDoc["message"] = "Forbundet til " + ssid + "! Du kan nu forlade opsætningssiden.";
@@ -223,7 +223,7 @@ void CaptivePortalManager::handleNotFound() {
 }
 
 void CaptivePortalManager::handleConnectionStatus() {
-  DynamicJsonDocument statusDoc(256);
+  DynamicJsonDocument statusDoc(NetworkConstants::PORTAL_JSON_SIZE);
   
   if (WiFi.status() == WL_CONNECTED) {
     statusDoc["connected"] = true;

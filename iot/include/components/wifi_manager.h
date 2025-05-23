@@ -8,11 +8,9 @@
 #include <data_types.h>
 #include "captive_portal_manager.h"
 
-#define LED_PIN Pins::LED
-
-class BroadBuddyWiFiManager {
+class WifiManager {
   public:
-    BroadBuddyWiFiManager();
+    WifiManager();
     void begin();
     void loop();
     WiFiStatus getStatus() const;

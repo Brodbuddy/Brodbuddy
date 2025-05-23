@@ -1,12 +1,9 @@
-#ifndef SOURDOUGH_MONITOR_H
-#define SOURDOUGH_MONITOR_H
+#ifndef EPAPER_MONITOR_H
+#define EPAPER_MONITOR_H
 
 #include <Arduino.h>
-#include "display/sourdough_display.h"
-
-// Maksimalt antal datapunkter der kan gemmes for 12 timer
-// Ved 5 minutters interval = 144 punkter
-#define MAX_DATA_POINTS 144
+#include "display/epaper_display.h"
+#include <utils/constants.h>
 
 struct SourdoughData
 {
@@ -25,24 +22,24 @@ struct SourdoughData
     float peakHoursAgo;
 
     // Cirkulær buffer til at gemme vækstdata over tid
-    int growthValues[MAX_DATA_POINTS];
-    unsigned long timestamps[MAX_DATA_POINTS]; // Tidsstempler i sekunder (millis()/1000)
+    int growthValues[MonitoringConstants::MAX_DATA_POINTS];
+    unsigned long timestamps[MonitoringConstants::MAX_DATA_POINTS]; // Tidsstempler i sekunder (millis()/1000)
     int dataCount;
     int oldestIndex;
     bool bufferFull;
 };
 
-class SourdoughMonitor
+class EpaperMonitor
 {
 public:
-    SourdoughMonitor(SourdoughDisplay &display);
+    EpaperMonitor(EpaperDisplay &display);
     void addDataPoint(SourdoughData &data, int growthPercentage, unsigned long timestamp);
     void updateDisplay(const SourdoughData &data);
     SourdoughData generateMockData();
     void updatePeakInfo(SourdoughData &data);
 
 private:
-    SourdoughDisplay &_display;
+    EpaperDisplay &_display;
     void drawHeader(const SourdoughData &data);
     void drawBattery(int level);
     void drawGraph(const SourdoughData &data);
