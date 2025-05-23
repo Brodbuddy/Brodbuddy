@@ -486,9 +486,8 @@ jobs:
   e2e-tests:
     name: Run E2E tests
     runs-on: ubuntu-latest
-    ###needs: [ deploy-staging ] ###
-    ###if: success() && (github.ref == 'refs/heads/master')###
-    if: github.ref != 'refs/heads/master'
+    needs: [ deploy-staging ] 
+    if: success() && (github.ref == 'refs/heads/master')
     timeout-minutes: 20
     strategy:
       matrix:
