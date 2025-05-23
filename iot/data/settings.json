@@ -7,7 +7,7 @@
     "password": "Kakao1!!"
   },
   "sensor": {
-    "interval": 15
+    "interval": 45
   },
   "display": {
     "interval": 300

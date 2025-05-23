@@ -1,6 +1,9 @@
 #include "components/sensor_manager.h"
 #include "utils/constants.h"
 #include "utils/time_utils.h"
+#include "utils/logger.h"
+
+static const char* TAG = "SensorManager";
 
 SensorManager::SensorManager() 
     : _lastReadTime(0),
@@ -95,7 +98,7 @@ bool SensorManager::readAllSensors() {
 
     if (_health.tofConnected) {
         uint16_t distance = _tof.readRangeContinuousMillimeters();
-    
+     
         if (!_tof.timeoutOccurred() && distance > Sensors::TOF_DISTANCE_MIN && distance < Sensors::TOF_DISTANCE_MAX) {
             _currentData.distanceMillis = distance;
             
@@ -150,10 +153,14 @@ bool SensorManager::collectMultipleSamples() {
     int validHumSamples = 0;
     int validDistSamples = 0;
     
+    LOG_D(TAG, "Starting to collect %d samples", Sensors::MAX_SAMPLES);
+    
     for (int i = 0; i < Sensors::MAX_SAMPLES; i++) {
         if (_health.bme280Connected) {
             float temp = _bme.readTemperature() + _tempOffset;
             float hum = _bme.readHumidity() + _humOffset;
+            
+            LOG_D(TAG, "BME280 Sample %d: temp=%.2f°C, hum=%.2f%%", i+1, temp, hum);
             
             if (temp > Sensors::TEMP_MIN && temp < Sensors::TEMP_MAX) {
                 tempSamples[validTempSamples++] = temp;
@@ -165,6 +172,8 @@ bool SensorManager::collectMultipleSamples() {
         
         if (_health.tofConnected) {
             uint16_t dist = _tof.readRangeContinuousMillimeters();
+            LOG_D(TAG, "ToF Sample %d: distance=%dmm", i+1, dist);
+            
             if (!_tof.timeoutOccurred() && dist > Sensors::TOF_DISTANCE_MIN && dist < Sensors::TOF_DISTANCE_MAX) {
                 distSamples[validDistSamples++] = dist;
             }
@@ -174,6 +183,9 @@ bool SensorManager::collectMultipleSamples() {
             TimeUtils::delay_for(TimeConstants::SENSOR_SAMPLE_INTERVAL);
         }
     }
+    
+    LOG_D(TAG, "Collected samples - valid: temp=%d, hum=%d, dist=%d", 
+          validTempSamples, validHumSamples, validDistSamples);
     
     if (validTempSamples > 0) {
         removeOutliers(tempSamples, validTempSamples, Sensors::TEMP_MIN, Sensors::TEMP_MAX);
@@ -185,6 +197,7 @@ bool SensorManager::collectMultipleSamples() {
                 _filteredTemp = Sensors::ALPHA_FILTER * medianTemp + (1 - Sensors::ALPHA_FILTER) * _filteredTemp;
             }
             _currentData.inTemp = _filteredTemp;
+            LOG_D(TAG, "Temperature result: median=%.2f°C, filtered=%.2f°C", medianTemp, _filteredTemp);
         }
     }
     
@@ -198,6 +211,7 @@ bool SensorManager::collectMultipleSamples() {
                 _filteredHum = Sensors::ALPHA_FILTER * medianHum + (1 - Sensors::ALPHA_FILTER) * _filteredHum;
             }
             _currentData.inHumidity = _filteredHum;
+            LOG_D(TAG, "Humidity result: median=%.2f%%, filtered=%.2f%%", medianHum, _filteredHum);
         }
     }
     
@@ -210,10 +224,13 @@ bool SensorManager::collectMultipleSamples() {
             if (_firstReading || _baselineDistance == 0) {
                 _baselineDistance = medianDist;
                 _currentData.currentRisePercent = 0.0f;
+                LOG_D(TAG, "Distance baseline set: %dmm", _baselineDistance);
             } else {
                 int riseAmount = _baselineDistance - medianDist;
                 _currentData.currentRisePercent = (float)riseAmount / (float)_baselineDistance * 100.0f;
                 _currentData.peakRisePercent = max(_currentData.peakRisePercent, _currentData.currentRisePercent);
+                LOG_D(TAG, "Distance result: median=%dmm, rise=%.2f%%, peak=%.2f%%", 
+                      medianDist, _currentData.currentRisePercent, _currentData.peakRisePercent);
             }
         }
     }

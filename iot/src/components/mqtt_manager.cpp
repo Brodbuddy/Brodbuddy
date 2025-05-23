@@ -42,6 +42,7 @@ bool MqttManager::isConnected() {
 bool MqttManager::publish(const char* topic, const JsonDocument& data) {
     String json;
     serializeJson(data, json);
+    LOG_D(TAG, "Publishing JSON to %s: %s", topic, json.c_str());
     return publish(topic, json.c_str());
 }
 
