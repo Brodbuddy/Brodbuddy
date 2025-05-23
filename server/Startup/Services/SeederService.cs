@@ -191,8 +191,8 @@ public class SeederService : ISeederService
         {
             var userIdentityService = scope.ServiceProvider.GetRequiredService<IUserIdentityService>();
             var userRoleService = scope.ServiceProvider.GetRequiredService<IUserRoleService>();
-            
-            const string adminEmail = "admin@brodbuddy.com";
+
+            const string adminEmail = "brodbuddy@proton.me";
             
             if (await userIdentityService.ExistsAsync(adminEmail))
             {
