@@ -13,6 +13,7 @@ using Infrastructure.Communication.Mqtt;
 using Infrastructure.Communication.Notifiers;
 using Infrastructure.Communication.Publishers;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
@@ -20,28 +21,36 @@ namespace Infrastructure.Communication;
 
 public static class Extensions
 {
-    public static IServiceCollection AddCommunicationInfrastructure(this IServiceCollection services)
+    public static IServiceCollection AddCommunicationInfrastructure(this IServiceCollection services, IHostEnvironment environment)
     {
-        services.AddMail();
+        services.AddMail(environment);
         services.AddSocketManager();
         services.AddMqttPublisher();
         services.AddNotifiers();
         return services;
     }
 
-    private static IServiceCollection AddMail(this IServiceCollection services)
+    private static IServiceCollection AddMail(this IServiceCollection services, IHostEnvironment environment)
     {
-        services.AddSingleton<IFluentEmail>(provider =>
+        var serviceProvider = services.BuildServiceProvider();
+        var appOptions = serviceProvider.GetRequiredService<IOptions<AppOptions>>().Value;
+        
+        if (environment.IsDevelopment() && !string.IsNullOrEmpty(appOptions.Email.SendGridApiKey))
         {
-            var options = provider.GetRequiredService<IOptions<AppOptions>>().Value;
-            var email = Email.From(options.Email.FromEmail, options.Email.Sender);
-            email.Sender = new MailKitSender(new SmtpClientOptions
-            {
-                Server = options.Email.Host,
-                Port = options.Email.Port
-            });
-            return email;
-        });
+            services.AddFluentEmail(appOptions.Email.FromEmail, appOptions.Email.Sender)
+                    .AddRazorRenderer()
+                    .AddSendGridSender(apiKey: appOptions.Email.SendGridApiKey);
+        }
+        else
+        {
+            services.AddFluentEmail(appOptions.Email.FromEmail, appOptions.Email.Sender)
+                    .AddRazorRenderer()
+                    .AddMailKitSender(new SmtpClientOptions
+                    {
+                        Server = appOptions.Email.Host,
+                        Port = appOptions.Email.Port
+                    });
+        }
 
         services.AddScoped<IEmailSender, FluentEmailSender>();
    

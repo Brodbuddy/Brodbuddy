@@ -36,4 +36,5 @@ RUN dotnet publish "Startup.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:U
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+COPY ["server/Infrastructure.Communication/Mail/Templates", "/app/Templates"]
 ENTRYPOINT ["dotnet", "Startup.dll"]

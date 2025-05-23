@@ -33,7 +33,7 @@ public class Program
         
         services.AddMonitoringInfrastructure(ApplicationName, environment);
         
-        services.AddCommunicationInfrastructure();
+        services.AddCommunicationInfrastructure(environment);
         services.AddDataInfrastructure();
         services.AddAuthInfrastructure();
         

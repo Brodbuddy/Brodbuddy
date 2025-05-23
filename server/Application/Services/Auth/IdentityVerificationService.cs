@@ -49,8 +49,7 @@ public class IdentityVerificationService : IIdentityVerificationService
 
             await _identityVerificationRepository.CreateAsync(userId, otpId);
 
-            var emailContent = "Your verification code is: " + code;
-            return await _emailService.SendEmailAsync(email, "Verification Code", emailContent);
+            return await _emailService.SendVerificationCodeAsync(email, "Verification Code", code.ToString(System.Globalization.CultureInfo.InvariantCulture));
         });
     }
 

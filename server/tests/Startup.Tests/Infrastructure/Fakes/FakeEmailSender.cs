@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Application.Interfaces.Communication.Mail;
 
 namespace Startup.Tests.Infrastructure.Fakes;
@@ -9,7 +8,7 @@ public class FakeEmailSender : IEmailSender
     private readonly Dictionary<string, List<EmailMessage>> _sentEmails = new();
     public bool SimulateFailure { get; set; }
 
-    public Task<bool> SendEmailAsync(string recipient, string topic, string content)
+    public Task<bool> SendVerificationCodeAsync(string recipient, string subject, string code)
     {
         if (SimulateFailure) return Task.FromResult(false);
             
@@ -21,7 +20,7 @@ public class FakeEmailSender : IEmailSender
                 _sentEmails[recipient] = emailList;
             }
             
-            emailList.Add(new EmailMessage(recipient, topic, content));
+            emailList.Add(new EmailMessage(recipient, subject, code));
         }
         
         return Task.FromResult(true);
@@ -51,8 +50,7 @@ public class FakeEmailSender : IEmailSender
             
         var latestEmail = emails[^1];
         
-        var match = Regex.Match(latestEmail.Content, @"\b(\d{6})\b");
-        if (match.Success && int.TryParse(match.Groups[1].Value, out var code))
+        if (int.TryParse(latestEmail.Content, out var code))
         {
             return code;
         }

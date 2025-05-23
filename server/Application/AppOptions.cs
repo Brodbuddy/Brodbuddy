@@ -37,6 +37,7 @@ public class EmailOptions
     public int Port { get; set; } = 1025;
     public string Sender { get; set; } = "Brian Petersen";
     public string FromEmail { get; set; } = "TestMail@test.dk";
+    public string? SendGridApiKey { get; set; }
 }
 
 public class PostgresOptions

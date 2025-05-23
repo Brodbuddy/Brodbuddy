@@ -2,5 +2,5 @@
 
 public interface IEmailSender
 {
-    Task<bool> SendEmailAsync(string recipient, string topic, string content);
+    Task<bool> SendVerificationCodeAsync(string recipient, string subject, string code);
 }

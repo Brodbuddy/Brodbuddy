@@ -14,7 +14,7 @@ namespace Startup.Tests.Api.Http;
 [Collection(TestCollections.Startup)]
 public class FeatureControllerTests(StartupTestFixture fixture, ITestOutputHelper output) : ApiTestBase(fixture, output)
 {
-    private const string BaseUrl = "/api/features";
+    private const string BaseUrl = "/api/feature";
 
     public class GetAllFeatures(StartupTestFixture fixture, ITestOutputHelper output) : FeatureControllerTests(fixture, output)
     {
