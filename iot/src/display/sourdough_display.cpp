@@ -1,4 +1,4 @@
-#include "display/SourdoughDisplay.h"
+#include "display/sourdough_display.h"
 #include "utils/constants.h"
 
 SourdoughDisplay::SourdoughDisplay() : Adafruit_GFX(EPD_HEIGHT, EPD_WIDTH) {}

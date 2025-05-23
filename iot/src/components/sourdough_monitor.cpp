@@ -1,4 +1,4 @@
-#include "components/SourdoughMonitor.h"
+#include "components/sourdough_monitor.h"
 
 SourdoughMonitor::SourdoughMonitor(SourdoughDisplay &display) : _display(display) {}
 

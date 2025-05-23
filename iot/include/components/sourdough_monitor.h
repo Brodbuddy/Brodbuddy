@@ -2,7 +2,7 @@
 #define SOURDOUGH_MONITOR_H
 
 #include <Arduino.h>
-#include "display/SourdoughDisplay.h"
+#include "display/sourdough_display.h"
 
 // Maksimalt antal datapunkter der kan gemmes for 12 timer
 // Ved 5 minutters interval = 144 punkter

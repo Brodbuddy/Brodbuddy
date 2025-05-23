@@ -1,0 +1,20 @@
+---
+Checks: >
+  -*,
+  bugprone-*,
+  clang-analyzer-*,
+  performance-*,
+  readability-*,
+  modernize-*,
+  hicpp-*,
+  cert-*,
+  misc-*,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -hicpp-vararg,
+  -cert-dcl50-cpp,
+  -cert-dcl59-cpp
+
+WarningsAsErrors: ''
+HeaderFilterRegex: 'src/.*\.h$'
+FormatStyle: file

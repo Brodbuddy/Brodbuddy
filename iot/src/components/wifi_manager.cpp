@@ -1,6 +1,7 @@
 #include "components/wifi_manager.h"
 #include <Arduino.h>
 #include <utils/constants.h>
+#include <utils/time_utils.h>
 #include <utils/logger.h>
 
 static const char* TAG = "WiFiManager";
@@ -16,19 +17,12 @@ BroadBuddyWiFiManager::BroadBuddyWiFiManager() :
   ledState(LOW),
   lastWiFiCheck(0),
   apModeStartTime(0),
-  apModeTimeoutEnabled(true) {
+  apModeTimeoutEnabled(true),
+  apModeTimeoutOccurred(false) {
 }
 
-void BroadBuddyWiFiManager::setup() {
+void BroadBuddyWiFiManager::begin() {
   pinMode(LED_PIN, OUTPUT);
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
-  
-  if (digitalRead(BUTTON_PIN) == LOW) {
-    LOG_I(TAG, "Reset button pressed during startup - clearing WiFi settings");
-    resetSettings();
-    delay(1000);
-    ESP.restart();
-  }
   
   currentStatus = WIFI_CONNECTING;
   ledState = LOW;
@@ -39,9 +33,9 @@ void BroadBuddyWiFiManager::setup() {
   
   LOG_I(TAG, "Attempting to connect with saved credentials");
   
-  preferences.begin("wifi", false);
-  String ssid = preferences.getString("ssid", "");
-  String password = preferences.getString("password", "");
+  preferences.begin(WiFiConstants::PREFERENCES_NAMESPACE, false);
+  String ssid = preferences.getString(WiFiConstants::PREF_KEY_SSID, "");
+  String password = preferences.getString(WiFiConstants::PREF_KEY_PASSWORD, "");
   preferences.end();
   
   if (ssid.length() > 0) {
@@ -51,9 +45,9 @@ void BroadBuddyWiFiManager::setup() {
     WiFi.begin();
   }
   
-  int timeout = 10; // 10 seconds timeout
+  int timeout = TimeUtils::to_ms(TimeConstants::WIFI_CONNECTION_TIMEOUT) / TimeUtils::to_ms(TimeConstants::WIFI_RETRY_DELAY);
   while (WiFi.status() != WL_CONNECTED && timeout > 0) {
-    delay(1000);
+    TimeUtils::delay_for(TimeConstants::WIFI_RETRY_DELAY);
     LOG_D(TAG, "Connecting...");
     timeout--;
   }
@@ -62,13 +56,11 @@ void BroadBuddyWiFiManager::setup() {
     LOG_I(TAG, "Connected to WiFi!");
     LOG_I(TAG, "IP address: %s", WiFi.localIP().toString().c_str());
     
-    // Set hostname for mDNS
     WiFi.setHostname(HOSTNAME);
     
     currentStatus = WIFI_CONNECTED;
     digitalWrite(LED_PIN, HIGH);
   } else {
-    // If connection fails, start the custom portal
     LOG_W(TAG, "Failed to connect with saved credentials, starting custom portal");
     captivePortalManager.setSaveCredentialsCallback([this](const String& ssid, const String& password) {
       this->saveWiFiCredentials(ssid, password);
@@ -85,19 +77,15 @@ void BroadBuddyWiFiManager::setup() {
 }
 
 void BroadBuddyWiFiManager::loop() {
-  // Handle captive portal if running
   captivePortalManager.loop();
   
-  // Check for AP mode timeout if portal is running
   if (captivePortalManager.isRunning()) {
-    if (apModeTimeoutEnabled && (millis() - apModeStartTime > AP_MODE_TIMEOUT)) {
-      LOG_W(TAG, "AP mode timeout - restarting device");
-      delay(500);
-      ESP.restart();
+    if (apModeTimeoutEnabled && (millis() - apModeStartTime > TimeUtils::to_ms(TimeConstants::WIFI_AP_MODE_TIMEOUT))) {
+      LOG_W(TAG, "AP mode timeout occurred");
+      apModeTimeoutOccurred = true;
     }
   }
 
-  // Update status based on actual WiFi state
   wl_status_t wifiStatus = WiFi.status();
   if (wifiStatus == WL_CONNECTED && currentStatus != WIFI_CONNECTED) {
     currentStatus = WIFI_CONNECTED;
@@ -105,12 +93,9 @@ void BroadBuddyWiFiManager::loop() {
     currentStatus = WIFI_DISCONNECTED;
   }
 
-  // LED handling
   if (currentStatus == WIFI_CONNECTED) {
-    // Solid on when connected
     digitalWrite(LED_PIN, HIGH);
   } else if (currentStatus == WIFI_CONNECTING && !captivePortalManager.isRunning()) {
-    // Blink when connecting (but not when portal is active, because we have a task for that)
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= BLINK_INTERVAL) {
       previousMillis = currentMillis;
@@ -119,36 +104,10 @@ void BroadBuddyWiFiManager::loop() {
     }
   }
   
-  // Button handling
-  buttonManager.handleButtonPress();
-  
-  if (buttonManager.isResetRequested()) {
-    resetSettings();
-    buttonManager.clearResetRequest();
-    ESP.restart();
-  }
-  
-  if (buttonManager.isPortalRequested()) {
-    buttonManager.clearPortalRequest();
-    captivePortalManager.setSaveCredentialsCallback([this](const String& ssid, const String& password) {
-      this->saveWiFiCredentials(ssid, password);
-    });
-    captivePortalManager.setStatusCallback([this](int status) {
-      this->currentStatus = (WiFiStatus)status;
-    });
-    captivePortalManager.setBlinkTaskCallback([this]() {
-      this->createBlinkTask();
-    });
-    captivePortalManager.startCustomPortal();
-    apModeStartTime = millis();
-  }
-  
-  // Check WiFi status
   checkWiFiStatus();
 }
 
 void BroadBuddyWiFiManager::createBlinkTask() {
-  // Only create task if one doesn't already exist
   if (blinkTaskHandle != NULL) {
     vTaskDelete(blinkTaskHandle);
     blinkTaskHandle = NULL;
@@ -163,10 +122,10 @@ void BroadBuddyWiFiManager::createBlinkTask() {
         vTaskDelay(BLINK_INTERVAL / portTICK_PERIOD_MS);
       }
     },
-    "BlinkTask",
-    1000,
+    WiFiConstants::BLINK_TASK_NAME,
+    WiFiConstants::BLINK_TASK_STACK_SIZE,
     NULL,
-    1,
+    WiFiConstants::BLINK_TASK_PRIORITY,
     &blinkTaskHandle
   );
 }
@@ -191,14 +150,14 @@ void BroadBuddyWiFiManager::checkWiFiStatus() {
 }
 
 void BroadBuddyWiFiManager::saveWiFiCredentials(const String& ssid, const String& password) {
-  preferences.begin("wifi", false);
-  preferences.putString("ssid", ssid);
-  preferences.putString("password", password);
+  preferences.begin(WiFiConstants::PREFERENCES_NAMESPACE, false);
+  preferences.putString(WiFiConstants::PREF_KEY_SSID, ssid);
+  preferences.putString(WiFiConstants::PREF_KEY_PASSWORD, password);
   preferences.end();
 }
 
 void BroadBuddyWiFiManager::resetSettings() {
-  preferences.begin("wifi", false);
+  preferences.begin(WiFiConstants::PREFERENCES_NAMESPACE, false);
   preferences.clear();
   preferences.end();
   
@@ -218,6 +177,22 @@ WiFiStatus BroadBuddyWiFiManager::getStatus() const {
   return currentStatus;
 }
 
-bool BroadBuddyWiFiManager::resetRequested() const {
-  return buttonManager.isResetRequested();
+bool BroadBuddyWiFiManager::hasError() const {
+  return apModeTimeoutOccurred;
+}
+
+void BroadBuddyWiFiManager::startCaptivePortal() {
+  LOG_I(TAG, "Starting captive portal on demand");
+  captivePortalManager.setSaveCredentialsCallback([this](const String& ssid, const String& password) {
+    this->saveWiFiCredentials(ssid, password);
+  });
+  captivePortalManager.setStatusCallback([this](int status) {
+    this->currentStatus = (WiFiStatus)status;
+  });
+  captivePortalManager.setBlinkTaskCallback([this]() {
+    this->createBlinkTask();
+  });
+  captivePortalManager.startCustomPortal();
+  apModeStartTime = millis();
+  apModeTimeoutEnabled = true;
 }

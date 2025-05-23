@@ -5,11 +5,14 @@
 #include "components/wifi_manager.h"
 #include "components/mqtt_manager.h"
 #include "components/sensor_manager.h"
-#include "components/SourdoughMonitor.h"
-#include "display/SourdoughDisplay.h"
+#include "components/button_manager.h"
+#include "components/sourdough_monitor.h"
+#include "display/sourdough_display.h"
 #include "state_machine.h"
 #include "utils/settings.h"
 #include "utils/logger.h"
+#include "utils/constants.h"
+#include "utils/time_utils.h"
 #include "data_types.h"
 
 static const char* TAG = "Main";
@@ -18,17 +21,17 @@ BroadBuddyWiFiManager wifiManager;
 MqttManager mqttManager;
 StateMachine stateMachine;
 SensorManager sensorManager;
+ButtonManager buttonManager;
 Settings settings;
 SourdoughDisplay display;
 SourdoughMonitor monitor(display);
 
 unsigned long lastStateCheck = 0;
-const unsigned long STATE_CHECK_INTERVAL = 100;
 
 void setup()
 {
   Serial.begin(115200);
-  Logger::begin(LOG_INFO);
+  Logger::begin(LOG_INFO, true);
 
   LOG_I(TAG, "--- Sourdough analyzer startup monitoring ---");
 
@@ -50,9 +53,17 @@ void setup()
     settings.getTempOffset(),
     settings.getHumOffset()
   );
-  sensorManager.setReadInterval(settings.getSensorInterval() * 1000);
+  sensorManager.setReadInterval(TimeUtils::to_ms(std::chrono::seconds(settings.getSensorInterval())));
 
-  wifiManager.setup();
+  buttonManager.begin();
+  if (buttonManager.isStartupResetPressed()) {
+    LOG_I(TAG, "Reset button pressed during startup - clearing WiFi settings");
+    wifiManager.resetSettings();
+    TimeUtils::delay_for(TimeConstants::WIFI_RESTART_DELAY);
+    ESP.restart();
+  }
+
+  wifiManager.begin();
 
   stateMachine.transitionTo(STATE_CONNECTING_WIFI);
 }
@@ -62,8 +73,25 @@ void loop()
   unsigned long currentMillis = millis();
   LOG_D(TAG, "currentMillis: %lu", currentMillis);
 
-  if (currentMillis - lastStateCheck >= STATE_CHECK_INTERVAL) { 
+  wifiManager.loop();
+  buttonManager.loop();
+  mqttManager.loop();
+
+  if (currentMillis - lastStateCheck >= TimeUtils::to_ms(TimeConstants::STATE_CHECK_INTERVAL)) { 
     lastStateCheck = currentMillis;
+
+    if (buttonManager.isResetRequested()) {
+      LOG_W(TAG, "WiFi reset requested");
+      wifiManager.resetSettings();
+      buttonManager.clearResetRequest();
+      stateMachine.transitionTo(STATE_ERROR);
+    }
+    
+    if (buttonManager.isPortalRequested()) {
+      LOG_I(TAG, "Manual portal requested");
+      buttonManager.clearPortalRequest();
+      wifiManager.startCaptivePortal();
+    }
 
     switch (stateMachine.getCurrentState()) {
       case STATE_BOOT:
@@ -71,9 +99,11 @@ void loop()
         break;
 
       case STATE_CONNECTING_WIFI:
-          wifiManager.loop();
-          if (wifiManager.getStatus() == WIFI_CONNECTED) {
-            delay(1000);
+          if (wifiManager.hasError()) {
+            LOG_E(TAG, "WiFi manager error detected");
+            stateMachine.transitionTo(STATE_ERROR);
+          } else if (wifiManager.getStatus() == WIFI_CONNECTED) {
+            TimeUtils::delay_for(TimeConstants::WIFI_STABILIZATION_DELAY);
             LOG_I(TAG, "WiFi connected");
             stateMachine.transitionTo(STATE_CONNECTING_MQTT);
           }
@@ -87,7 +117,7 @@ void loop()
           String password = settings.getMqttPassword();
           String deviceId = settings.getDeviceId();
           
-          LOG_I(TAG, "Connecting to MQTT - Server: %s, Port: %d, User: %s, Device: %s", 
+          LOG_D(TAG, "Connecting to MQTT - Server: %s, Port: %d, User: %s, Device: %s", 
                 server.c_str(), port, user.c_str(), deviceId.c_str());
           
           if (mqttManager.begin(server.c_str(), port, user.c_str(), password.c_str(), deviceId.c_str())) {
@@ -95,7 +125,7 @@ void loop()
             stateMachine.transitionTo(STATE_SENSING);
           } else {
             LOG_E(TAG, "MQTT connection failed, retrying in 5 seconds");
-            delay(5000);
+            TimeUtils::delay_for(TimeConstants::MQTT_RETRY_DELAY);
           }
         } else {
           stateMachine.transitionTo(STATE_SENSING);
@@ -140,7 +170,7 @@ void loop()
           WiFi.disconnect(true);
           WiFi.mode(WIFI_OFF);
           
-          esp_sleep_enable_timer_wakeup(settings.getSensorInterval() * 1000000);
+          TimeUtils::enable_sleep_timer(std::chrono::seconds(settings.getSensorInterval()));
           esp_light_sleep_start();
           
           if (!settings.begin()) {
@@ -151,11 +181,11 @@ void loop()
           
           WiFi.mode(WIFI_STA);
           WiFi.reconnect();
-          delay(1000);
+          TimeUtils::delay_for(std::chrono::seconds(1));
           
           stateMachine.transitionTo(STATE_CONNECTING_WIFI);
         } else {
-          if (stateMachine.shouldTransition(settings.getSensorInterval() * 1000)) {
+          if (stateMachine.shouldTransition(TimeUtils::to_ms(std::chrono::seconds(settings.getSensorInterval())))) {
             stateMachine.transitionTo(STATE_SENSING);
           }
         }
@@ -163,11 +193,9 @@ void loop()
 
       case STATE_ERROR:
         LOG_E(TAG, "System in error state");
-        delay(5000);
+        TimeUtils::delay_for(TimeConstants::ERROR_STATE_DELAY);
         ESP.restart();
         break;
     }
   }
-
-  mqttManager.loop();
 }

@@ -10,7 +10,9 @@
 class ButtonManager {
 public:
   ButtonManager();
-  void handleButtonPress();
+  void begin();
+  bool isStartupResetPressed() const;
+  void loop();
   bool isResetRequested() const { return resetRequest; }
   void clearResetRequest() { resetRequest = false; }
   bool isPortalRequested() const { return portalRequest; }

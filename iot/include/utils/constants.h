@@ -68,4 +68,16 @@ namespace Sensors {
     constexpr int XSHUT_RESET_DELAY_MS = 100;
 }
 
+namespace WiFiConstants {
+    // Preferences storage
+    constexpr const char* PREFERENCES_NAMESPACE = "wifi";
+    constexpr const char* PREF_KEY_SSID = "ssid";
+    constexpr const char* PREF_KEY_PASSWORD = "password";
+    
+    // Task configuration
+    constexpr const char* BLINK_TASK_NAME = "BlinkTask";
+    constexpr uint32_t BLINK_TASK_STACK_SIZE = 1000;
+    constexpr UBaseType_t BLINK_TASK_PRIORITY = 1;
+}
+
 #endif
