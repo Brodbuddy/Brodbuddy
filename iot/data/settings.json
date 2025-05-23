@@ -1,5 +1,5 @@
 {
-  "deviceId": "5605f96c-bf07-434c-8a30-e532c7e83fb3",
+  "deviceId": "skumfidus",
   "mqtt": {
     "server": "15b24181a314453a912a712175056638.s1.eu.hivemq.cloud",
     "port": 8883,
@@ -17,5 +17,5 @@
     "humOffset": 7.3,
     "containerHeight": 200
   },
-  "lowPowerMode": false
+  "lowPowerMode": true
 }

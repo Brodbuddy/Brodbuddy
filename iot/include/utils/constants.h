@@ -22,8 +22,9 @@ namespace Pins {
     constexpr int EINK_SDI = 23; 
 
     // Led / reset button
-    constexpr int LED = 2;
-    constexpr int RESET_BUTTON = 13;    
+    constexpr int LED = 2;              // D9 - Blue/Green onboard LED
+    constexpr int RGB_LED = 5;          // D8 - WS2812 RGB LED
+    constexpr int RESET_BUTTON = 27;    // D4 - User button (was 13, now corrected)    
 
     // Time of Flight
     constexpr int XSHUT = 34;

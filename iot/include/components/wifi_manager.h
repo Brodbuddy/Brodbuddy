@@ -1,20 +1,15 @@
 #pragma once
 
 #include <WiFi.h>
-#include <WebServer.h>
-#include <DNSServer.h>
 #include <Preferences.h>
 #include "config.h"
 #include <utils/constants.h>
+#include <utils/logger.h>
+#include <data_types.h>
+#include "button_manager.h"
+#include "captive_portal_manager.h"
 
-#define LED_PIN Pins::LED    
-#define BUTTON_PIN Pins::RESET_BUTTON 
-
-enum WiFiStatus {
-  WIFI_DISCONNECTED,
-  WIFI_CONNECTING,
-  WIFI_CONNECTED
-};
+#define LED_PIN Pins::LED
 
 class BroadBuddyWiFiManager {
 public:
@@ -32,17 +27,9 @@ private:
   unsigned long previousMillis;
   bool ledState;
   unsigned long lastWiFiCheck;
-  String lastConnectionStatus;
   
-  // Button handling
-  bool buttonPressed;
-  unsigned long buttonPressStart;
-  bool resetRequest;
-  
-  // Web server custom portal
-  WebServer* server;
-  DNSServer* dns;
-  bool portalRunning;
+  ButtonManager buttonManager;
+  CaptivePortalManager captivePortalManager;
   
   // AP mode timeout variabler
   unsigned long apModeStartTime;
@@ -50,19 +37,7 @@ private:
   bool apModeTimeoutEnabled;
   
   void createBlinkTask();
-  void handleButtonPress();
   void checkWiFiStatus();
-  
-  // Custom portal methods
-  void startCustomPortal();
-  void stopCustomPortal();
-  void setupWebServer();
-  void handleRoot();
-  void handleScan();
-  void handleConnect();
-  void handleNotFound();
-  void handleConnectionStatus(); 
-  
   void saveWiFiCredentials(const String& ssid, const String& password);
   
   // Private timeout-kontrolmetoder

@@ -1,50 +1,26 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
+#include <WiFi.h>
+
 #include "components/wifi_manager.h"
-#include "components/bme280_sensor.h"
-#include "components/tof_sensor.h"
 #include "components/mqtt_manager.h"
-#include "i2c_utils.h"
-#include "config.h"
-#include "display/SourdoughDisplay.h"
-#include "components/SourdoughMonitor.h"
-
-
-
-#include "state_machine.h"
 #include "components/sensor_manager.h"
+#include "components/SourdoughMonitor.h"
+#include "display/SourdoughDisplay.h"
+#include "state_machine.h"
 #include "utils/settings.h"
 #include "utils/logger.h"
+#include "data_types.h"
 
-const char* TAG = "Main";
+static const char* TAG = "Main";
 
-
-
-
-
-
-// Global instances
 BroadBuddyWiFiManager wifiManager;
-BME280Sensor bmeSensor;
-ToFSensor tofSensor;
 MqttManager mqttManager;
-
-// Timing variables for MQTT publishing
-unsigned long lastBMEPublishTime = 0;
-unsigned long lastToFPublishTime = 0;
-unsigned long lastDataCheckTime = 0; // Ny variabel til at tjekke modtaget data
-unsigned long lastPublishTime = 0;
-
-// Mode flag - surdejsmonitor eller temperatur/fugtighed monitor
-bool sourdoughMonitorMode = false; // Sættes automatisk baseret på sensorer
-SourdoughDisplay display;
-SourdoughMonitor monitor(display);
-SourdoughData data;
-
-
 StateMachine stateMachine;
 SensorManager sensorManager;
 Settings settings;
-
+SourdoughDisplay display;
+SourdoughMonitor monitor(display);
 
 unsigned long lastStateCheck = 0;
 const unsigned long STATE_CHECK_INTERVAL = 100;
@@ -63,7 +39,7 @@ void setup()
   }
 
   //display.begin();
-  data = monitor.generateMockData();
+  SourdoughData data = monitor.generateMockData();
   monitor.updateDisplay(data);
 
   if (!sensorManager.begin()) {
@@ -97,6 +73,7 @@ void loop()
       case STATE_CONNECTING_WIFI:
           wifiManager.loop();
           if (wifiManager.getStatus() == WIFI_CONNECTED) {
+            delay(1000);
             LOG_I(TAG, "WiFi connected");
             stateMachine.transitionTo(STATE_CONNECTING_MQTT);
           }
@@ -159,10 +136,22 @@ void loop()
 
       case STATE_SLEEP:
         if (settings.getLowPowerMode()) {
-          WiFi.disconnect();
+          WiFi.disconnect(true);
+          WiFi.mode(WIFI_OFF);
+          
           esp_sleep_enable_timer_wakeup(settings.getSensorInterval() * 1000000);
           esp_light_sleep_start();
+          
+          if (!settings.begin()) {
+            LOG_E(TAG, "Failed to re-initialize settings after sleep");
+            stateMachine.transitionTo(STATE_ERROR);
+            break;
+          }
+          
+          WiFi.mode(WIFI_STA);
           WiFi.reconnect();
+          delay(1000);
+          
           stateMachine.transitionTo(STATE_CONNECTING_WIFI);
         } else {
           if (stateMachine.shouldTransition(settings.getSensorInterval() * 1000)) {

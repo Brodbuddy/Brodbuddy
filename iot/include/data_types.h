@@ -1,6 +1,12 @@
 #ifndef DATA_TYPES_H
 #define DATA_TYPES_H
 
+enum WiFiStatus {
+    WIFI_DISCONNECTED,
+    WIFI_CONNECTING,
+    WIFI_CONNECTED
+};
+
 struct SourdoughReading {
     float temperatureCelsius;
     float humidityPercentage;
