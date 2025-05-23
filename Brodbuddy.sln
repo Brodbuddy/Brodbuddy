@@ -1,4 +1,4 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
@@ -43,6 +43,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Api.Websocket.Tests", "server\tests\Api.Websocket.Tests\Api.Websocket.Tests.csproj", "{7EFCADBA-2E22-443D-A775-016AA12B5085}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Monitoring.Tests", "server\tests\Infrastructure.Monitoring.Tests\Infrastructure.Monitoring.Tests.csproj", "{ECF07D28-7C89-47C5-B52B-C36194C3C9DE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlaywrightTests", "PlaywrightTests\PlaywrightTests.csproj", "{BE12F7B1-82F9-4CD4-8590-04CE789DC10C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -133,6 +135,10 @@ Global
 		{ECF07D28-7C89-47C5-B52B-C36194C3C9DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ECF07D28-7C89-47C5-B52B-C36194C3C9DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ECF07D28-7C89-47C5-B52B-C36194C3C9DE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE12F7B1-82F9-4CD4-8590-04CE789DC10C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE12F7B1-82F9-4CD4-8590-04CE789DC10C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE12F7B1-82F9-4CD4-8590-04CE789DC10C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE12F7B1-82F9-4CD4-8590-04CE789DC10C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{00DCAEB2-0510-411B-AACA-4CA09FFEF990} = {0011B983-CB61-450A-A1CC-38612B08B540}
