@@ -254,8 +254,8 @@ jobs:
   build-iot-firmware:
     name: Build IoT firmware
     runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/master')
-    needs: [ aggregate-mutation-results, continuous-integration ]
+    # if: (github.ref == 'refs/heads/master')
+    # needs: [ aggregate-mutation-results, continuous-integration ]
     outputs:
       iot_firmware_artifact_name: ${{ steps.build-iot.outputs.firmware_artifact_name }}
     steps:
@@ -289,8 +289,8 @@ jobs:
   build-backend-image:
     name: Build backend Docker image
     runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/master')
-    needs: [ aggregate-mutation-results, continuous-integration ]
+    # if: (github.ref == 'refs/heads/master')
+    # needs: [ aggregate-mutation-results, continuous-integration ]
     permissions:
       contents: read
       packages: write
@@ -333,8 +333,8 @@ jobs:
   build-frontend-image:
     name: Build frontend Docker image
     runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/master')
-    needs: [ aggregate-mutation-results, continuous-integration ]
+    # if: (github.ref == 'refs/heads/master')
+    # needs: [ aggregate-mutation-results, continuous-integration ]
     permissions:
       contents: read
       packages: write
@@ -375,7 +375,7 @@ jobs:
     name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: [ build-iot-firmware, build-backend-image, build-frontend-image ]
-    if: success() && (github.ref == 'refs/heads/master')
+    if: success() 
     environment:
       name: staging
       url: http://${{ vars.DOMAIN_NAME }}
@@ -432,6 +432,8 @@ jobs:
           # --- Seq ---
           APPOPTIONS__SEQ__SERVERURL=${{ vars.APPOPTIONS__SEQ__SERVERURL }}
           APPOPTIONS__SEQ__APIKEY=${{ secrets.APPOPTIONS__SEQ__APIKEY }}
+          # --- Zipkin --
+          APPOPTIONS__ZIPKIN__ENDPOINT=${{ vars.APPOPTIONS__ZIPKIN__ENDPOINT }}
           EOL
           # --- Image Tags ---
           echo "SERVER_IMAGE_TAG=\"${{ needs.build-backend-image.outputs.server_image_ci_tag }}\"" >> .env
