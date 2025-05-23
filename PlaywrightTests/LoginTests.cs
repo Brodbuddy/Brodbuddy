@@ -1,16 +1,17 @@
-using NUnit.Framework;
+using Xunit;
 using Microsoft.Playwright;
 using Shouldly;
 
 namespace PlaywrightTests;
 
-[TestFixture]
 public class LoginTests : TestBase
 {
-    [Test]
+    
+    [Fact]
     public async Task LoginPage_ShouldDisplayEmailVerificationText()
     {
-        await Page.GotoAsync($"{BaseUrl}/login");
+        var baseUrl = GetBaseUrl();
+        await Page.GotoAsync($"{baseUrl}/login");
 
         // En simpel test til at se om, der vises "Email Verification" på login siden
         var content = await Page.TextContentAsync("body");
@@ -18,10 +19,11 @@ public class LoginTests : TestBase
         content!.ShouldContain("Email Verification");
     }
 
-    [Test]
+    [Fact]
     public async Task SendVerificationCode_ShouldRedirectToVerify()
     {
-        await Page.GotoAsync($"{BaseUrl}/login");
+        var baseUrl = GetBaseUrl();
+        await Page.GotoAsync($"{baseUrl}/login");
 
         // Tjekker om knappen eksistere
         var button = await Page.QuerySelectorAsync("button[type=submit]");
@@ -35,7 +37,7 @@ public class LoginTests : TestBase
         await button!.ClickAsync();
 
         // Venter på URL skifter til /login/verify
-        await Page.WaitForURLAsync($"{BaseUrl}/login/verify");
-        Page.Url.ShouldBe($"{BaseUrl}/login/verify");
+        await Page.WaitForURLAsync($"{baseUrl}/login/verify");
+        Page.Url.ShouldBe($"{baseUrl}/login/verify");
     }
 }

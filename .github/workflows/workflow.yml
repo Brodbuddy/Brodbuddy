@@ -484,15 +484,16 @@ jobs:
   e2e-tests:
     name: Run E2E tests
     runs-on: ubuntu-latest
-    needs: [ deploy-staging ]
-    if: success() && (github.ref == 'refs/heads/master')
+    ###needs: [ deploy-staging ] ###
+    ###if: success() && (github.ref == 'refs/heads/master')###
+    if: github.ref != 'refs/heads/master'
     timeout-minutes: 20
     strategy:
       matrix:
         browser: [ chromium, firefox, webkit ]
       fail-fast: false
     env:
-      E2E_TEST_DIR: tests/E2e
+      E2E_TEST_DIR: PlaywrightTests
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -523,7 +524,7 @@ jobs:
         run: |
           cd ${{ env.E2E_TEST_DIR }}
           mkdir -p TestResults
-          dotnet test --filter Browser=${{ matrix.browser }} \
+          dotnet test \
             --logger "trx;LogFileName=TestResults-${{ matrix.browser }}.trx" \
             --logger "html;LogFileName=TestResults-${{ matrix.browser }}.html" \
             --results-directory "./TestResults"
