@@ -53,9 +53,12 @@ public class PostgresOptions
 
 public class DragonflyOptions
 {
-    public string ConnectionString { get; set; } = "localhost:6379";
+    public string Host { get; set; } = "localhost";
+    public int Port { get; set; } = 6379;
     public bool AllowAdmin { get; set; } = true;
     public bool AbortOnConnectFail { get; set; }
+    
+    public string ConnectionString => $"{Host}:{Port}";
 }
 
 public class MqttOptions
