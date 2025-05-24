@@ -1,10 +1,10 @@
 {
-  "deviceId": "skumfidus",
+  "analyzerId": "38915d56-2322-4a6b-8506-a1831535e62b",
   "mqtt": {
-    "server": "15b24181a314453a912a712175056638.s1.eu.hivemq.cloud",
-    "port": 8883,
-    "user": "thom625b",
-    "password": "Kakao1!!"
+    "server": "mqtt.staging.brodbuddy.com",
+    "port": 1883,
+    "user": "sadfasdfasdf",
+    "password": "pass"
   },
   "sensor": {
     "interval": 15
@@ -17,5 +17,5 @@
     "humOffset": 7.3,
     "containerHeight": 200
   },
-  "lowPowerMode": true
+  "lowPowerMode": false
 }

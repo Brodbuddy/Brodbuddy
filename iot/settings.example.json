@@ -1,0 +1,21 @@
+{
+    "analyzerId": "38915d56-2322-4a6b-8506-a1831535e62b",
+    "mqtt": {
+      "server": "mqtt.brodbuddy.com",
+      "port": 1883,
+      "user": "burger",
+      "password": "boller"
+    },
+    "sensor": {
+      "interval": 15
+    },
+    "display": {
+      "interval": 300
+    },
+    "calibration": {
+      "tempOffset": -1.7,
+      "humOffset": 7.3,
+      "containerHeight": 200
+    },
+    "lowPowerMode": false
+  }
