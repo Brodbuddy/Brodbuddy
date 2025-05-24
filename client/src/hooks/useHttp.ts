@@ -10,7 +10,7 @@ export const REDIRECT_PATH_KEY = 'redirectPath';
 
 const store = getDefaultStore();
 
-const handleAuthFailure = (error: any) => {
+const handleAuthFailure = (error: unknown) => {
     store.set(jwtAtom, null);
     store.set(userInfoAtom, null);
     localStorage.setItem(REDIRECT_PATH_KEY, window.location.pathname);

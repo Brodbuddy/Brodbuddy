@@ -25,6 +25,10 @@
     --ring: 25 60% 45%;              /* B36A32 - Fokusring matcher primær */
     --muted: 36 20% 92%;             /* F1EEE6 - Dæmpet baggrund */
     --muted-foreground: 0 0% 40%;    /* 666666 - Dæmpet tekst */
+    --popover: 0 0% 100%;            /* FFFFFF - Popover baggrund */
+    --popover-foreground: 0 0% 10%;  /* 1A1A1A - Popover tekst */
+    --destructive: 0 84% 60%;        /* EF4444 - Destructive color */
+    --destructive-foreground: 0 0% 100%; /* FFFFFF - Destructive text */
 
     /* Chart colors */
     --chart-temperature: 0 84% 60%;  /* EF4444 - Rød til temperatur */
@@ -58,6 +62,10 @@
     --ring: 25 100% 55%;             /* FF6D33 - Orange fokusring */
     --muted: 0 0% 22%;               /* 383838 - Dæmpet baggrund */
     --muted-foreground: 0 0% 70%;    /* B3B3B3 - Medium grå tekst */
+    --popover: 0 0% 18%;             /* 2E2E2E - Popover baggrund */
+    --popover-foreground: 0 0% 90%;  /* E6E6E6 - Popover tekst */
+    --destructive: 0 95% 65%;        /* FF4747 - Destructive color */
+    --destructive-foreground: 0 0% 100%; /* FFFFFF - Destructive text */
 
     /* Chart colors - Bright colors for dark mode */
     --chart-temperature: 0 100% 65%; /* FF4D4D - Klar rød */
@@ -74,5 +82,53 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  *::selection {
+    background-color: rgba(179, 106, 50, 0.25) !important;
+    color: inherit !important;
+  }
+
+  *::-moz-selection {
+    background-color: rgba(179, 106, 50, 0.25) !important;
+    color: inherit !important;
+  }
+
+  .dark *::selection {
+    background-color: rgba(255, 109, 51, 0.25) !important;
+    color: inherit !important;
+  }
+
+  .dark *::-moz-selection {
+    background-color: rgba(255, 109, 51, 0.25) !important;
+    color: inherit !important;
+  }
+
+  input::selection,
+  textarea::selection,
+  [contenteditable]::selection {
+    background-color: rgba(179, 106, 50, 0.3) !important;
+    color: inherit !important;
+  }
+
+  input::-moz-selection,
+  textarea::-moz-selection,
+  [contenteditable]::-moz-selection {
+    background-color: rgba(179, 106, 50, 0.3) !important;
+    color: inherit !important;
+  }
+
+  .dark input::selection,
+  .dark textarea::selection,
+  .dark [contenteditable]::selection {
+    background-color: rgba(255, 109, 51, 0.3) !important;
+    color: inherit !important;
+  }
+
+  .dark input::-moz-selection,
+  .dark textarea::-moz-selection,
+  .dark [contenteditable]::-moz-selection {
+    background-color: rgba(255, 109, 51, 0.3) !important;
+    color: inherit !important;
   }
 }

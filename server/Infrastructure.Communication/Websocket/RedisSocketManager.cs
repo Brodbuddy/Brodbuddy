@@ -35,11 +35,16 @@ public class RedisSocketManager : ISocketManager
         _localSockets[socketId] = socket;
 
         var socketHashKey = RedisSocketKeys.SocketHash(socketId);
+        var socketToClientKey = RedisSocketKeys.SocketToClientMap(socketId);
+        var ttl = TimeSpan.FromHours(2);
+
         await _db.HashSetAsync(socketHashKey, RedisSocketKeys.ClientIdField, clientId);
         await _db.HashSetAsync(socketHashKey, RedisSocketKeys.ConnectedAtField,
             _timeProvider.GetUtcNow().ToUnixTimeSeconds(), When.NotExists);
+        await _db.KeyExpireAsync(socketHashKey, ttl);
 
-        await _db.StringSetAsync(RedisSocketKeys.SocketToClientMap(socketId), clientId);
+        await _db.StringSetAsync(socketToClientKey, clientId, ttl);
+        
         await _db.SetAddAsync(RedisSocketKeys.ActiveSocketsSetKey, socketId.ToString());
         await _db.SetAddAsync(RedisSocketKeys.ClientSocketsSet(clientId), socketId.ToString());
 

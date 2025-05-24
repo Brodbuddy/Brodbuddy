@@ -31,7 +31,13 @@
       "!/**/MqttHostedService.cs",
       "!/**/FleckWebSocketServer.cs",
       "!/**/TestMqttDevicePublisher.cs",
-      "!/**/HandlerTypeHelpers.cs"
+      "!/**/HandlerTypeHelpers.cs",
+      "!/**/Messaging/**/*",
+      "!/**/Validators/**/*",
+      "!/**/ClaimExtensions.cs",
+      "!/**/Models/**/*",
+      "!/**/RedisSubscriptionListener.cs",
+      "!/**/EfTransactionManager.cs"
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest",

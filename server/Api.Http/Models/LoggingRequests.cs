@@ -1,4 +1,4 @@
-using Application.Models;
+using Core.Enums;
 
 namespace Api.Http.Models;
 

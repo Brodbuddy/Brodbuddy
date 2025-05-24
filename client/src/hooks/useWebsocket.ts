@@ -1,9 +1,8 @@
 import { useAtomValue } from 'jotai';
-import { clientIdAtom } from './import';
+import { clientIdAtom, tokenStorage, TOKEN_KEY, jwtAtom } from './import';
 import { useEffect, useState, useMemo } from 'react';
 import { WebSocketClient, WebSocketError, ErrorCodes } from '../api/websocket-client';
 import { refreshToken } from "./useHttp";
-import { tokenStorage, TOKEN_KEY, jwtAtom } from '../atoms/auth';
 import config from '../config';
 
 export function useWebSocket() {
@@ -51,26 +50,33 @@ export function useWebSocket() {
         if (!wsClient.send) return wsClient;
 
         const proxiedSend = new Proxy(wsClient.send, {
-            get(target, prop) {
-                const originalMethod = target[prop as keyof typeof target];
+            get<K extends keyof typeof wsClient.send>(
+                target: typeof wsClient.send, 
+                prop: K
+            ): typeof wsClient.send[K] {
+                const original = target[prop];
+                
+                if (typeof original !== 'function') {
+                    return original;
+                }
 
-                if (typeof originalMethod !== 'function') return originalMethod;
-
-                return async function(this: typeof target, payload: any) {
-                    try {
-                        return await originalMethod.call(this, payload);
-                    } catch (error) {
-                        if ((error as WebSocketError)?.code === ErrorCodes.unauthorized) {
-                            try {
-                                await refreshToken();
-                                return await originalMethod.call(this, payload);
-                            } catch (refreshError) {
-                                throw refreshError;
+                return new Proxy(original, {
+                    async apply(originalMethod: any, thisArg: any, argArray: any[]) {
+                        try {
+                            return await originalMethod.apply(thisArg, argArray);
+                        } catch (error) {
+                            if ((error as WebSocketError)?.code === ErrorCodes.unauthorized) {
+                                try {
+                                    await refreshToken();
+                                    return await originalMethod.apply(thisArg, argArray);
+                                } catch (refreshError) {
+                                    throw refreshError;
+                                }
                             }
+                            throw error;
                         }
-                        throw error;
                     }
-                };
+                });
             }
         });
 

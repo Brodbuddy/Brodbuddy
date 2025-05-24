@@ -17,7 +17,11 @@ public partial class User
 
     public virtual ICollection<TokenContext> TokenContexts { get; set; } = new List<TokenContext>();
 
+    public virtual ICollection<UserAnalyzer> UserAnalyzers { get; set; } = new List<UserAnalyzer>();
+
+    public virtual ICollection<UserRole> UserRoleCreatedByNavigations { get; set; } = new List<UserRole>();
+
+    public virtual ICollection<UserRole> UserRoleUsers { get; set; } = new List<UserRole>();
+
     public virtual ICollection<VerificationContext> VerificationContexts { get; set; } = new List<VerificationContext>();
-    
-    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }

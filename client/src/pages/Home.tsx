@@ -4,31 +4,29 @@ import {Broadcasts} from "../api/websocket-client.ts";
 
 export default function Home() {
     const {client, connected} = useWebSocket();
-    const [username, setUsername] = useState('');
-    const [roomId, setRoomId] = useState('default');
     const [isJoined, setIsJoined] = useState(false);
     const [joinedUsers, setJoinedUsers] = useState<string[]>([]);
 
     useEffect(() => {
-        if (!client || connected) return;
+        if (!client) return;
         
-        const unsubscribe = client.on(Broadcasts.broadcastTest, (payload: any) => {
-            setJoinedUsers(prev => [...prev, `User ${payload.ConnectionId} joined room ${payload.RoomId}`]);
+        const unsubscribe = client.on(Broadcasts.sourdoughReading, (payload: any) => {
+            setJoinedUsers(prev => [...prev, `Temperature reading: ${payload.TemperatureCelsius}`]);
         });
         
         return () => unsubscribe();
-    }, [client, connected, roomId]);
+    }, [client]);
 
     const handleJoinRoom = () => {
-        if (!client || !connected || !username.trim() || !roomId.trim()) return;
-        client.send.joinRoom({
-            RoomId: roomId,
-            Username: username
+        if (!client || !connected) return;
+        client.send.sourdoughData({
+            UserId: "38915d56-2322-4a6b-8506-a1831535e62b"
         }).then(response => {
             setIsJoined(true);
-            setJoinedUsers(prev => [...prev, `You joined room ${response.RoomId} with ID ${response.ConnectionId}`]);
+            setJoinedUsers(prev => [...prev, `Subscribed to telemetry for user ${response.UserId} with connection ${response.ConnectionId}`]);
+            console.log("UserID: " + response.UserId);
         }).catch(error => {
-            console.error('Failed to join room:', error);
+            console.error('Failed to subscribe to telemetry:', error);
         });
     };
     
@@ -37,46 +35,26 @@ export default function Home() {
 
         const subscriptions = JSON.parse(sessionStorage.getItem('ws_subscriptions') || '{}');
         const isAlreadyJoined = Object.values(subscriptions).some((sub: any) =>
-            sub.method === 'JoinRoom' && sub.payload?.RoomId === roomId
+            sub.method === 'Telemetry' && sub.payload?.UserId === "38915d56-2322-4a6b-8506-a1831535e62b"
         );
 
         if (isAlreadyJoined) {
             setIsJoined(true);
             setJoinedUsers(prev => [
                 ...prev,
-                `You reconnected to room ${roomId} as ${username}`
+                `Reconnected to telemetry stream`
             ]);
         }
-    }, [client, connected, roomId, username]);
+    }, [client, connected]);
 
     return (
         <div
             style={{position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: '500px'}}>
-            <h1 style={{textAlign: 'center'}}>WebSocket Chat Room</h1>
+            <h1 style={{textAlign: 'center'}}>Sourdough Telemetry</h1>
 
             {!isJoined ? (
                 <div style={{border: '1px solid #ccc', padding: '20px', borderRadius: '5px'}}>
-                    <h2>Join a Room</h2>
-                    <div style={{marginBottom: '10px'}}>
-                        <label style={{display: 'block', marginBottom: '5px'}}>Username:</label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            style={{width: '100%', padding: '8px', border: '1px solid #ccc'}}
-                            disabled={!connected}
-                        />
-                    </div>
-                    <div style={{marginBottom: '20px'}}>
-                        <label style={{display: 'block', marginBottom: '5px'}}>Room ID:</label>
-                        <input
-                            type="text"
-                            value={roomId}
-                            onChange={(e) => setRoomId(e.target.value)}
-                            style={{width: '100%', padding: '8px', border: '1px solid #ccc'}}
-                            disabled={!connected}
-                        />
-                    </div>
+                    <h2>Subscribe to Telemetry</h2>
                     <button
                         onClick={handleJoinRoom}
                         style={{
@@ -89,7 +67,7 @@ export default function Home() {
                         }}
                         disabled={!connected}
                     >
-                        Join Room
+                        Subscribe to Telemetry
                     </button>
 
                     {!connected && (
@@ -106,7 +84,7 @@ export default function Home() {
                         backgroundColor: '#f0f0f0',
                         borderRadius: '5px'
                     }}>
-                        Connected to room <strong>{roomId}</strong> as <strong>{username}</strong>
+                        Subscribed to telemetry stream
                     </div>
 
                     <div style={{
@@ -129,13 +107,13 @@ export default function Home() {
                         ))}
                         {joinedUsers.length === 0 && (
                             <div style={{textAlign: 'center', color: '#666'}}>
-                                No users yet
+                                No telemetry data yet. Send MQTT messages to see data appear here.
                             </div>
                         )}
                     </div>
 
                     <div style={{textAlign: 'center', color: '#666', fontStyle: 'italic'}}>
-                        Note: You can only join rooms for now. Message sending is not implemented yet.
+                        Waiting for MQTT telemetry data...
                     </div>
                 </div>
             )}

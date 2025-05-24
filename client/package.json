@@ -25,7 +25,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "dayjs": "^1.11.13",
     "input-otp": "^1.4.2",
     "jotai": "^2.12.3",
     "lucide-react": "^0.503.0",

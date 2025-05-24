@@ -61,7 +61,7 @@ export default function CompleteLoginPage() {
             if (!success) {
                 setError('Invalid verification code. Please try again.');
             }
-        } catch (err) {
+        } catch {
             setError('An error occurred. Please try again later.');
         } finally {
             setIsLoading(false);
@@ -70,7 +70,7 @@ export default function CompleteLoginPage() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-bg-cream p-4">
-            <div className="w-full max-w-md overflow-hidden rounded-lg bg-bg-white shadow-md">
+            <div className="w-full max-w-md overflow-hidden rounded-lg bg-bg-white shadow-md border border-accent-foreground">
                 <div className="bg-accent-foreground p-4 text-center">
                     <h1 className="text-xl font-medium text-primary-foreground">Enter Verification Code</h1>
                 </div>

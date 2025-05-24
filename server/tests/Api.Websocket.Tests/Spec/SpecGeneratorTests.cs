@@ -1,6 +1,8 @@
 using System.Reflection;
 using Api.Websocket.Spec;
+using Application.Models;
 using Brodbuddy.WebSocket.Core;
+using Core.Interfaces;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -30,7 +32,7 @@ public class SpecGeneratorTests
             var assembly = Assembly.GetExecutingAssembly();
             
             // Act
-            var spec = SpecGenerator.GenerateSpec(assembly, _serviceProvider);
+            var spec = SpecGenerator.GenerateSpec([assembly], _serviceProvider);
             
             // Assert
             spec.ShouldNotBeNull();
@@ -51,7 +53,7 @@ public class SpecGeneratorTests
             var assembly = typeof(TestHandler).Assembly;
             
             // Act
-            var spec = SpecGenerator.GenerateSpec(assembly, serviceProvider);
+            var spec = SpecGenerator.GenerateSpec([assembly], serviceProvider);
             
             // Assert
             spec.RequestTypes.ShouldContainKey("test");
@@ -65,7 +67,7 @@ public class SpecGeneratorTests
             var assembly = typeof(TestBroadcastMessage).Assembly;
             
             // Act
-            var spec = SpecGenerator.GenerateSpec(assembly, _serviceProvider);
+            var spec = SpecGenerator.GenerateSpec([assembly], _serviceProvider);
             
             // Assert
             spec.BroadcastTypes.ShouldContainKey("testBroadcastMessage");
@@ -85,7 +87,7 @@ public class SpecGeneratorTests
             var assembly = typeof(TestHandler).Assembly;
             
             // Act
-            var spec = SpecGenerator.GenerateSpec(assembly, serviceProvider);
+            var spec = SpecGenerator.GenerateSpec([assembly], serviceProvider);
             
             // Assert
             var mapping = spec.RequestResponses["Test"];
@@ -98,12 +100,12 @@ public class SpecGeneratorTests
     public class GenerateTypeDefinitionTests(ITestOutputHelper output) : SpecGeneratorTests(output)
     {
         [Theory]
-        [InlineData("NullableInt", true)]        // Nullable value type
-        [InlineData("NullableBool", true)]       // Nullable value type 
-        [InlineData("NullableString", false)]    // Nullable reference type 
-        [InlineData("NullableList", false)]      // Nullable reference type 
-        [InlineData("NonNullableString", false)] // Non-nullable reference type
-        [InlineData("NonNullableList", false)]   // Non-nullable reference type
+        [InlineData("nullableInt", true)]        // Nullable value type
+        [InlineData("nullableBool", true)]       // Nullable value type 
+        [InlineData("nullableString", false)]    // Nullable reference type 
+        [InlineData("nullableList", false)]      // Nullable reference type 
+        [InlineData("nonNullableString", false)] // Non-nullable reference type
+        [InlineData("nonNullableList", false)]   // Non-nullable reference type
         public void GenerateTypeDefinition_ReflectsCurrentNullabilityImplementation(string propertyName, bool expectedIsNullable)
         {
             // Arrange
@@ -145,7 +147,7 @@ public class SpecGeneratorTests
             
             // Act
             var assembly = typeof(TestRequest).Assembly;
-            var spec = SpecGenerator.GenerateSpec(assembly, serviceProvider);
+            var spec = SpecGenerator.GenerateSpec([assembly], serviceProvider);
             
             // Assert
             var validation = spec.RequestResponses["Test"].Validation;

@@ -1,6 +1,7 @@
 using Application.Interfaces;
 using Application.Interfaces.Monitoring;
 using Application.Models;
+using Core.Enums;
 using Microsoft.Extensions.Logging;
 using Serilog.Core;
 using Serilog.Events;

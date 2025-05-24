@@ -1,4 +1,5 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Core.Entities;
 
@@ -14,9 +15,9 @@ public partial class UserRole
 
     public Guid? CreatedBy { get; set; }
 
+    public virtual User? CreatedByNavigation { get; set; }
+
     public virtual Role Role { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
-
-    public virtual User? CreatedByUser { get; set; }
 }

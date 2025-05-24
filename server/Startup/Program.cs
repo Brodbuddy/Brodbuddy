@@ -3,13 +3,18 @@ using Api.Websocket;
 using Api.Mqtt;
 using Api.Websocket.Spec;
 using Application;
+using Application.Interfaces;
+using Application.Interfaces.Data;
+using Core.Interfaces;
 using Infrastructure.Auth;
 using Infrastructure.Communication;
+using Infrastructure.Communication.Websocket;
 using Infrastructure.Data;
 using Infrastructure.Monitoring;
 using Microsoft.Extensions.Options;
 using Serilog;
 using LoggerFactory = Infrastructure.Monitoring.LoggerFactory;
+using Startup.Services;
 using Startup.TcpProxy;
 
 namespace Startup;
@@ -28,7 +33,7 @@ public class Program
         
         services.AddMonitoringInfrastructure(ApplicationName, environment);
         
-        services.AddCommunicationInfrastructure();
+        services.AddCommunicationInfrastructure(environment);
         services.AddDataInfrastructure();
         services.AddAuthInfrastructure();
         
@@ -38,6 +43,8 @@ public class Program
         
         services.AddApplicationServices();
         services.AddTcpProxyService();
+        
+        services.AddScoped<ISeederService, SeederService>();
     }
     
     private static void TryHandleWebSocketClientGeneration(IServiceCollection services)
@@ -48,7 +55,14 @@ public class Program
         var outputDir = Path.Combine(baseDir, "../../client/src/api");
         Directory.CreateDirectory(outputDir);
     
-        var spec = SpecGenerator.GenerateSpec(typeof(FleckWebSocketServer).Assembly, services.BuildServiceProvider());
+        var assemblies = new[]
+        {
+            typeof(FleckWebSocketServer).Assembly,
+            typeof(RedisSocketManager).Assembly,
+            typeof(IBroadcastMessage).Assembly,
+        };
+
+        var spec = SpecGenerator.GenerateSpec(assemblies, services.BuildServiceProvider());
         TypeScriptGenerator.Generate(spec, templatesDir, outputDir);
         
         const string outputFile = "/client/src/api/websocket-client.ts"; // Skal gerne findes dynamisk i stedet, men nu blir det lige sådan her. 
@@ -85,6 +99,22 @@ public class Program
         app.MapGet("/", () => "Hej, nu med multi API :)");
     }
 
+    private static async Task SeedDatabaseAsync(WebApplication app)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var seeder = scope.ServiceProvider.GetRequiredService<ISeederService>();
+            await seeder.SeedFeaturesAsync();
+            await seeder.SeedAdminAsync();
+            await seeder.SeedTestDataAsync(true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during database seeding");
+        }
+    }
+
     public static async Task Main(string[] args)
     {
         Log.Logger = LoggerFactory.CreateBootstrapLogger();
@@ -100,6 +130,7 @@ public class Program
             var app = builder.Build();
             ConfigureMiddleware(app);
 
+            await SeedDatabaseAsync(app);
             LogSwaggerUrl(app);
 
             await app.RunAsync();

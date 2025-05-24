@@ -1,8 +1,6 @@
 ﻿using System.Text.Json;
 using Api.Mqtt.Core;
-using Api.Mqtt.MessageHandlers;
 using Api.Mqtt.Tests.TestUtils;
-using Application.Services;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
 

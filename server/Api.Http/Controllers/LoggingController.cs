@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Http.Controllers;
 
 [ApiController]
-[Route("api/logging")]
+[Route("api/[controller]")]
 public class LoggingController : ControllerBase
 {
     private readonly ILogLevelManager _logLevelManager;

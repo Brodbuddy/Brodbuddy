@@ -1,5 +1,7 @@
 using Application.Interfaces.Data.Repositories;
+using Application.Interfaces.Data.Repositories.Auth;
 using Application.Services;
+using Application.Services.Auth;
 using Moq;
 using SharedTestDependencies.Fakes;
 using Shouldly;

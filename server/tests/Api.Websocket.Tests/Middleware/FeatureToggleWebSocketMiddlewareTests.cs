@@ -2,6 +2,8 @@ using System.Text.Json;
 using Api.Websocket.Middleware;
 using Application.Models;
 using Application.Services;
+using Application.Services.Auth;
+using Core.ValueObjects;
 using Fleck;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

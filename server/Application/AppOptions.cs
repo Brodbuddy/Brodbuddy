@@ -37,6 +37,7 @@ public class EmailOptions
     public int Port { get; set; } = 1025;
     public string Sender { get; set; } = "Brian Petersen";
     public string FromEmail { get; set; } = "TestMail@test.dk";
+    public string? SendGridApiKey { get; set; }
 }
 
 public class PostgresOptions
@@ -52,9 +53,12 @@ public class PostgresOptions
 
 public class DragonflyOptions
 {
-    public string ConnectionString { get; set; } = "localhost:6379";
+    public string Host { get; set; } = "localhost";
+    public int Port { get; set; } = 6379;
     public bool AllowAdmin { get; set; } = true;
     public bool AbortOnConnectFail { get; set; }
+    
+    public string ConnectionString => $"{Host}:{Port}";
 }
 
 public class MqttOptions

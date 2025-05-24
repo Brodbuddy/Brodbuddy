@@ -1,6 +1,5 @@
 import { Navigate, RouteProps } from 'react-router-dom';
-import { AppRoutes, AccessLevel, canAccess } from './import';
-import { useAuthContext } from '../AuthContext';
+import { AppRoutes, AccessLevel, canAccess, useAuthContext } from './import';
 import { REDIRECT_PATH_KEY } from '../hooks/useHttp';
 
 type RequireAuthProps = Omit<RouteProps, 'element'> & {

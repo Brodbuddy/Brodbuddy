@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 using Api.Mqtt.Routing;
+using FluentValidation;
 using HiveMQtt.Client.Events;
 using HiveMQtt.MQTT5.Types;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +13,7 @@ public class MqttDispatcher
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<MqttDispatcher> _logger;
-    private readonly Dictionary<string, (Type HandlerType, Type MessageType)> _handlerRegistry = new();
+    private readonly Dictionary<string, (Type HandlerType, Type MessageType, IValidator? Validator)> _handlerRegistry = new();
     private readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
     
     public MqttDispatcher(IServiceProvider serviceProvider, ILogger<MqttDispatcher> logger)
@@ -37,6 +38,13 @@ public class MqttDispatcher
                 
                 var messageType = handlerInterface.GetGenericArguments()[0];
                 
+                var validatorType = assembly.GetTypes()
+                                            .FirstOrDefault(t => t.IsClass && t is { IsAbstract: false, BaseType.IsGenericType: true } && 
+                                                                 t.BaseType.GetGenericTypeDefinition() == typeof(AbstractValidator<>) &&
+                                                                 t.BaseType.GetGenericArguments()[0] == messageType);
+                                                        
+                var validator = validatorType != null ? ActivatorUtilities.CreateInstance(scope.ServiceProvider, validatorType) as IValidator : null;
+                
                 var handler = ActivatorUtilities.CreateInstance(scope.ServiceProvider, handlerType);
                 var topicFilter = ((dynamic)handler).TopicFilter as string;
                 
@@ -46,7 +54,7 @@ public class MqttDispatcher
                     continue;
                 }
                 
-                _handlerRegistry[topicFilter] = (handlerType, messageType);
+                _handlerRegistry[topicFilter] = (handlerType, messageType, validator);
                 
                 _logger.LogDebug("Registered handler {HandlerType} for topic {TopicFilter}", handlerType.Name, topicFilter);
             }
@@ -92,6 +100,8 @@ public class MqttDispatcher
             return;
         }
         
+        var payload = args.PublishMessage.PayloadAsString;
+        
         _logger.LogDebug("Received MQTT message on topic: {Topic}", topic);
         
         var matchingHandlers = _handlerRegistry.Where(kvp => MqttTopicMatcher.Matches(kvp.Key, topic))
@@ -108,13 +118,24 @@ public class MqttDispatcher
             using var scope = _serviceProvider.CreateScope();
             try
             {
-                
-                var message = JsonSerializer.Deserialize(args.PublishMessage.PayloadAsString, handlerInfo.MessageType, _jsonOptions);
+                var message = JsonSerializer.Deserialize(payload, handlerInfo.MessageType, _jsonOptions);
                 
                 if (message == null)
                 {
                     _logger.LogWarning("Failed to deserialize message for topic {Topic}", topic);
                     continue;
+                }
+                
+                if (handlerInfo.Validator != null)
+                {
+                    var context = new ValidationContext<object>(message);
+                    var validationResult = await handlerInfo.Validator.ValidateAsync(context);
+                    if (!validationResult.IsValid)
+                    {
+                        var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                        _logger.LogWarning("Validation failed for message on topic {Topic}: {Errors}", topic, errors);
+                        continue;
+                    }
                 }
                 
                 var handler = ActivatorUtilities.CreateInstance(scope.ServiceProvider, handlerInfo.HandlerType);
@@ -127,7 +148,7 @@ public class MqttDispatcher
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing message for topic {Topic} with handler {HandlerType}", topic, handlerInfo.HandlerType.Name);
+                _logger.LogError(ex, "Error processing message for topic {Topic} with handler {HandlerType}. Payload: {Payload}", topic, handlerInfo.HandlerType.Name, payload);
             }
         }
     }

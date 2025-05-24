@@ -1,0 +1,13 @@
+---
+BasedOnStyle: LLVM
+IndentWidth: 4
+UseTab: Never
+ColumnLimit: 120
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+PointerAlignment: Left
+SortIncludes: false
+SpaceAfterCStyleCast: false
+SpacesInContainerLiterals: false
+MaxEmptyLinesToKeep: 1
+IndentCaseLabels: true

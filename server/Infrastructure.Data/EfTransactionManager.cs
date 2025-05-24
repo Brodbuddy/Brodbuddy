@@ -1,4 +1,4 @@
-using Application.Interfaces;
+using Application.Interfaces.Data;
 using Infrastructure.Data.Persistence;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,6 +1,10 @@
 ﻿using Application.Interfaces;
+using Application.Interfaces.Data;
 using Application.Interfaces.Data.Repositories;
+using Application.Interfaces.Data.Repositories.Auth;
+using Application.Models.DTOs;
 using Application.Services;
+using Application.Services.Auth;
 using Core.Exceptions;
 using Moq;
 using Shouldly;
@@ -43,10 +47,10 @@ public class DeviceRegistryServiceTests
             // Arrange
             var userId = Guid.NewGuid();
             var deviceId = Guid.NewGuid();
-            var deviceDetails = new Models.DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
+            var deviceDetails = new DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
             
             _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(true);
-            _deviceServiceMock.Setup(x => x.CreateAsync(It.IsAny<Models.DeviceDetails>())).ReturnsAsync(deviceId);
+            _deviceServiceMock.Setup(x => x.CreateAsync(It.IsAny<DeviceDetails>())).ReturnsAsync(deviceId);
             _repositoryMock.Setup(x => x.GetDeviceIdByFingerprintAsync(userId, It.IsAny<string>())).ReturnsAsync((Guid?)null);
             _repositoryMock.Setup(x => x.CountByUserIdAsync(userId)).ReturnsAsync(0);
 
@@ -68,7 +72,7 @@ public class DeviceRegistryServiceTests
             // Arrange
             var userId = Guid.NewGuid();
             var existingDeviceId = Guid.NewGuid();
-            var deviceDetails = new Models.DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
+            var deviceDetails = new DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
             
             _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(true);
             _repositoryMock.Setup(x => x.GetDeviceIdByFingerprintAsync(userId, It.IsAny<string>())).ReturnsAsync(existingDeviceId);
@@ -83,7 +87,7 @@ public class DeviceRegistryServiceTests
             // Assert
             result.ShouldBe(existingDeviceId);
             _deviceServiceMock.Verify(x => x.UpdateLastSeenAsync(existingDeviceId), Times.Once);
-            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<Models.DeviceDetails>()), Times.Never);
+            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<DeviceDetails>()), Times.Never);
             _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
             _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<Guid>>>()), Times.Once);
         }
@@ -93,7 +97,7 @@ public class DeviceRegistryServiceTests
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var deviceDetails = new Models.DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
+            var deviceDetails = new DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
             _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(false);
 
             _transactionManagerMock
@@ -105,7 +109,7 @@ public class DeviceRegistryServiceTests
                 _service.AssociateDeviceAsync(userId, deviceDetails)
             );
 
-            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<Models.DeviceDetails>()), Times.Never);
+            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<DeviceDetails>()), Times.Never);
             _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
         }
         
@@ -114,7 +118,7 @@ public class DeviceRegistryServiceTests
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var deviceDetails = new Models.DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
+            var deviceDetails = new DeviceDetails("chrome", "windows", "Mozilla Firefox", "127.0.0.1");
             
             _userIdentityServiceMock.Setup(x => x.ExistsAsync(userId)).ReturnsAsync(true);
             _repositoryMock.Setup(x => x.GetDeviceIdByFingerprintAsync(userId, It.IsAny<string>())).ReturnsAsync((Guid?)null);
@@ -129,7 +133,7 @@ public class DeviceRegistryServiceTests
                 _service.AssociateDeviceAsync(userId, deviceDetails)
             );
             
-            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<Models.DeviceDetails>()), Times.Never);
+            _deviceServiceMock.Verify(x => x.CreateAsync(It.IsAny<DeviceDetails>()), Times.Never);
             _repositoryMock.Verify(x => x.SaveAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()), Times.Never);
             _transactionManagerMock.Verify(tm => tm.ExecuteInTransactionAsync(It.IsAny<Func<Task<Guid>>>()), Times.Once);
         }

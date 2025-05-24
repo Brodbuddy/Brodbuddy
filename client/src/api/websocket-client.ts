@@ -1,5 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 
+export enum LoggingLevel {
+    Verbose = "Verbose",
+    Debug = "Debug",
+    Information = "Information",
+    Warning = "Warning",
+    Error = "Error",
+    Fatal = "Fatal",
+}
+
 // WebSocket Error Codes
 export const ErrorCodes = {
     invalidMessage: "INVALID_MESSAGE",
@@ -15,22 +24,24 @@ export const ErrorCodes = {
 
 // Request type constants
 export const Requests = {
-    joinRoom: "JoinRoom",
+    ping: "Ping",
+    sourdoughData: "SourdoughData",
 } as const;
 
 // Response type constants
 export const Responses = {
-    userJoined: "UserJoined",
+    pong: "Pong",
+    sourdoughDataSubscribed: "SourdoughDataSubscribed",
 } as const;
 
 // Broadcast type constants
 export const Broadcasts = {
-    broadcastTest: "BroadcastTest",
+    sourdoughReading: "SourdoughReading",
 } as const;
 
 // Subscription methods
 export const SubscriptionMethods = {
-    joinRoom: "JoinRoom",
+    sourdoughData: "SourdoughData",
 } as const;
 
 // Unsubscription methods
@@ -38,11 +49,7 @@ export const UnsubscriptionMethods = {
 } as const;
 
 // Base interfaces
-export interface BaseRequest {
-    requestId?: string;
-}
-
-export interface BaseResponse {
+export interface BaseMessage {
     requestId?: string;
 }
 
@@ -51,25 +58,37 @@ export interface BaseBroadcast {
 }
 
 // Message interfaces
-export interface JoinRoom extends BaseRequest {
-    RoomId: string;
-    Username: string;
+export interface Ping extends BaseMessage {
+    timestamp: number;
 }
 
-export interface UserJoined extends BaseResponse {
-    RoomId: string;
-    Username: string;
-    ConnectionId: string;
+export interface Pong extends BaseMessage {
+    timestamp: number;
+    serverTimestamp: number;
 }
 
-export interface BroadcastTest extends BaseBroadcast {
-    RoomId: string;
-    Status: string;
+export interface SubscribeToSourdoughData extends BaseMessage {
+    userId: string;
+}
+
+export interface SourdoughDataSubscribed extends BaseMessage {
+    userId: string;
+    connectionId: string;
+}
+
+export interface SourdoughReading extends BaseBroadcast {
+    rise: number;
+    temperature: number;
+    humidity: number;
+    epochTime: number;
+    timestamp: string;
+    localTime: string;
 }
 
 // Request-response type mapping
 export type RequestResponseMap = {
-    [Requests.joinRoom]: [JoinRoom, UserJoined];
+    [Requests.ping]: [Ping, Pong];
+    [Requests.sourdoughData]: [SubscribeToSourdoughData, SourdoughDataSubscribed];
 };
 
 
@@ -311,6 +330,15 @@ export class WebSocketClient {
             clearInterval(this.pingInterval);
         }
 
+        this.pingInterval = window.setInterval(() => {
+            if (this.socket?.readyState === WebSocket.OPEN) {
+                this.send.ping({
+                    Timestamp: Date.now()
+                }).catch(error => {
+                    console.warn("Ping failed:", error);
+                });
+            }
+        }, 30000); // 30 seconds
     }
 
     private saveSubscription(method: string, payload: any, topicKey?: string): void {
@@ -341,8 +369,11 @@ export class WebSocketClient {
 
 
     send = {
-    joinRoom: (payload: Omit<JoinRoom, 'requestId'>): Promise<UserJoined> => {
-        return this.sendRequest<UserJoined>('JoinRoom', payload);
+    ping: (payload: Omit<Ping, 'requestId'>): Promise<Pong> => {
+        return this.sendRequest<Pong>('Ping', payload);
+    },
+    sourdoughData: (payload: Omit<SubscribeToSourdoughData, 'requestId'>): Promise<SourdoughDataSubscribed> => {
+        return this.sendRequest<SourdoughDataSubscribed>('SourdoughData', payload);
     },
 };
 

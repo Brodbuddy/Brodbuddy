@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
     Card,
     CardContent,
@@ -18,39 +18,99 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {Droplet, Thermometer, TrendingUp} from 'lucide-react';
-import {ThemeToggle} from "@/components/ThemeToggle";
 import {sourdoughHistoricalData} from '@/data/sourdoughData';
+import SourdoughManager from '@/components/analyzer/SourdoughManager';
+import {useWebSocket} from '@/hooks/useWebsocket';
+import {Broadcasts, SourdoughReading} from '@/api/websocket-client';
 
 const HomeDashboard: React.FC = () => {
-    const [timeRange, setTimeRange] = useState("30d");
+    const [timeRange, setTimeRange] = useState("12h");
+    const [latestReading, setLatestReading] = useState<SourdoughReading | null>(null);
+    const [realTimeData, setRealTimeData] = useState<Array<{
+        date: string;
+        temperature: number;
+        humidity: number;
+        growth: number;
+    }>>([]);
+    const {client, connected} = useWebSocket();
 
+    const getDataFreshnessColor = (reading: SourdoughReading | null): string => {
+        if (!reading) return "text-gray-400";
 
-    const filteredData = sourdoughHistoricalData.filter(item => {
-        const date = new Date(item.date);
-        const today = new Date("2024-06-30");
-        let daysToSubtract = 30;
+        const now = Date.now();
+        const readingTime = new Date(reading.timestamp).getTime();
+        const ageMinutes = (now - readingTime) / (1000 * 60);
 
-        if (timeRange === "14d") {
-            daysToSubtract = 14;
-        } else if (timeRange === "7d") {
-            daysToSubtract = 7;
+        if (ageMinutes < 5) return "text-green-500";
+        if (ageMinutes < 30) return "text-yellow-500";
+        return "text-red-500";
+    };
+
+    useEffect(() => {
+        if (!client || !connected) return;
+
+        const subscribeToData = async () => {
+            try {
+                await client.send.sourdoughData({
+                    userId: '38915d56-2322-4a6b-8506-a1831535e62b'
+                });
+            } catch (err) {
+                console.error('Failed to subscribe to sourdough data:', err);
+            }
+        };
+
+        subscribeToData();
+
+        const unsubscribe = client.on(Broadcasts.sourdoughReading, (payload: SourdoughReading) => {
+            console.log('Received sourdough reading:', payload);
+            setLatestReading(payload);
+
+            const newDataPoint = {
+                date: payload.localTime,
+                temperature: payload.temperature,
+                humidity: payload.humidity,
+                growth: payload.rise
+            };
+
+            setRealTimeData(prevData => {
+                const updatedData = [...prevData, newDataPoint];
+                return updatedData.slice(-100);
+            });
+        });
+
+        return () => unsubscribe();
+    }, [client, connected]);
+
+    const getFilteredData = () => {
+        if (realTimeData.length === 0) return [];
+
+        const now = new Date();
+        let cutoffTime: Date;
+
+        if (timeRange === "1h") {
+            cutoffTime = new Date(now.getTime() - 60 * 60 * 1000);
+        } else if (timeRange === "6h") {
+            cutoffTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+        } else {
+            cutoffTime = new Date(now.getTime() - 12 * 60 * 60 * 1000);
         }
 
-        const startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - daysToSubtract);
+        return realTimeData.filter(item => {
+            const itemDate = new Date(item.date);
+            return itemDate >= cutoffTime;
+        });
+    };
 
-        return date >= startDate;
-    });
+    const chartData = getFilteredData();
 
 
     const latestData = sourdoughHistoricalData[sourdoughHistoricalData.length - 1];
 
     return (
         <>
-            <div className="flex justify-end mr-4 mt-2">
-                <ThemeToggle className="scale-150"/>
-            </div>
-            <Card className="border-border-brown bg-bg-cream shadow-md mt-10 ">
+            <SourdoughManager/>
+
+            <Card className="border-border-brown bg-bg-cream shadow-md mt-6">
 
                 <CardContent className="p-4 ">
 
@@ -58,6 +118,20 @@ const HomeDashboard: React.FC = () => {
                         {/* Header */}
                         <div className="flex justify-between items-center mb-6">
                             <h1 className="text-3xl font-bold text-accent-foreground p-2 rounded-md">My Sourdough</h1>
+                            {latestReading && (
+                                <div className="text-right">
+                                    <div className="text-sm text-accent-foreground/60">Last updated</div>
+                                    <div className="text-sm font-medium text-accent-foreground">
+                                        {new Date(latestReading.localTime).toLocaleString()}
+                                    </div>
+                                    <div className="text-xs text-accent-foreground/40">
+                                        {new Date(latestReading.timestamp).toLocaleString("en-US", {
+                                            timeZone: "UTC",
+                                            timeZoneName: "short"
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Main Content - Top Row */}
@@ -66,14 +140,21 @@ const HomeDashboard: React.FC = () => {
                             {/* Temperature Card */}
                             <Card className="border-border-brown bg-bg-white overflow-hidden">
                                 <CardHeader className="bg-accent-foreground py-4">
-                                    <CardTitle className="text-primary flex items-center">
-                                        <Thermometer className="mr-2 h-5 w-5"/>
-                                        Temperature
+                                    <CardTitle className="text-primary flex items-center justify-between">
+                                        <div className="flex items-center">
+                                            <Thermometer className="mr-2 h-5 w-5"/>
+                                            Temperature
+                                        </div>
+                                        {latestReading && (
+                                            <div
+                                                className={`w-2 h-2 rounded-full ${getDataFreshnessColor(latestReading).replace('text-', 'bg-')}`}></div>
+                                        )}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-6 text-center">
                                     <div
-                                        className="text-6xl font-bold text-accent-foreground mb-2">{latestData.temperature}°C
+                                        className="text-6xl font-bold text-accent-foreground mb-2">
+                                        {latestReading ? `${latestReading.temperature.toFixed(1)}°C` : `${latestData.temperature}°C`}
                                     </div>
                                     <div className="text-accent-foreground/80">Latest water temperature</div>
                                 </CardContent>
@@ -82,14 +163,21 @@ const HomeDashboard: React.FC = () => {
                             {/* Humidity Card */}
                             <Card className="border-border-brown bg-bg-white overflow-hidden">
                                 <CardHeader className="bg-accent-foreground py-4">
-                                    <CardTitle className="text-primary flex items-center">
-                                        <Droplet className="mr-2 h-5 w-5"/>
-                                        Humidity
+                                    <CardTitle className="text-primary flex items-center justify-between">
+                                        <div className="flex items-center">
+                                            <Droplet className="mr-2 h-5 w-5"/>
+                                            Humidity
+                                        </div>
+                                        {latestReading && (
+                                            <div
+                                                className={`w-2 h-2 rounded-full ${getDataFreshnessColor(latestReading).replace('text-', 'bg-')}`}></div>
+                                        )}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-6 text-center">
                                     <div
-                                        className="text-6xl font-bold text-accent-foreground mb-2">{latestData.humidity}%
+                                        className="text-6xl font-bold text-accent-foreground mb-2">
+                                        {latestReading ? `${latestReading.humidity.toFixed(1)}%` : `${latestData.humidity}%`}
                                     </div>
                                     <div className="text-accent-foreground/80">Latest humidity</div>
                                 </CardContent>
@@ -98,14 +186,21 @@ const HomeDashboard: React.FC = () => {
                             {/* Growth Card */}
                             <Card className="border-border-brown bg-bg-white overflow-hidden">
                                 <CardHeader className="bg-accent-foreground py-4">
-                                    <CardTitle className="text-primary flex items-center">
-                                        <TrendingUp className="mr-2 h-5 w-5"/>
-                                        Growth
+                                    <CardTitle className="text-primary flex items-center justify-between">
+                                        <div className="flex items-center">
+                                            <TrendingUp className="mr-2 h-5 w-5"/>
+                                            Growth
+                                        </div>
+                                        {latestReading && (
+                                            <div
+                                                className={`w-2 h-2 rounded-full ${getDataFreshnessColor(latestReading).replace('text-', 'bg-')}`}></div>
+                                        )}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-6 text-center">
                                     <div
-                                        className="text-6xl font-bold text-accent-foreground mb-2">{latestData.growth}%
+                                        className="text-6xl font-bold text-accent-foreground mb-2">
+                                        {latestReading ? `${latestReading.rise.toFixed(1)}%` : `${latestData.growth}%`}
                                     </div>
                                     <div className="text-accent-foreground/80">Latest growth</div>
                                 </CardContent>
@@ -123,14 +218,21 @@ const HomeDashboard: React.FC = () => {
                                             time
                                         </div>
                                     </div>
-                                    <Select onValueChange={(value: any) => setTimeRange(value)} defaultValue={timeRange}>
+                                    <Select onValueChange={(value: any) => setTimeRange(value)}
+                                            defaultValue={timeRange}>
                                         <SelectTrigger className="bg-secondary border-border-brown">
                                             <SelectValue placeholder="Select time range"/>
                                         </SelectTrigger>
                                         <SelectContent className="bg-accent-foreground border-border-brown">
-                                            <SelectItem value="7d" className="text-primary hover:bg-bg-cream hover:text-accent-foreground">7 days</SelectItem>
-                                            <SelectItem value="14d" className="text-primary hover:bg-bg-cream hover:text-accent-foreground">14 days</SelectItem>
-                                            <SelectItem value="30d" className="text-primary hover:bg-bg-cream hover:text-accent-foreground">30 days</SelectItem>
+                                            <SelectItem value="1h"
+                                                        className="text-primary hover:bg-bg-cream hover:text-accent-foreground">1
+                                                hour</SelectItem>
+                                            <SelectItem value="6h"
+                                                        className="text-primary hover:bg-bg-cream hover:text-accent-foreground">6
+                                                hours</SelectItem>
+                                            <SelectItem value="12h"
+                                                        className="text-primary hover:bg-bg-cream hover:text-accent-foreground">12
+                                                hours</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </CardHeader>
@@ -154,7 +256,7 @@ const HomeDashboard: React.FC = () => {
                                     >
                                         {/* Chart */}
                                         <AreaChart
-                                            data={filteredData}
+                                            data={chartData}
                                             margin={{top: 20, right: 10, left: 10, bottom: 5}}
                                         >
                                             <defs>
@@ -224,16 +326,16 @@ const HomeDashboard: React.FC = () => {
                                                 }}
                                             />
                                             <Area
-                                            type="monotone"
-                                            dataKey="growth"
-                                            stroke="hsl(var(--chart-growth))"
-                                            fill="url(#fillGrowth)"
+                                                type="monotone"
+                                                dataKey="growth"
+                                                stroke="hsl(var(--chart-growth))"
+                                                fill="url(#fillGrowth)"
                                             />
                                             <Area
-                                            type="monotone"
-                                            dataKey="humidity"
-                                            stroke="hsl(var(--chart-humidity))"
-                                            fill="url(#fillHumidity)"
+                                                type="monotone"
+                                                dataKey="humidity"
+                                                stroke="hsl(var(--chart-humidity))"
+                                                fill="url(#fillHumidity)"
                                             />
                                             <Area
                                                 type="monotone"
@@ -251,6 +353,8 @@ const HomeDashboard: React.FC = () => {
                     </div>
                 </CardContent>
             </Card>
+
+
         </>
     );
 };

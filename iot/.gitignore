@@ -1,2 +1,6 @@
 .pio
 .vscode/
+.clangd
+compile_commands.json
+.env
+data/settings.json

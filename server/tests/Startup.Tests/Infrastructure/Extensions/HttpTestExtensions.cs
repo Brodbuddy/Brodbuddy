@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using Application.Services;
+using Application.Services.Auth;
 using Core.Entities;
 using Microsoft.Extensions.DependencyInjection;
 using Startup.Tests.Infrastructure.Factories;
