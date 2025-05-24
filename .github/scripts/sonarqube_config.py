@@ -41,7 +41,8 @@ def configure_sonarqube():
         "**/TcpProxyExtensions.cs",
         "**/SwaggerExtensions.cs",
         "**/FluentEmailSender.cs",
-        "**/FleckWebSocketServer.cs"
+        "**/FleckWebSocketServer.cs",
+        "iot/**/*"
     ]
 
     cmd = [

@@ -333,7 +333,7 @@ export class WebSocketClient {
         this.pingInterval = window.setInterval(() => {
             if (this.socket?.readyState === WebSocket.OPEN) {
                 this.send.ping({
-                    Timestamp: Date.now()
+                    timestamp: Date.now()
                 }).catch(error => {
                     console.warn("Ping failed:", error);
                 });
