@@ -53,7 +53,7 @@ jobs:
         run: |
           cd ${{ env.E2E_TEST_DIR }}
           mkdir -p TestResults
-          dotnet test \
+          dotnet test --filter Browser=${{ matrix.browser }} \
             --logger "trx;LogFileName=TestResults-${{ matrix.browser }}.trx" \
             --logger "html;LogFileName=TestResults-${{ matrix.browser }}.html" \
             --results-directory "./TestResults"
@@ -64,8 +64,8 @@ jobs:
         if: always()
         run: |
           cd ${{ env.E2E_TEST_DIR }}
-          chmod +x ../../.github/scripts/generate_test_summary.py
-          python ../../.github/scripts/generate_test_summary.py
+          chmod +x ../.github/scripts/generate_test_summary.py
+          python ../.github/scripts/generate_test_summary.py
 
       - name: Upload test results
         if: always()
