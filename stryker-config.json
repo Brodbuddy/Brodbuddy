@@ -34,7 +34,8 @@
       "!/**/HandlerTypeHelpers.cs",
       "!/**/Messaging/**/*",
       "!/**/Validators/**/*",
-      "!/**/ClaimExtensions.cs"
+      "!/**/ClaimExtensions.cs",
+      "!/**/Models/**/*"
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest",

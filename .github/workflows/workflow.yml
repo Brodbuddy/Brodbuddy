@@ -547,4 +547,3 @@ jobs:
           name: playwright-report-${{ matrix.browser }}-${{ github.sha }}
           path: ${{ env.E2E_TEST_DIR }}/TestResults
           retention-days: 30
-          
