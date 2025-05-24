@@ -28,9 +28,29 @@ const getLocalStorage = (): SimpleStorage => {
 
 const localStorageJotai = createJSONStorage<string>(() => getLocalStorage());
 
+const getOrCreateClientId = (): string => {
+    const storage = getLocalStorage();
+    const existingId = storage.getItem('websocketDeviceId');
+    
+    if (existingId) {
+        try {
+            const parsed = JSON.parse(existingId);
+            if (typeof parsed === 'string' && parsed.length > 0) {
+                return parsed;
+            }
+        } catch {
+            // Ugyldig JSON, laver nyt ID 
+        }
+    }
+    
+    const newId = uuidv4();
+    storage.setItem('websocketDeviceId', JSON.stringify(newId));
+    return newId;
+};
+
 export const clientIdAtom = atomWithStorage<string>(
     'websocketDeviceId',
-    uuidv4(),    
+    getOrCreateClientId(),    
     localStorageJotai,      
     { getOnInit: true }         
 );
