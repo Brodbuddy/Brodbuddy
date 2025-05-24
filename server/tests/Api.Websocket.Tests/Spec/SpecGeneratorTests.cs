@@ -100,12 +100,12 @@ public class SpecGeneratorTests
     public class GenerateTypeDefinitionTests(ITestOutputHelper output) : SpecGeneratorTests(output)
     {
         [Theory]
-        [InlineData("NullableInt", true)]        // Nullable value type
-        [InlineData("NullableBool", true)]       // Nullable value type 
-        [InlineData("NullableString", false)]    // Nullable reference type 
-        [InlineData("NullableList", false)]      // Nullable reference type 
-        [InlineData("NonNullableString", false)] // Non-nullable reference type
-        [InlineData("NonNullableList", false)]   // Non-nullable reference type
+        [InlineData("nullableInt", true)]        // Nullable value type
+        [InlineData("nullableBool", true)]       // Nullable value type 
+        [InlineData("nullableString", false)]    // Nullable reference type 
+        [InlineData("nullableList", false)]      // Nullable reference type 
+        [InlineData("nonNullableString", false)] // Non-nullable reference type
+        [InlineData("nonNullableList", false)]   // Non-nullable reference type
         public void GenerateTypeDefinition_ReflectsCurrentNullabilityImplementation(string propertyName, bool expectedIsNullable)
         {
             // Arrange
