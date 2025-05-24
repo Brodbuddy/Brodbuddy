@@ -55,7 +55,7 @@ services:
   zipkin:
     image: openzipkin/zipkin:latest
     environment:
-      - ZIPKIN_UI_BASEPATH=/zipkin
+      - ZIPKIN_UI_BASEPATH=/
     ports:
       - '9411:9411'
     restart: unless-stopped
