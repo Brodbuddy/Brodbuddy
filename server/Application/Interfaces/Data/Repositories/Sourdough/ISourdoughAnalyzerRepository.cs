@@ -9,4 +9,5 @@ public interface ISourdoughAnalyzerRepository
     Task<Guid> SaveAsync(SourdoughAnalyzer analyzer);
     Task<IEnumerable<SourdoughAnalyzer>> GetByUserIdAsync(Guid userId);
     Task<IEnumerable<SourdoughAnalyzer>> GetAllAsync();
+    Task<Guid?> GetOwnersUserIdAsync(Guid analyzerId);
 }

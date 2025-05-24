@@ -24,16 +24,6 @@ public class SourdoughReadingValidator : AbstractValidator<SourdoughReading>
         RuleFor(x => x.RisePercent)
             .GreaterThanOrEqualTo(0)
             .WithMessage("Rise must be non-negative");
-
-        RuleFor(x => x.Timestamp)
-            .Must(BeRecentTimestamp)
-            .WithMessage("Timestamp must be within last 24 hours");
-    }
-
-    private static bool BeRecentTimestamp(DateTime timestamp)
-    {
-        var now = DateTime.UtcNow;
-        return timestamp >= now.AddHours(-24) && timestamp <= now.AddMinutes(5);
     }
 }
 
