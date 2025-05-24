@@ -1,5 +1,7 @@
 using Application.Interfaces.Communication.Notifiers;
+using Application.Interfaces.Data.Repositories.Sourdough;
 using Core.ValueObjects;
+using Microsoft.Extensions.Logging;
 
 namespace Application.Services.Sourdough;
 
@@ -11,14 +13,23 @@ public interface ISourdoughTelemetryService
 public class SourdoughTelemetryService : ISourdoughTelemetryService
 {
     private readonly IUserNotifier _userNotifier;
-    
-    public SourdoughTelemetryService(IUserNotifier userNotifier)
-    {
+    private readonly ISourdoughAnalyzerRepository _analyzerRepository;
+   
+
+    public SourdoughTelemetryService(IUserNotifier userNotifier, ISourdoughAnalyzerRepository analyzerRepository)
+    {  
+        _analyzerRepository = analyzerRepository;
         _userNotifier = userNotifier;
     }
     
     public async Task ProcessSourdoughReadingAsync(Guid analyzerId, SourdoughReading reading)
     {
-        await _userNotifier.NotifySourdoughReadingAsync(Guid.Parse("38915d56-2322-4a6b-8506-a1831535e62b"), reading);
+        var ownerId = await _analyzerRepository.GetOwnersUserIdAsync(analyzerId);
+        
+        if (ownerId.HasValue)
+        {
+            await _userNotifier.NotifySourdoughReadingAsync(ownerId.Value, reading);
+        }
+        
     }
 }

@@ -44,4 +44,13 @@ public class PgSourdoughAnalyzerRepository : ISourdoughAnalyzerRepository
         return await _context.SourdoughAnalyzers.Include(a => a.UserAnalyzers)
                                                 .ToListAsync();
     }
+
+    public async Task<Guid?> GetOwnersUserIdAsync(Guid analyzerId)
+    {
+        var userAnalyzer = await _context.UserAnalyzers
+            .FirstOrDefaultAsync(ua => ua.AnalyzerId == analyzerId && ua.IsOwner == true);
+    
+        return userAnalyzer?.UserId;
+    }
+    
 }
