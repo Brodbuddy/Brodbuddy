@@ -15,7 +15,7 @@ jobs:
   e2e-tests:
     name: Run E2E tests
     runs-on: ubuntu-latest
-    if: success() && (github.ref == 'refs/heads/master')
+    if: success() #&& (github.ref == 'refs/heads/master')
     timeout-minutes: 20
     strategy:
       matrix:
