@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Xunit;
 using Microsoft.Playwright.Xunit;
 using Shouldly;
@@ -23,7 +24,7 @@ public class LoginTests : PageTest
         content.ShouldNotBeNull();
         content!.ShouldContain("Email Verification");
     }
-/***
+
     [Fact]
     public async Task SendVerificationCode_ShouldRedirectToVerify()
     {
@@ -44,5 +45,5 @@ public class LoginTests : PageTest
         // Venter på URL skifter til /login/verify
         await Page.WaitForURLAsync($"{baseUrl}/login/verify");
         Page.Url.ShouldBe($"{baseUrl}/login/verify");
-    } ***/
+    }
 }
