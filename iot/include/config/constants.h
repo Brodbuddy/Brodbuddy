@@ -92,6 +92,8 @@ namespace NetworkConstants {
     constexpr const char* AP_PASSWORD = "12345678";
     constexpr const char* HOSTNAME = "sourdough_monitor";
     constexpr int WIFI_CONNECT_ATTEMPTS = 30;
+    
+    constexpr size_t MQTT_BUFFER_SIZE = 1024;
 } 
 
 namespace UIConstants {

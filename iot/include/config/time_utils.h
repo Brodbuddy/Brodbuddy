@@ -74,6 +74,13 @@ namespace TimeConstants {
     constexpr auto EPAPER_RESET_LOW_DELAY = 500ms;
     constexpr auto EPAPER_BUSY_POLL_DELAY = 10ms;
     constexpr auto EPAPER_BUSY_TIMEOUT = 5s;
+
+    // NTP Time sync
+    constexpr auto NTP_SYNC_INTERVAL = 24h;
+    constexpr auto NTP_SYNC_RETRY_DELAY = 500ms;
+    constexpr auto LONG_SLEEP_THRESHOLD = 1h;
+    constexpr time_t MIN_VALID_EPOCH = 1609459200;   // 1 januar 2021
+    constexpr time_t FALLBACK_EPOCH = 1704067200UL;  // 1 januar 2024
 }
 
 #endif

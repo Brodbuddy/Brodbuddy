@@ -128,7 +128,6 @@ void WifiManager::checkWiFiStatus() {
                 currentStatus = WIFI_DISCONNECTED;
             }
         } else if (currentStatus == WIFI_DISCONNECTED) {
-            // Update status based on actual WiFi state
             if (WiFi.status() == WL_CONNECTED) {
                 currentStatus = WIFI_CONNECTED;
                 LOG_I(TAG, "WiFi reconnected");

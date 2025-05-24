@@ -13,12 +13,17 @@
 #include "hardware/sensor_manager.h"
 #include "network/wifi_manager.h"
 #include "network/mqtt_manager.h"
+#include "network/mqtt_topics.h"
+#include "network/time_manager.h"
+#include "network/mqtt_protocol.h"
 #include "logging/logger.h"
 
 static const char* TAG = "Main";
 
 WifiManager wifiManager;
 MqttManager mqttManager;
+MqttTopics* mqttTopics = nullptr;
+TimeManager timeManager;
 StateMachine stateMachine;
 SensorManager sensorManager;
 ButtonManager buttonManager;
@@ -38,6 +43,8 @@ void handleStateUpdatingDisplay();
 void handleStatePublishingData();
 void handleStateSleep();
 void handleStateError();
+void handleDiagnosticsRequest(char* topic, byte* payload, unsigned int length);
+void setupDiagnosticsHandler();
 
 void setup() {
     Serial.begin(115200);
@@ -81,6 +88,7 @@ void loop() {
     wifiManager.loop();
     buttonManager.loop();
     mqttManager.loop();
+    timeManager.loop();
 
     if (currentMillis - lastStateCheck >= TimeUtils::to_ms(TimeConstants::STATE_CHECK_INTERVAL)) {
         lastStateCheck = currentMillis;
@@ -145,6 +153,16 @@ void handleStateConnectingWifi() {
     } else if (wifiManager.getStatus() == WIFI_CONNECTED) {
         TimeUtils::delay_for(TimeConstants::WIFI_STABILIZATION_DELAY);
         LOG_I(TAG, "WiFi connected");
+        
+        if (!timeManager.isTimeValid()) {
+            LOG_I(TAG, "Synchronizing time with NTP server");
+            if (timeManager.begin()) {
+                LOG_I(TAG, "Time synchronized: %s", timeManager.getLocalTimeString().c_str());
+            } else {
+                LOG_W(TAG, "Time sync failed, continuing without accurate time");
+            }
+        }
+        
         stateMachine.transitionTo(STATE_CONNECTING_MQTT);
     }
 }
@@ -155,13 +173,20 @@ void handleStateConnectingMqtt() {
         int port = settings.getMqttPort();
         String user = settings.getMqttUser();
         String password = settings.getMqttPassword();
-        String deviceId = settings.getDeviceId();
+        String analyzerId = settings.getAnalyzerId();
 
         LOG_D(TAG, "Connecting to MQTT - Server: %s, Port: %d, User: %s, Device: %s", server.c_str(), port,
-              user.c_str(), deviceId.c_str());
+              user.c_str(), analyzerId.c_str());
+              
+        if (mqttTopics == nullptr) {
+            mqttTopics = new MqttTopics(analyzerId);
+            mqttManager.setTopics(mqttTopics);
+            LOG_I(TAG, "MQTT topics initialized for device: %s", analyzerId.c_str());
+        }
 
-        if (mqttManager.begin(server.c_str(), port, user.c_str(), password.c_str(), deviceId.c_str())) {
+        if (mqttManager.begin(server.c_str(), port, user.c_str(), password.c_str(), analyzerId.c_str())) {
             LOG_I(TAG, "MQTT connection established");
+            setupDiagnosticsHandler();
             stateMachine.transitionTo(STATE_SENSING);
         } else {
             LOG_E(TAG, "MQTT connection failed, retrying in 5 seconds");
@@ -192,14 +217,20 @@ void handleStatePublishingData() {
     if (!mqttManager.isConnected()) {
         stateMachine.transitionTo(STATE_CONNECTING_MQTT);
     } else {
-        DynamicJsonDocument doc(256);
+        DynamicJsonDocument doc(512);
         SensorData data = sensorManager.getCurrentData();
-        doc["temperature"] = data.inTemp;
-        doc["humidity"] = data.inHumidity;
-        doc["rise"] = data.currentRisePercent;
+        
+        doc[MqttProtocol::TelemetryFields::EPOCH_TIME] = timeManager.getEpochTime();
+        doc[MqttProtocol::TelemetryFields::TIMESTAMP] = timeManager.getISOTime();
+        doc[MqttProtocol::TelemetryFields::LOCAL_TIME] = timeManager.getLocalTimeISO();
+        doc[MqttProtocol::TelemetryFields::TEMPERATURE] = data.inTemp;
+        doc[MqttProtocol::TelemetryFields::HUMIDITY] = data.inHumidity;
+        doc[MqttProtocol::TelemetryFields::RISE] = data.currentRisePercent;
 
-        if (mqttManager.publish("kakao/maelk", doc)) {
-            LOG_I(TAG, "Data published");
+        if (mqttTopics && mqttManager.publish(mqttTopics->getTelemetryTopic().c_str(), doc)) {
+            LOG_I(TAG, "Data published to %s", mqttTopics->getTelemetryTopic().c_str());
+        } else {
+            LOG_E(TAG, "Failed to publish data");
         }
         stateMachine.transitionTo(STATE_SLEEP);
     }
@@ -210,8 +241,11 @@ void handleStateSleep() {
         WiFi.disconnect(true);
         WiFi.mode(WIFI_OFF);
 
-        TimeUtils::enable_sleep_timer(std::chrono::seconds(settings.getSensorInterval()));
+        auto sleepDuration = std::chrono::seconds(settings.getSensorInterval());
+        TimeUtils::enable_sleep_timer(sleepDuration);
         esp_light_sleep_start();
+
+        timeManager.adjustAfterSleep(TimeUtils::to_ms(sleepDuration));
 
         if (!settings.begin()) {
             LOG_E(TAG, "Failed to re-initialize settings after sleep");
@@ -235,4 +269,46 @@ void handleStateError() {
     LOG_E(TAG, "System in error state");
     TimeUtils::delay_for(TimeConstants::ERROR_STATE_DELAY);
     ESP.restart();
+}
+
+void setupDiagnosticsHandler() {
+    if (!mqttTopics) {
+        LOG_E(TAG, "Cannot setup diagnostics - topics not initialized");
+        return;
+    }
+    
+    mqttManager.setCallback(handleDiagnosticsRequest);
+    
+    if (mqttManager.subscribe(mqttTopics->getDiagnosticsRequestTopic().c_str())) {
+        LOG_I(TAG, "Diagnostics handler registered on topic: %s", 
+              mqttTopics->getDiagnosticsRequestTopic().c_str());
+    }
+}
+
+void handleDiagnosticsRequest(char* topic, byte* payload, unsigned int length) {
+    LOG_I(TAG, "Received diagnostics request");
+    
+    DynamicJsonDocument responseDoc(512);
+    
+    responseDoc[MqttProtocol::DiagnosticsFields::ANALYZER_ID] = settings.getAnalyzerId();
+    responseDoc[MqttProtocol::DiagnosticsFields::EPOCH_TIME] = timeManager.getEpochTime();
+    responseDoc[MqttProtocol::DiagnosticsFields::TIMESTAMP] = timeManager.getISOTime();
+    responseDoc[MqttProtocol::DiagnosticsFields::LOCAL_TIME] = timeManager.getLocalTimeISO();
+    responseDoc[MqttProtocol::DiagnosticsFields::UPTIME] = millis();
+    responseDoc[MqttProtocol::DiagnosticsFields::FREE_HEAP] = ESP.getFreeHeap();
+    responseDoc[MqttProtocol::DiagnosticsFields::STATE] = stateMachine.getStateName();
+    
+    responseDoc[MqttProtocol::DiagnosticsFields::WIFI][MqttProtocol::DiagnosticsFields::WIFI_CONNECTED] = WiFi.isConnected();
+    responseDoc[MqttProtocol::DiagnosticsFields::WIFI][MqttProtocol::DiagnosticsFields::WIFI_RSSI] = WiFi.RSSI();
+    
+    SensorData sensorData = sensorManager.getCurrentData();
+    responseDoc[MqttProtocol::DiagnosticsFields::SENSORS][MqttProtocol::DiagnosticsFields::SENSOR_TEMPERATURE] = sensorData.inTemp;
+    responseDoc[MqttProtocol::DiagnosticsFields::SENSORS][MqttProtocol::DiagnosticsFields::SENSOR_HUMIDITY] = sensorData.inHumidity;
+    responseDoc[MqttProtocol::DiagnosticsFields::SENSORS][MqttProtocol::DiagnosticsFields::SENSOR_RISE] = sensorData.currentRisePercent;
+    
+    if (mqttTopics && mqttManager.publish(mqttTopics->getDiagnosticsResponseTopic().c_str(), responseDoc)) {
+        LOG_I(TAG, "Diagnostics response sent");
+    } else {
+        LOG_E(TAG, "Failed to send diagnostics response");
+    }
 }

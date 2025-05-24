@@ -31,7 +31,7 @@ bool Settings::load() {
 
 void Settings::setDefaults() {
     _doc.clear();
-    _doc["deviceId"] = "sourdough_monitor_01";
+    _doc["analyzerId"] = "brodbuddy_01";
     _doc["mqtt"]["server"] = "broker.hivemq.com";
     _doc["mqtt"]["port"] = 1883;
     _doc["mqtt"]["user"] = "";
@@ -83,12 +83,12 @@ bool Settings::loadFromFile() {
     return _loaded;
 }
 
-String Settings::getDeviceId() const {
-    return _doc["deviceId"].as<String>();
+String Settings::getAnalyzerId() const {
+    return _doc["analyzerId"].as<String>();
 }
 
-void Settings::setDeviceId(const String& id) {
-    _doc["deviceId"] = id;
+void Settings::setAnalyzerId(const String& id) {
+    _doc["analyzerId"] = id;
 }
 
 String Settings::getMqttServer() const {

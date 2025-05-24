@@ -22,8 +22,8 @@ class Settings {
     bool load();
     void setDefaults();
 
-    String getDeviceId() const;
-    void setDeviceId(const String& id);
+    String getAnalyzerId() const;
+    void setAnalyzerId(const String& id);
 
     String getMqttServer() const;
     void setMqttServer(const String& server);

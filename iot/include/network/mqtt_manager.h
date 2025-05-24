@@ -4,6 +4,9 @@
 #include <WiFiClient.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
+#include <functional>
+
+class MqttTopics;
 
 class MqttManager {
   private:
@@ -16,8 +19,13 @@ class MqttManager {
     String _user;
     String _password;
     String _clientId;
+    
+    MqttTopics* _topics;
 
     unsigned long lastReconnectAttempt;
+    
+    static MqttManager* _instance;
+    static void mqttCallback(char* topic, byte* payload, unsigned int length);
 
     bool reconnect();
 
@@ -29,4 +37,10 @@ class MqttManager {
 
     bool publish(const char* topic, const JsonDocument& data);
     bool publish(const char* topic, const char* payload);
+    
+    bool subscribe(const char* topic);
+    void setCallback(std::function<void(char*, byte*, unsigned int)> callback);
+    
+    void setTopics(MqttTopics* topics) { _topics = topics; }
+    MqttTopics* getTopics() const { return _topics; }
 };
