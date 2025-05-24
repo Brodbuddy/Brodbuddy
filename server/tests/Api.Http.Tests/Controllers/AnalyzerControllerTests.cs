@@ -169,14 +169,14 @@ public class AnalyzerControllerTests
 
             responseList.Count.ShouldBe(2);
 
-            // Verify first analyzer
+            // Verificer første analyzer
             responseList[0].Id.ShouldBe(analyzers[0].Id);
             responseList[0].Name.ShouldBe("Test Analyzer 1");
             responseList[0].Nickname.ShouldBe("My Analyzer");
             responseList[0].LastSeen.ShouldBe(analyzers[0].LastSeen);
             responseList[0].IsOwner.ShouldBeTrue();
 
-            // Verify second analyzer
+            // Verificer anden analyzer
             responseList[1].Id.ShouldBe(analyzers[1].Id);
             responseList[1].Name.ShouldBe("Test Analyzer 2");
             responseList[1].Nickname.ShouldBe("Second Analyzer");
@@ -231,6 +231,8 @@ public class AnalyzerControllerTests
                     MacAddress = "11:22:33:44:55:66",
                     FirmwareVersion = "1.1.0",
                     IsActivated = false,
+                    ActivatedAt = null,
+                    LastSeen = null,
                     CreatedAt = DateTime.UtcNow.AddDays(-1)
                 }
             };
@@ -251,25 +253,27 @@ public class AnalyzerControllerTests
 
             responseList.Count.ShouldBe(2);
 
-            // Verify first analyzer
-            responseList[0].Id.ShouldBe(analyzers[0].Id);
-            responseList[0].Name.ShouldBe("Test Analyzer 1");
-            responseList[0].MacAddress.ShouldBe("AA:BB:CC:DD:EE:FF");
-            responseList[0].FirmwareVersion.ShouldBe("1.0.0");
-            responseList[0].IsActivated.ShouldBeTrue();
-            responseList[0].ActivatedAt.ShouldBe(analyzers[0].ActivatedAt);
-            responseList[0].LastSeen.ShouldBe(analyzers[0].LastSeen);
-            responseList[0].CreatedAt.ShouldBe(analyzers[0].CreatedAt);
+            // Verificer første analyzer
+            var firstResponse = responseList[0];
+            firstResponse.Id.ShouldBe(analyzers[0].Id);
+            firstResponse.Name.ShouldBe(analyzers[0].Name);
+            firstResponse.MacAddress.ShouldBe(analyzers[0].MacAddress);
+            firstResponse.FirmwareVersion.ShouldBe(analyzers[0].FirmwareVersion);
+            firstResponse.IsActivated.ShouldBe(analyzers[0].IsActivated);
+            firstResponse.ActivatedAt.ShouldBe(analyzers[0].ActivatedAt);
+            firstResponse.LastSeen.ShouldBe(analyzers[0].LastSeen);
+            firstResponse.CreatedAt.ShouldBe(analyzers[0].CreatedAt);
 
-            // Verify second analyzer
-            responseList[1].Id.ShouldBe(analyzers[1].Id);
-            responseList[1].Name.ShouldBe("Test Analyzer 2");
-            responseList[1].MacAddress.ShouldBe("11:22:33:44:55:66");
-            responseList[1].FirmwareVersion.ShouldBe("1.1.0");
-            responseList[1].IsActivated.ShouldBeFalse();
-            responseList[1].ActivatedAt.ShouldBeNull();
-            responseList[1].LastSeen.ShouldBeNull();
-            responseList[1].CreatedAt.ShouldBe(analyzers[1].CreatedAt);
+            // Verificer anden analyzer
+            var secondResponse = responseList[1];
+            secondResponse.Id.ShouldBe(analyzers[1].Id);
+            secondResponse.Name.ShouldBe(analyzers[1].Name);
+            secondResponse.MacAddress.ShouldBe(analyzers[1].MacAddress);
+            secondResponse.FirmwareVersion.ShouldBe(analyzers[1].FirmwareVersion);
+            secondResponse.IsActivated.ShouldBe(analyzers[1].IsActivated);
+            secondResponse.ActivatedAt.ShouldBeNull(); 
+            secondResponse.LastSeen.ShouldBeNull();  
+            secondResponse.CreatedAt.ShouldBe(analyzers[1].CreatedAt);
         }
     }
 
