@@ -598,10 +598,6 @@ jobs:
       - name: Set lowercase repository name
         id: repo-name
         run: echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-        
-      - name: Set lowercase repository name
-        id: repo-name
-        run: echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Tag Docker images with release version
         run: |
