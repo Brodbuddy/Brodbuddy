@@ -153,4 +153,52 @@ public static class TestDataSeeder
         context.ChangeTracker.Clear();
         return role;
     }
+
+    public static async Task<SourdoughAnalyzer> SeedSourdoughAnalyzerAsync(
+        this PgDbContext context,
+        TimeProvider timeProvider,
+        string macAddress,
+        string name,
+        bool isActivated = false)
+    {
+        var now = timeProvider.Now();
+        var analyzer = new SourdoughAnalyzer
+        {
+            MacAddress = macAddress,
+            Name = name,
+            ActivationCode = $"TEST{Guid.NewGuid():N}".Substring(0, 12),
+            IsActivated = isActivated,
+            CreatedAt = now,
+            UpdatedAt = now,
+            ActivatedAt = isActivated ? now : null,
+            LastSeen = isActivated ? now : null
+        };
+
+        await context.SourdoughAnalyzers.AddAsync(analyzer);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        return analyzer;
+    }
+
+    public static async Task<UserAnalyzer> SeedUserAnalyzerAsync(
+        this PgDbContext context,
+        TimeProvider timeProvider,
+        Guid userId,
+        Guid analyzerId,
+        string nickname,
+        bool isOwner)
+    {
+        var userAnalyzer = new UserAnalyzer
+        {
+            UserId = userId,
+            AnalyzerId = analyzerId,
+            Nickname = nickname,
+            IsOwner = isOwner
+        };
+
+        await context.UserAnalyzers.AddAsync(userAnalyzer);
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        return userAnalyzer;
+    }
 }
