@@ -58,7 +58,7 @@ jobs:
             --logger "html;LogFileName=TestResults-${{ matrix.browser }}.html" \
             --results-directory "./TestResults"
         env:
-          PLAYWRIGHT_TEST_BASE_URL: http://${{ vars.STAGING_DOMAIN_NAME }}
+          PLAYWRIGHT_TEST_BASE_URL: https://${{ vars.STAGING_DOMAIN_NAME }}
           BROWSER: ${{ matrix.browser }}
 
       - name: Generate test summary
