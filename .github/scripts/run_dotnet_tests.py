@@ -18,7 +18,7 @@ def run_tests():
     cmd = [
         "dotnet",
         "test",
-        "--filter", r"FullyQualifiedName\!~PlaywrightTests",
+        "--filter", "FullyQualifiedName!~PlaywrightTests",
         "--collect:XPlat Code Coverage",
         "--logger",
         "trx;LogFilePrefix=test-results",
