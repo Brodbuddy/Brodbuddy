@@ -1,0 +1,21 @@
+{
+  "deviceId": "skumfidus",
+  "mqtt": {
+    "server": "15b24181a314453a912a712175056638.s1.eu.hivemq.cloud",
+    "port": 8883,
+    "user": "thom625b",
+    "password": "Kakao1!!"
+  },
+  "sensor": {
+    "interval": 15
+  },
+  "display": {
+    "interval": 300
+  },
+  "calibration": {
+    "tempOffset": -1.7,
+    "humOffset": 7.3,
+    "containerHeight": 200
+  },
+  "lowPowerMode": true
+}

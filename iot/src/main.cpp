@@ -1,66 +1,173 @@
 #include <Arduino.h>
-#include <GxEPD2_BW.h>
-#include <GxEPD2_3C.h>
-#include <Fonts/FreeMonoBold9pt7b.h>
+#include <ArduinoJson.h>
+#include <WiFi.h>
 
-// Function prototype - add this line
-void addTextOnly();
+#include "components/wifi_manager.h"
+#include "components/mqtt_manager.h"
+#include "components/sensor_manager.h"
+#include "components/SourdoughMonitor.h"
+#include "display/SourdoughDisplay.h"
+#include "state_machine.h"
+#include "utils/settings.h"
+#include "utils/logger.h"
+#include "data_types.h"
 
-// DISPLAY MODEL OPTIONS - Uncomment only ONE at a time
-// Option 1: Standard 2.9" B/W model
-// GxEPD2_BW<GxEPD2_290, GxEPD2_290::HEIGHT> display(GxEPD2_290(/*CS=*/15, /*DC=*/17, /*RST=*/21, /*BUSY=*/4));
+static const char* TAG = "Main";
 
-// Option 2: 2.9" B/W BS model
-GxEPD2_BW<GxEPD2_290_BS, GxEPD2_290_BS::HEIGHT> display(GxEPD2_290_BS(/*CS=*/15, /*DC=*/17, /*RST=*/21, /*BUSY=*/4));
+BroadBuddyWiFiManager wifiManager;
+MqttManager mqttManager;
+StateMachine stateMachine;
+SensorManager sensorManager;
+Settings settings;
+SourdoughDisplay display;
+SourdoughMonitor monitor(display);
 
-// Option 3: 2.9" B/W/R Z13 model for 3-color displays
-//GxEPD2_3C<GxEPD2_290_Z13, GxEPD2_290_Z13::HEIGHT> display(GxEPD2_290_Z13(/*CS=*/15, /*DC=*/17, /*RST=*/21, /*BUSY=*/4));
+unsigned long lastStateCheck = 0;
+const unsigned long STATE_CHECK_INTERVAL = 100;
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
-  delay(1000);
-  Serial.println("Minimal E-Paper Text Test");
-  
-  // Only initialize the display, don't clear or reset it
-  display.init(0, false, 2, false);
-  display.setRotation(1); // Landscape orientation
-  
-  // Draw text without changing background
-  addTextOnly();
-  
-  Serial.println("Text drawing complete");
+  Logger::begin(LOG_INFO);
+
+  LOG_I(TAG, "--- Sourdough analyzer startup monitoring ---");
+
+  if (!settings.begin()) {
+    LOG_E(TAG, "Failed to initialize settings");
+    stateMachine.transitionTo(STATE_ERROR);
+    return;
+  }
+
+  //display.begin();
+  SourdoughData data = monitor.generateMockData();
+  monitor.updateDisplay(data);
+
+  if (!sensorManager.begin()) {
+    LOG_E(TAG, "Failed to initialize sensors");
+  }
+
+  sensorManager.setCalibration(
+    settings.getTempOffset(),
+    settings.getHumOffset()
+  );
+  sensorManager.setReadInterval(settings.getSensorInterval() * 1000);
+
+  wifiManager.setup();
+
+  stateMachine.transitionTo(STATE_CONNECTING_WIFI);
 }
 
-void loop() {
-  delay(60000); // Just wait
-}
+void loop()
+{
+  unsigned long currentMillis = millis();
+  LOG_D(TAG, "currentMillis: %lu", currentMillis);
 
-void addTextOnly() {
-  // Prepare partial window for text
-  int x = 10;
-  int y = 30;
-  int w = 280;
-  int h = 100;
-  
-  // Set partial window for text area only
-  display.setPartialWindow(x, y, w, h);
-  
-  // Start drawing session
-  display.firstPage();
-  do {
-    // Set font and text properties
-    display.setFont(&FreeMonoBold9pt7b);
-    display.setTextColor(GxEPD_BLACK);
-    
-    // Draw text at specific positions - don't fill background!
-    display.setCursor(x, y + 20);
-    display.print("Borge Sourdough");
-    
-    display.setCursor(x, y + 50);
-    display.print("Rise: 35.0%");
-    
-    display.setCursor(x, y + 80);
-    display.print("Temp: 22.9C");
-    
-  } while (display.nextPage());
+  if (currentMillis - lastStateCheck >= STATE_CHECK_INTERVAL) { 
+    lastStateCheck = currentMillis;
+
+    switch (stateMachine.getCurrentState()) {
+      case STATE_BOOT:
+        stateMachine.transitionTo(STATE_CONNECTING_WIFI);
+        break;
+
+      case STATE_CONNECTING_WIFI:
+          wifiManager.loop();
+          if (wifiManager.getStatus() == WIFI_CONNECTED) {
+            delay(1000);
+            LOG_I(TAG, "WiFi connected");
+            stateMachine.transitionTo(STATE_CONNECTING_MQTT);
+          }
+          break;
+
+      case STATE_CONNECTING_MQTT:
+        if (!mqttManager.isConnected()) {
+          String server = settings.getMqttServer();
+          int port = settings.getMqttPort();
+          String user = settings.getMqttUser();
+          String password = settings.getMqttPassword();
+          String deviceId = settings.getDeviceId();
+          
+          LOG_I(TAG, "Connecting to MQTT - Server: %s, Port: %d, User: %s, Device: %s", 
+                server.c_str(), port, user.c_str(), deviceId.c_str());
+          
+          if (mqttManager.begin(server.c_str(), port, user.c_str(), password.c_str(), deviceId.c_str())) {
+            LOG_I(TAG, "MQTT connection established");
+            stateMachine.transitionTo(STATE_SENSING);
+          } else {
+            LOG_E(TAG, "MQTT connection failed, retrying in 5 seconds");
+            delay(5000);
+          }
+        } else {
+          stateMachine.transitionTo(STATE_SENSING);
+        }
+        break;
+
+      case STATE_SENSING:
+        if (sensorManager.shouldRead()) {
+          LOG_I(TAG, "Collecting sensor samples...");
+          if (sensorManager.collectMultipleSamples()) {
+            LOG_I(TAG, "Sensor reading complete");
+            stateMachine.transitionTo(STATE_UPDATING_DISPLAY);
+          }
+        }
+        break;
+
+      case STATE_UPDATING_DISPLAY:
+        display.updateDisplay();
+        LOG_I(TAG, "Display updated");
+        stateMachine.transitionTo(STATE_PUBLISHING_DATA);
+        break;
+
+      case STATE_PUBLISHING_DATA:
+        if (!mqttManager.isConnected()) {
+          stateMachine.transitionTo(STATE_CONNECTING_MQTT);
+        } else {
+          DynamicJsonDocument doc(256);
+          SensorData data = sensorManager.getCurrentData();
+          doc["temperature"] = data.inTemp;
+          doc["humidity"] = data.inHumidity;
+          doc["rise"] = data.currentRisePercent;
+
+          if (mqttManager.publish("kakao/maelk", doc)) {
+            LOG_I(TAG, "Data published");
+          }
+          stateMachine.transitionTo(STATE_SLEEP);
+        }
+        break;
+
+      case STATE_SLEEP:
+        if (settings.getLowPowerMode()) {
+          WiFi.disconnect(true);
+          WiFi.mode(WIFI_OFF);
+          
+          esp_sleep_enable_timer_wakeup(settings.getSensorInterval() * 1000000);
+          esp_light_sleep_start();
+          
+          if (!settings.begin()) {
+            LOG_E(TAG, "Failed to re-initialize settings after sleep");
+            stateMachine.transitionTo(STATE_ERROR);
+            break;
+          }
+          
+          WiFi.mode(WIFI_STA);
+          WiFi.reconnect();
+          delay(1000);
+          
+          stateMachine.transitionTo(STATE_CONNECTING_WIFI);
+        } else {
+          if (stateMachine.shouldTransition(settings.getSensorInterval() * 1000)) {
+            stateMachine.transitionTo(STATE_SENSING);
+          }
+        }
+        break;
+
+      case STATE_ERROR:
+        LOG_E(TAG, "System in error state");
+        delay(5000);
+        ESP.restart();
+        break;
+    }
+  }
+
+  mqttManager.loop();
 }

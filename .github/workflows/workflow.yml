@@ -1,9 +1,11 @@
-name: CI/CD Pipeline
+ame: CI/CD Pipeline
 
 on:
   push:
     paths:
       - 'server/**'
+      - 'client/**'
+      - 'PlaywrightTests/**'
       - 'Directory.Build.props'
       - '.github/**'
     branches:
@@ -250,7 +252,7 @@ jobs:
           else
             echo "Overall Mutation score ($FINAL_MUTATION_SCORE%) meets or exceeds threshold requirement (80%)"
           fi
-          
+  
   build-iot-firmware:
     name: Build IoT firmware
     runs-on: ubuntu-latest
@@ -285,7 +287,7 @@ jobs:
           name: iot-firmware-${{ steps.vars.outputs.sha }}
           path: ${{ steps.build-iot.outputs.firmware_artifact_name }}
           retention-days: 7
-          
+  
   build-backend-image:
     name: Build backend Docker image
     runs-on: ubuntu-latest
@@ -329,7 +331,7 @@ jobs:
           docker push ghcr.io/${REPO_NAME}-backend:${TAG}
           
           echo "server_image_ci_tag=ghcr.io/${REPO_NAME}-backend:${TAG}" >> $GITHUB_OUTPUT
-          
+  
   build-frontend-image:
     name: Build frontend Docker image
     runs-on: ubuntu-latest
@@ -483,19 +485,18 @@ jobs:
             echo "Waiting briefly before reloading Nginx..."
             sleep 5
             docker compose exec $NGINX_CONTAINER_NAME nginx -s reload
-          
+            
   e2e-tests:
     name: Run E2E tests
     runs-on: ubuntu-latest
-    needs: [ deploy-staging ]
-    if: success() && (github.ref == 'refs/heads/master')
+    if: success() #&& (github.ref == 'refs/heads/master')
     timeout-minutes: 20
     strategy:
       matrix:
         browser: [ chromium, firefox, webkit ]
       fail-fast: false
     env:
-      E2E_TEST_DIR: tests/E2e
+      E2E_TEST_DIR: PlaywrightTests
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -526,19 +527,20 @@ jobs:
         run: |
           cd ${{ env.E2E_TEST_DIR }}
           mkdir -p TestResults
-          dotnet test --filter Browser=${{ matrix.browser }} \
+          dotnet test \
             --logger "trx;LogFileName=TestResults-${{ matrix.browser }}.trx" \
             --logger "html;LogFileName=TestResults-${{ matrix.browser }}.html" \
             --results-directory "./TestResults"
         env:
-          PLAYWRIGHT_TEST_BASE_URL: http://${{ vars.STAGING_DOMAIN_NAME }}
+          PLAYWRIGHT_TEST_BASE_URL: https://${{ vars.STAGING_DOMAIN_NAME }}
+          BROWSER: ${{ matrix.browser }}
 
       - name: Generate test summary
         if: always()
         run: |
           cd ${{ env.E2E_TEST_DIR }}
-          chmod +x ../../.github/scripts/generate_test_summary.py
-          python ../../.github/scripts/generate_test_summary.py
+          chmod +x ../.github/scripts/generate_test_summary.py
+          python ../.github/scripts/generate_test_summary.py
 
       - name: Upload test results
         if: always()

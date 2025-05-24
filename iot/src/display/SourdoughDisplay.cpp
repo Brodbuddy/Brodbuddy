@@ -1,0 +1,202 @@
+#include "display/SourdoughDisplay.h"
+#include "utils/constants.h"
+
+SourdoughDisplay::SourdoughDisplay() : Adafruit_GFX(EPD_HEIGHT, EPD_WIDTH) {}
+
+void SourdoughDisplay::begin()
+{
+    Serial.println("Initializing E-Paper Display...");
+
+    // Initialiser pins
+    pinMode(Pins::EINK_BUSY, INPUT);
+    pinMode(Pins::EINK_RESET, OUTPUT);
+    pinMode(Pins::EINK_DC, OUTPUT);
+    pinMode(Pins::EINK_CS, OUTPUT);
+
+    // Initialiser SPI
+    SPI.begin(Pins::EINK_SCLK, -1, Pins::EINK_SDI, Pins::EINK_CS);
+    SPI.beginTransaction(SPISettings(2000000, MSBFIRST, SPI_MODE0));
+
+    // Nulstil og initialiser
+    hardwareReset();
+    softwareReset();
+    initDisplay();
+
+    // Clear buffers til start
+    clearBuffers();
+
+    setFont(); // Nulstil til standard font
+    setTextColor(COLOR_BLACK);
+    setTextSize(1); // Standard størrelse for at sikre det passer i header
+
+    setRotation(0);
+
+    // Juster tekstindstillinger
+    setTextWrap(true);
+    cp437(true); // Brug CP437 tegnsæt for specialtegn
+}
+
+void SourdoughDisplay::hardwareReset()
+{
+    Serial.println("Performing extended hardware reset...");
+    digitalWrite(Pins::EINK_RESET, HIGH);
+    delay(200);
+    digitalWrite(Pins::EINK_RESET, LOW);
+    delay(500);
+    digitalWrite(Pins::EINK_RESET, HIGH);
+    delay(200);
+}
+
+void SourdoughDisplay::softwareReset()
+{
+    Serial.println("Sending software reset command...");
+    sendCommand(CMD_SWRESET);
+    waitUntilIdle();
+}
+
+void SourdoughDisplay::initDisplay()
+{
+    Serial.println("Initializing display with basic commands...");
+
+    // Konfigurerer display scanning
+    sendCommand(CMD_DRIVER_OUTPUT);
+    sendData((EPD_HEIGHT - 1) & 0xFF);        // Højde (lavere byte)
+    sendData(((EPD_HEIGHT - 1) >> 8) & 0xFF); // Højde (højere byte)
+    sendData(PARAM_DRIVER_CONFIG);            // Konfigurationsbits
+
+    // Konfigurerer display kant
+    sendCommand(CMD_BORDER_WAVEFORM);
+    sendData(PARAM_NORMAL_BORDER); // Normal kantbølgeform
+}
+
+void SourdoughDisplay::clearBuffers()
+{
+    Serial.println("Clearing display buffers...");
+    for (int i = 0; i < EPD_WIDTH * EPD_HEIGHT / 8; i++)
+    {
+        blackBuffer[i] = 0xFF; // Alt hvidt
+        redBuffer[i] = 0x00;   // Intet rødt
+    }
+}
+
+void SourdoughDisplay::updateDisplay()
+{
+    Serial.println("Sending buffer data to display RAM...");
+
+    // Send sort/hvid buffer til display
+    sendCommand(CMD_WRITE_RAM_BLACK);
+    for (int i = 0; i < EPD_WIDTH * EPD_HEIGHT / 8; i++)
+    {
+        sendData(blackBuffer[i]);
+    }
+
+    // Send rød buffer til display
+    sendCommand(CMD_WRITE_RAM_RED);
+    for (int i = 0; i < EPD_WIDTH * EPD_HEIGHT / 8; i++)
+    {
+        sendData(redBuffer[i]);
+    }
+
+    // Opdater displayet
+    sendCommand(CMD_DISPLAY_UPDATE);
+    sendData(PARAM_UPDATE_FULL);
+    sendCommand(CMD_MASTER_ACTIVATION);
+    waitUntilIdle();
+}
+
+void SourdoughDisplay::sendCommand(uint8_t command)
+{
+    digitalWrite(Pins::EINK_DC, LOW);
+    digitalWrite(Pins::EINK_CS, LOW);
+    SPI.transfer(command);
+    digitalWrite(Pins::EINK_CS, HIGH);
+}
+
+void SourdoughDisplay::sendData(uint8_t data)
+{
+    digitalWrite(Pins::EINK_DC, HIGH);
+    digitalWrite(Pins::EINK_CS, LOW);
+    SPI.transfer(data);
+    digitalWrite(Pins::EINK_CS, HIGH);
+}
+
+void SourdoughDisplay::waitUntilIdle()
+{
+    unsigned long start = millis();
+    while (digitalRead(Pins::EINK_BUSY) == LOW)
+    {
+        delay(10);
+        if (millis() - start > 5000)
+        { // 5 sekunder timeout
+            Serial.println("waitUntilIdle TIMEOUT!");
+            break;
+        }
+    }
+}
+
+void SourdoughDisplay::fullRefresh()
+{
+    sendCommand(CMD_DISPLAY_UPDATE);
+    sendData(PARAM_UPDATE_FULL);
+    sendCommand(CMD_MASTER_ACTIVATION);
+    waitUntilIdle();
+}
+
+void SourdoughDisplay::setPixel(int16_t x, int16_t y, uint16_t color)
+{
+    if (x < 0 || x >= EPD_WIDTH || y < 0 || y >= EPD_HEIGHT)
+    {
+        return;
+    }
+    uint16_t byte_index = (x / 8) + (y * (EPD_WIDTH / 8));
+    uint8_t bit_pos = 7 - (x % 8);
+
+    if (color == COLOR_WHITE)
+    {
+        blackBuffer[byte_index] |= (1 << bit_pos);
+        redBuffer[byte_index] &= ~(1 << bit_pos);
+    }
+    else if (color == COLOR_BLACK)
+    {
+        blackBuffer[byte_index] &= ~(1 << bit_pos);
+        redBuffer[byte_index] &= ~(1 << bit_pos);
+    }
+    else if (color == COLOR_RED)
+    {
+        blackBuffer[byte_index] |= (1 << bit_pos);
+        redBuffer[byte_index] |= (1 << bit_pos);
+    }
+}
+
+void SourdoughDisplay::drawPixel(int16_t x, int16_t y, uint16_t color)
+{
+    if ((x < 0) || (y < 0) || (x >= width()) || (y >= height()))
+    {
+        return;
+    }
+
+    setPixel(y, x, color);
+}
+
+void SourdoughDisplay::drawTestPattern()
+{
+    Serial.println("Drawing test pattern into buffers...");
+
+    // Tegn sort firkant øverst til venstre
+    for (int y = 10; y < 60; y++)
+    {
+        for (int x = 10; x < 60; x++)
+        {
+            setPixel(x, y, COLOR_BLACK);
+        }
+    }
+
+    // Tegn rød firkant nederst til højre
+    for (int y = EPD_HEIGHT - 60; y < EPD_HEIGHT - 10; y++)
+    {
+        for (int x = EPD_WIDTH - 60; x < EPD_WIDTH - 10; x++)
+        {
+            setPixel(x, y, COLOR_RED);
+        }
+    }
+}
