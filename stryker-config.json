@@ -36,7 +36,8 @@
       "!/**/Validators/**/*",
       "!/**/ClaimExtensions.cs",
       "!/**/Models/**/*",
-      "!/**/RedisSubscriptionListener.cs"
+      "!/**/RedisSubscriptionListener.cs",
+      "!/**/EfTransactionManager.cs"
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest",
