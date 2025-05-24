@@ -1,4 +1,4 @@
-#include "utils/logger.h"
+#include "logging/logger.h"
 
 LogLevel Logger::_level = LOG_INFO;
 bool Logger::_serialEnabled = true;
@@ -8,19 +8,20 @@ void Logger::begin(LogLevel level, bool enableColors) {
     _level = level;
     _colorsEnabled = enableColors;
     _serialEnabled = true;
-    
+
     if (_serialEnabled) {
         Serial.println();
         if (_colorsEnabled) {
-            Serial.printf("%s%s[LOGGER]%s Logger initialized with colors\n", 
-                         ANSI_COLOR_BOLD, ANSI_COLOR_GREEN, ANSI_COLOR_RESET);
+            Serial.printf("%s%s[LOGGER]%s Logger initialized with colors\n", ANSI_COLOR_BOLD, ANSI_COLOR_GREEN,
+                          ANSI_COLOR_RESET);
         } else {
             Serial.println("[LOGGER] Logger initialized");
         }
     }
 }
 
-void Logger::log(LogLevel level, const char* levelStr, const char* color, const char* tag, const char* format, va_list args) {
+void Logger::log(LogLevel level, const char* levelStr, const char* color, const char* tag, const char* format,
+                 va_list args) {
     if (!_serialEnabled || level > _level) {
         return;
     }
@@ -28,14 +29,12 @@ void Logger::log(LogLevel level, const char* levelStr, const char* color, const 
     unsigned long timestamp = millis();
 
     if (_colorsEnabled) {
-        Serial.printf("%s[%lu]%s%s[%s]%s%s[%s]%s ", 
-                     ANSI_COLOR_CYAN, timestamp, ANSI_COLOR_RESET,
-                     color, levelStr, ANSI_COLOR_RESET,
-                     ANSI_COLOR_BOLD, tag, ANSI_COLOR_RESET);
+        Serial.printf("%s[%lu]%s%s[%s]%s%s[%s]%s ", ANSI_COLOR_CYAN, timestamp, ANSI_COLOR_RESET, color, levelStr,
+                      ANSI_COLOR_RESET, ANSI_COLOR_BOLD, tag, ANSI_COLOR_RESET);
     } else {
         Serial.printf("[%lu][%s][%s] ", timestamp, levelStr, tag);
     }
-    
+
     char buffer[256];
     vsnprintf(buffer, sizeof(buffer), format, args);
     Serial.println(buffer);

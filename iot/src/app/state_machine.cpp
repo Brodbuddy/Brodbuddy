@@ -1,10 +1,19 @@
-#include "state_machine.h"
-#include "utils/logger.h"
+#include "app/state_machine.h"
+
+#include "logging/logger.h"
 
 static const char* TAG = "StateMachine";
 
 const char* StateMachine::_stateNames[] = {
-    "BOOT", "CONNECTING_WIFI", "CONNECTING_MQTT", "SENSING", "UPDATING_DISPLAY", "PUBLISHING_DATA", "SLEEP", "ERROR"};
+    "BOOT",
+    "CONNECTING_WIFI",
+    "CONNECTING_MQTT",
+    "SENSING",
+    "UPDATING_DISPLAY",
+    "PUBLISHING_DATA",
+    "SLEEP", 
+    "ERROR"
+};
 
 StateMachine::StateMachine() : _currentState(STATE_BOOT), _previousState(STATE_BOOT), _stateStartTime(millis()) {}
 

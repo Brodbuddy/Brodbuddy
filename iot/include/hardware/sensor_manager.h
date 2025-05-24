@@ -2,12 +2,13 @@
 #define SENSOR_MANAGER_H
 
 #include <Arduino.h>
-#include <VL53L0X.h>
-#include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
-#include "data_types.h"
-#include "utils/constants.h"
+#include <VL53L0X.h>
+#include <Wire.h>
+
+#include "app/data_types.h"
+#include "config/constants.h"
 
 struct SensorHealth {
     bool bme280Connected;
@@ -17,7 +18,7 @@ struct SensorHealth {
 };
 
 class SensorManager {
-private:
+  private:
     Adafruit_BME280 _bme;
     VL53L0X _tof;
     SensorData _currentData;
@@ -28,7 +29,7 @@ private:
 
     float _tempOffset;
     float _humOffset;
-    
+
     bool _firstReading;
     float _filteredTemp;
     float _filteredHum;
@@ -39,28 +40,34 @@ private:
     float _simHum;
     int _simDistance;
 #endif
-    
+
     float calculateMedian(float arr[], int size);
     int calculateMedianInt(int arr[], int size);
     void removeOutliers(float arr[], int& size, float minVal, float maxVal);
     void removeOutliersInt(int arr[], int& size, int minVal, int maxVal);
 
-public:
+  public:
     SensorManager();
 
     bool begin();
     bool readAllSensors();
     bool collectMultipleSamples();
 
-    const SensorData& getCurrentData() const { return _currentData; }
-    const SensorHealth& getHealth() const { return _health; }
-   
+    const SensorData& getCurrentData() const {
+        return _currentData;
+    }
+    const SensorHealth& getHealth() const {
+        return _health;
+    }
+
     void setCalibration(float tempOffset, float humOffset) {
         _tempOffset = tempOffset;
         _humOffset = humOffset;
     }
 
-    void setReadInterval(unsigned long interval) { _readInterval = interval; }
+    void setReadInterval(unsigned long interval) {
+        _readInterval = interval;
+    }
     bool shouldRead() const;
 };
 

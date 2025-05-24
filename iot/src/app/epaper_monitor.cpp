@@ -1,26 +1,18 @@
-#include "components/epaper_monitor.h"
-#include <utils/constants.h>
-#include <utils/logger.h>
+#include "app/epaper_monitor.h"
+
+#include "config/constants.h"
+#include "logging/logger.h"
 
 static const char* TAG = "EpaperMonitor";
 
-EpaperMonitor::EpaperMonitor(EpaperDisplay &display) : _display(display) {}
+EpaperMonitor::EpaperMonitor(EpaperDisplay& display) : _display(display) {}
 
-SourdoughData EpaperMonitor::generateMockData()
-{
-    const int mockGrowthValues[] = {
-        100, 102, 101, 104, 108, 115,
-        117, 120, 123, 127, 134, 140,
-        138, 135, 142, 152, 158, 165,
-        169, 172, 180, 178, 187, 195,
-        203, 210, 214, 212, 225, 235,
-        232, 228, 235, 242, 256, 265,
-        268, 273, 269, 278, 288, 295,
-        300, 307, 304, 312, 318, 325,
-        330, 324, 336, 345, 351, 348,
-        352, 351, 346, 338, 329, 320,
-        315, 308, 303, 295, 287, 280,
-        277, 268, 260, 255, 250, 245};
+SourdoughData EpaperMonitor::generateMockData() {
+    const int mockGrowthValues[] = {100, 102, 101, 104, 108, 115, 117, 120, 123, 127, 134, 140, 138, 135, 142,
+                                    152, 158, 165, 169, 172, 180, 178, 187, 195, 203, 210, 214, 212, 225, 235,
+                                    232, 228, 235, 242, 256, 265, 268, 273, 269, 278, 288, 295, 300, 307, 304,
+                                    312, 318, 325, 330, 324, 336, 345, 351, 348, 352, 351, 346, 338, 329, 320,
+                                    315, 308, 303, 295, 287, 280, 277, 268, 260, 255, 250, 245};
     const int mockDataSize = sizeof(mockGrowthValues) / sizeof(mockGrowthValues[0]);
 
     SourdoughData data = {};
@@ -40,33 +32,27 @@ SourdoughData EpaperMonitor::generateMockData()
 
     // Tilføj mockdata med 10-minutters intervaller
     unsigned long interval = 10 * 60;
-    for (int i = 0; i < mockDataSize; i++)
-    {
+    for (int i = 0; i < mockDataSize; i++) {
         unsigned long timestamp = startTime + (i * interval);
         addDataPoint(data, mockGrowthValues[i], timestamp);
     }
-    
+
     LOG_D(TAG, "Generated mock data with %d data points", mockDataSize);
     return data;
 }
 
-void EpaperMonitor::addDataPoint(SourdoughData &data, int growthPercentage, unsigned long timestamp)
-{
+void EpaperMonitor::addDataPoint(SourdoughData& data, int growthPercentage, unsigned long timestamp) {
     int insertIndex;
 
-    if (data.bufferFull)
-    {
+    if (data.bufferFull) {
         insertIndex = data.oldestIndex;
         data.oldestIndex = (data.oldestIndex + 1) % MonitoringConstants::MAX_DATA_POINTS;
         LOG_D(TAG, "Buffer full, wrapping around. Oldest index now: %d", data.oldestIndex);
-    }
-    else
-    {
+    } else {
         insertIndex = data.dataCount;
         data.dataCount++;
 
-        if (data.dataCount >= MonitoringConstants::MAX_DATA_POINTS)
-        {
+        if (data.dataCount >= MonitoringConstants::MAX_DATA_POINTS) {
             data.bufferFull = true;
             data.dataCount = MonitoringConstants::MAX_DATA_POINTS;
             LOG_I(TAG, "Data buffer reached capacity (%d points)", MonitoringConstants::MAX_DATA_POINTS);
@@ -81,45 +67,38 @@ void EpaperMonitor::addDataPoint(SourdoughData &data, int growthPercentage, unsi
     updatePeakInfo(data);
 }
 
-void EpaperMonitor::updatePeakInfo(SourdoughData &data)
-{
+void EpaperMonitor::updatePeakInfo(SourdoughData& data) {
     int previousPeak = data.peakGrowth;
     data.peakGrowth = 0;
     int peakIndex = -1;
 
     // Find peak værdi og indeks
-    for (int i = 0; i < data.dataCount; i++)
-    {
+    for (int i = 0; i < data.dataCount; i++) {
         int actualIndex = (data.oldestIndex + i) % MonitoringConstants::MAX_DATA_POINTS;
-        if (data.growthValues[actualIndex] > data.peakGrowth)
-        {
+        if (data.growthValues[actualIndex] > data.peakGrowth) {
             data.peakGrowth = data.growthValues[actualIndex];
             peakIndex = actualIndex;
         }
     }
 
     // Beregn timer siden peak
-    if (peakIndex >= 0)
-    {
+    if (peakIndex >= 0) {
         unsigned long now = millis() / 1000;
         unsigned long peakTime = data.timestamps[peakIndex];
         data.peakHoursAgo = (now - peakTime) / 3600.0; // Konverter sekunder til timer
-        
+
         if (data.peakGrowth != previousPeak) {
             LOG_D(TAG, "New peak detected: %d%% (was %d%%)", data.peakGrowth, previousPeak);
         }
-    }
-    else
-    {
+    } else {
         data.peakHoursAgo = 0;
     }
 }
 
-void EpaperMonitor::updateDisplay(const SourdoughData &data)
-{
-    LOG_I(TAG, "Updating display - Growth: %d%%, Peak: %d%% (%.1fh ago)", 
-          data.currentGrowth, data.peakGrowth, data.peakHoursAgo);
-    
+void EpaperMonitor::updateDisplay(const SourdoughData& data) {
+    LOG_I(TAG, "Updating display - Growth: %d%%, Peak: %d%% (%.1fh ago)", data.currentGrowth, data.peakGrowth,
+          data.peakHoursAgo);
+
     _display.clearBuffers();
 
     // Tegn linje til at adskille header fra grafområdet
@@ -132,8 +111,7 @@ void EpaperMonitor::updateDisplay(const SourdoughData &data)
     _display.updateDisplay();
 }
 
-void EpaperMonitor::drawHeader(const SourdoughData &data)
-{
+void EpaperMonitor::drawHeader(const SourdoughData& data) {
     // Første række: Udendørs temperatur, fugtighed og vækst
     _display.setTextColor(DisplayConstants::COLOR_BLACK);
     _display.setCursor(10, 5);
@@ -166,8 +144,7 @@ void EpaperMonitor::drawHeader(const SourdoughData &data)
     _display.print("%");
 }
 
-void EpaperMonitor::drawBattery(int batteryLevel)
-{
+void EpaperMonitor::drawBattery(int batteryLevel) {
     // Tegn lodret batteri form
     _display.drawRect(270, 5, 10, 20, DisplayConstants::COLOR_BLACK); // Batteriets ydre
     _display.drawRect(272, 2, 6, 3, DisplayConstants::COLOR_BLACK);   // Batteriets top
@@ -176,8 +153,7 @@ void EpaperMonitor::drawBattery(int batteryLevel)
     _display.fillRect(272, 23 - fillHeight, 6, fillHeight, DisplayConstants::COLOR_BLACK);
 }
 
-void EpaperMonitor::drawGraph(const SourdoughData &data)
-{
+void EpaperMonitor::drawGraph(const SourdoughData& data) {
     // Grafområdets dimensioner
     int graphX = 10;
     int graphY = 45;
@@ -195,24 +171,22 @@ void EpaperMonitor::drawGraph(const SourdoughData &data)
 
     // Tegn L-formet graframme (|_)
     _display.drawLine(xLabelStartX, graphY, xLabelStartX, graphY + graphHeight, DisplayConstants::COLOR_BLACK);
-    _display.drawLine(xLabelStartX, graphY + graphHeight, graphX + graphWidth, graphY + graphHeight, DisplayConstants::COLOR_BLACK);
+    _display.drawLine(xLabelStartX, graphY + graphHeight, graphX + graphWidth, graphY + graphHeight,
+                      DisplayConstants::COLOR_BLACK);
 
     // Tilføj lodrette gitterlinjer for hver time (12 timer i alt)
     int hourWidth = (graphWidth - yLabelWidth) / 12;
 
-    for (int hour = 0; hour <= 12; hour++)
-    {
+    for (int hour = 0; hour <= 12; hour++) {
         int x = xLabelStartX + (hour * hourWidth);
 
         // Tegn gitterlinje for hver time
         _display.drawLine(x, graphY, x, graphY + graphHeight, DisplayConstants::COLOR_BLACK);
 
         // Tilføj etiketter kun for lige timer
-        if (hour % 2 == 0)
-        {
+        if (hour % 2 == 0) {
             int labelIndex = hour / 2;
-            if (labelIndex < sizeof(timeLabels) / sizeof(timeLabels[0]))
-            {
+            if (labelIndex < sizeof(timeLabels) / sizeof(timeLabels[0])) {
                 _display.setCursor(x - 8, graphY + graphHeight + 2);
                 _display.setTextColor(DisplayConstants::COLOR_BLACK);
                 _display.print(timeLabels[labelIndex]);
@@ -224,8 +198,7 @@ void EpaperMonitor::drawGraph(const SourdoughData &data)
     int yLabelValues[] = {150, 200, 250, 300, 350, 400};
 
     int numYLabels = sizeof(yLabelValues) / sizeof(yLabelValues[0]);
-    for (int i = 0; i < numYLabels; i++)
-    {
+    for (int i = 0; i < numYLabels; i++) {
         int y = graphY + graphHeight - (i + 1) * graphHeight / numYLabels;
 
         // Tegn vandret gitterlinje
@@ -253,11 +226,9 @@ void EpaperMonitor::drawGraph(const SourdoughData &data)
     float timeRange = 12.0 * 60 * 60; // 12 timer i sekunder
 
     // Kun tegn punkter, hvis vi har mindst 2
-    if (data.dataCount >= 2)
-    {
+    if (data.dataCount >= 2) {
         // Tegn linjerne mellem punkter
-        for (int i = 0; i < data.dataCount - 1; i++)
-        {
+        for (int i = 0; i < data.dataCount - 1; i++) {
             // Beregn de faktiske indekser med hensyn til cirkulær buffer
             int idx1 = (data.oldestIndex + i) % MonitoringConstants::MAX_DATA_POINTS;
             int idx2 = (data.oldestIndex + i + 1) % MonitoringConstants::MAX_DATA_POINTS;
@@ -282,8 +253,7 @@ void EpaperMonitor::drawGraph(const SourdoughData &data)
             _display.drawLine(x1, y1, x2, y2, DisplayConstants::COLOR_BLACK);
 
             // Marker hver 3. datapunkt
-            if (i % 3 == 0)
-            {
+            if (i % 3 == 0) {
                 _display.fillRect(x1 - 2, y1 - 2, 4, 4, DisplayConstants::COLOR_BLACK);
             }
         }
@@ -293,19 +263,16 @@ void EpaperMonitor::drawGraph(const SourdoughData &data)
     int peakValue = 0;
     int peakIndex = -1;
 
-    for (int i = 0; i < data.dataCount; i++)
-    {
+    for (int i = 0; i < data.dataCount; i++) {
         int idx = (data.oldestIndex + i) % MonitoringConstants::MAX_DATA_POINTS;
-        if (data.growthValues[idx] > peakValue)
-        {
+        if (data.growthValues[idx] > peakValue) {
             peakValue = data.growthValues[idx];
             peakIndex = idx;
         }
     }
 
     // Hvis vi fandt en peak, marker den
-    if (peakIndex >= 0)
-    {
+    if (peakIndex >= 0) {
         float peakTimePct = (data.timestamps[peakIndex] - twelveHoursAgo) / timeRange;
         peakTimePct = max(0.0f, min(1.0f, peakTimePct));
 

@@ -2,10 +2,10 @@
 #define EPAPER_DISPLAY_H
 
 #include <Arduino.h>
-#include <SPI.h>
 #include <Adafruit_GFX.h>
-#include <utils/constants.h>
+#include <SPI.h>
 
+#include "config/constants.h"
 
 class EpaperDisplay : public Adafruit_GFX {
   public:

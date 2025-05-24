@@ -1,6 +1,7 @@
-#include "components/button_manager.h"
-#include <utils/time_utils.h>
-#include <utils/constants.h>
+#include "hardware/button_manager.h"
+
+#include "config/constants.h"
+#include "config/time_utils.h"
 
 static const char* TAG = "ButtonManager";
 

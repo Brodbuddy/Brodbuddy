@@ -1,8 +1,9 @@
 #pragma once
 
 #include <Arduino.h>
-#include <utils/constants.h>
-#include <utils/logger.h>
+
+#include "config/constants.h"
+#include "logging/logger.h"
 
 class ButtonManager {
   public:

@@ -1,6 +1,7 @@
-#include "components/mqtt_manager.h"
-#include "utils/logger.h"
-#include "utils/time_utils.h"
+#include "network/mqtt_manager.h"
+
+#include "config/time_utils.h"
+#include "logging/logger.h"
 
 static const char* TAG = "MqttManager";
 

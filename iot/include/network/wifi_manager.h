@@ -2,11 +2,11 @@
 
 #include <WiFi.h>
 #include <Preferences.h>
-#include "config.h"
-#include <utils/constants.h>
-#include <utils/logger.h>
-#include <data_types.h>
-#include "captive_portal_manager.h"
+
+#include "app/data_types.h"
+#include "config/constants.h"
+#include "logging/logger.h"
+#include "network/captive_portal_manager.h"
 
 class WifiManager {
   public:

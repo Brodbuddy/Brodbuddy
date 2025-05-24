@@ -1,12 +1,14 @@
-#include "components/wifi_manager.h"
+#include "network/wifi_manager.h"
+
 #include <Arduino.h>
-#include <utils/constants.h>
-#include <utils/time_utils.h>
-#include <utils/logger.h>
+
+#include "config/constants.h"
+#include "config/time_utils.h"
+#include "logging/logger.h"
 
 static const char* TAG = "WiFiManager";
 
-#define BLINK_INTERVAL LED_BLINK_NORMAL
+#define BLINK_INTERVAL TimeUtils::to_ms(TimeConstants::LED_BLINK_NORMAL)
 
 TaskHandle_t blinkTaskHandle = NULL;
 
@@ -50,7 +52,7 @@ void WifiManager::begin() {
         LOG_I(TAG, "Connected to WiFi!");
         LOG_I(TAG, "IP address: %s", WiFi.localIP().toString().c_str());
 
-        WiFi.setHostname(HOSTNAME);
+        WiFi.setHostname(NetworkConstants::HOSTNAME);
 
         currentStatus = WIFI_CONNECTED;
         digitalWrite(Pins::LED, HIGH);
@@ -117,7 +119,7 @@ void WifiManager::createBlinkTask() {
 }
 
 void WifiManager::checkWiFiStatus() {
-    if (millis() - lastWiFiCheck > WIFI_CHECK_INTERVAL) {
+    if (millis() - lastWiFiCheck > TimeUtils::to_ms(TimeConstants::WIFI_CHECK_INTERVAL)) {
         lastWiFiCheck = millis();
 
         if (currentStatus == WIFI_CONNECTED) {

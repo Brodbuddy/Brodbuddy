@@ -1,5 +1,6 @@
-#include "utils/settings.h"
-#include "utils/logger.h"
+#include "config/settings.h"
+
+#include "logging/logger.h"
 
 const char* Settings::SETTINGS_FILE = "/settings.json";
 
@@ -116,16 +117,16 @@ void Settings::setMqttUser(const String& user) {
 
 String Settings::getMqttPassword() const {
     String password = _doc["mqtt"]["password"].as<String>();
-    
+
     if (password == "${MQTT_PASSWORD}") {
-        #ifdef MQTT_PASSWORD
-            return String(MQTT_PASSWORD);
-        #else
-            LOG_W("Settings", "MQTT_PASSWORD not defined at compile time!");
-            return "";
-        #endif
+#ifdef MQTT_PASSWORD
+        return String(MQTT_PASSWORD);
+#else
+        LOG_W("Settings", "MQTT_PASSWORD not defined at compile time!");
+        return "";
+#endif
     }
-    
+
     return password;
 }
 

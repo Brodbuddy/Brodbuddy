@@ -2,18 +2,18 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
-#include "components/wifi_manager.h"
-#include "components/mqtt_manager.h"
-#include "components/sensor_manager.h"
-#include "components/button_manager.h"
-#include "components/epaper_monitor.h"
-#include "display/epaper_display.h"
-#include "state_machine.h"
-#include "utils/settings.h"
-#include "utils/logger.h"
-#include "utils/constants.h"
-#include "utils/time_utils.h"
-#include "data_types.h"
+#include "config/constants.h"
+#include "config/settings.h"
+#include "config/time_utils.h"
+#include "app/data_types.h"
+#include "app/state_machine.h"
+#include "app/epaper_monitor.h"
+#include "hardware/button_manager.h"
+#include "hardware/epaper_display.h"
+#include "hardware/sensor_manager.h"
+#include "network/wifi_manager.h"
+#include "network/mqtt_manager.h"
+#include "logging/logger.h"
 
 static const char* TAG = "Main";
 

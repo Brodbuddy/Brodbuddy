@@ -34,11 +34,13 @@ namespace TimeUtils {
 namespace TimeConstants {
     using namespace std::chrono_literals;
 
+    // WiFI
     constexpr auto WIFI_CONNECTION_TIMEOUT = 10s;
     constexpr auto WIFI_RETRY_DELAY = 1s;
     constexpr auto WIFI_AP_MODE_TIMEOUT = 5min;
     constexpr auto WIFI_STABILIZATION_DELAY = 1s;
     constexpr auto WIFI_RESTART_DELAY = 500ms;
+    constexpr auto WIFI_CHECK_INTERVAL = 10s;
 
     constexpr auto MQTT_RETRY_DELAY = 5s;
     constexpr auto ERROR_STATE_DELAY = 5s;
@@ -48,9 +50,16 @@ namespace TimeConstants {
     constexpr auto BUTTON_SHORT_PRESS = 1s;
     constexpr auto BUTTON_LED_BLINK = 50ms;
 
+
+    // LED blink intervaller
+    constexpr auto LED_BLINK_FAST = 100ms;
+    constexpr auto LED_BLINK_NORMAL = 500ms;
+    constexpr auto LED_BLINK_SLOW = 1s;
+
+    // MQTT
     constexpr auto MQTT_KEEP_ALIVE = 60s;
     constexpr auto MQTT_SOCKET_TIMEOUT_DURATION = 30s;
-    
+
     // Sensor
     constexpr auto VL53L0X_TIMEOUT = 500ms;
     constexpr auto VL53L0X_TIMING_BUDGET = 200ms;
@@ -59,7 +68,7 @@ namespace TimeConstants {
     constexpr auto I2C_INIT_DELAY = 50ms;
     constexpr auto XSHUT_RESET_DELAY = 100ms;
     constexpr auto SENSOR_SAMPLE_INTERVAL = 1s;
-    
+
     // E-paper display
     constexpr auto EPAPER_RESET_HIGH_DELAY = 200ms;
     constexpr auto EPAPER_RESET_LOW_DELAY = 500ms;
