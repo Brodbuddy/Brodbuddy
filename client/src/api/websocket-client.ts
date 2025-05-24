@@ -59,28 +59,30 @@ export interface BaseBroadcast {
 
 // Message interfaces
 export interface Ping extends BaseMessage {
-    Timestamp: number;
+    timestamp: number;
 }
 
 export interface Pong extends BaseMessage {
-    Timestamp: number;
-    ServerTimestamp: number;
+    timestamp: number;
+    serverTimestamp: number;
 }
 
 export interface SubscribeToSourdoughData extends BaseMessage {
-    UserId: string;
+    userId: string;
 }
 
 export interface SourdoughDataSubscribed extends BaseMessage {
-    UserId: string;
-    ConnectionId: string;
+    userId: string;
+    connectionId: string;
 }
 
 export interface SourdoughReading extends BaseBroadcast {
-    RisePercent: number;
-    TemperatureCelsius: number;
-    HumidityPercent: number;
-    Timestamp: string;
+    rise: number;
+    temperature: number;
+    humidity: number;
+    epochTime: number;
+    timestamp: string;
+    localTime: string;
 }
 
 // Request-response type mapping

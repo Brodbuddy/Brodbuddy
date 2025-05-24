@@ -4,7 +4,7 @@ public static class MqttTopics
 {
     public static class Analyzer 
     {
-        public static string Telemetry(Guid deviceId) => $"analyzers/{deviceId}/telemetry";
+        public static string Telemetry(Guid deviceId) => $"analyzer/{deviceId}/telemetry";
     }
     
     public static class Patterns

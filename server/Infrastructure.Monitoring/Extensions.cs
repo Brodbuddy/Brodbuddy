@@ -65,8 +65,7 @@ public static class MonitoringExtensions
                     .AddHttpClientInstrumentation(options => options.RecordException = true)
                     .AddEntityFrameworkCoreInstrumentation(options =>
                     {
-                        options.SetDbStatementForText =
-                            environment.IsDevelopment(); // Log kun SQL i development for debug
+                        options.SetDbStatementForText = environment.IsDevelopment(); // Log kun SQL i development for debug
                     });
 
                 // builder.AddConsoleExporter(); // Til lokal udvikling 

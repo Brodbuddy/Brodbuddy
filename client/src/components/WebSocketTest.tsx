@@ -12,7 +12,8 @@ export function WebSocketTest() {
         if (!client) return;
         
         const unsubscribe = client.on(Broadcasts.sourdoughReading, (payload: any) => {
-            setReadings(prev => [...prev, `Temperature: ${payload.temperatureCelsius}`]);
+            console.log(payload);
+            setReadings(prev => [...prev, `Temperature: ${payload.Temperature}`]);
         });
         
         return () => unsubscribe();
@@ -21,9 +22,9 @@ export function WebSocketTest() {
     const handleTelemetrySubscribe = async () => {
         try {
             const result = await client.send.sourdoughData({
-                UserId: '38915d56-2322-4a6b-8506-a1831535e62b'
+                userId: '38915d56-2322-4a6b-8506-a1831535e62b'
             });
-            setTelemetryResult(`Connected: ${result.ConnectionId} for User: ${result.UserId}`);
+            setTelemetryResult(`Connected: ${result.connectionId} for User: ${result.userId}`);
         } catch (err) {
             setTelemetryResult(`Telemetry error: ${JSON.stringify(err)}`);
         }
@@ -32,9 +33,9 @@ export function WebSocketTest() {
     const handlePing = async () => {
         try {
             const result = await client.send.ping({
-                Timestamp: Date.now()
+                timestamp: Date.now()
             });
-            const latency = Date.now() - result.Timestamp;
+            const latency = Date.now() - result.timestamp;
             setPingResult(`Pong received! Latency: ${latency}ms`);
         } catch (err) {
             setPingResult(`Ping error: ${JSON.stringify(err)}`);

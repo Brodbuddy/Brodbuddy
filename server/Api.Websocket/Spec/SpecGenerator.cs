@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json.Serialization;
 using Application.Models;
 using Brodbuddy.WebSocket.Core;
 using Core.Interfaces;
@@ -116,7 +117,7 @@ public static class SpecGenerator
     internal static TypeDefinition GenerateTypeDefinition(Type type)
     {
         var properties = type.GetProperties().ToDictionary(
-            p => p.Name,
+            p => GetJsonPropertyName(p),
             p => new PropertyDefinition(
                 Type: GetTypeScriptType(p.PropertyType),
                 IsRequired: !IsNullableType(p.PropertyType)
@@ -244,6 +245,12 @@ public static class SpecGenerator
     private static bool IsNullableType(Type type)
     {
         return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
+    }
+    
+    private static string GetJsonPropertyName(PropertyInfo property)
+    {
+        var jsonPropertyAttribute = property.GetCustomAttribute<JsonPropertyNameAttribute>();
+        return jsonPropertyAttribute != null ? jsonPropertyAttribute.Name : ToCamelCase(property.Name);
     }
     
     private static string ToCamelCase(string str) => char.ToLowerInvariant(str[0]) + str[1..];
