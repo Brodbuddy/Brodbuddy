@@ -25,11 +25,10 @@ public class SourdoughTelemetryService : ISourdoughTelemetryService
     public async Task ProcessSourdoughReadingAsync(Guid analyzerId, SourdoughReading reading)
     {
         var ownerId = await _analyzerRepository.GetOwnersUserIdAsync(analyzerId);
-        
+
         if (ownerId.HasValue)
         {
             await _userNotifier.NotifySourdoughReadingAsync(ownerId.Value, reading);
         }
-        
     }
 }
