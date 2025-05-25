@@ -15,8 +15,8 @@ public class SourdoughTelemetryService : ISourdoughTelemetryService
     private readonly IUserNotifier _userNotifier;
     private readonly ISourdoughAnalyzerRepository _analyzerRepository;
    
-
-    public SourdoughTelemetryService(IUserNotifier userNotifier, ISourdoughAnalyzerRepository analyzerRepository)
+    public SourdoughTelemetryService( IUserNotifier userNotifier, 
+        ISourdoughAnalyzerRepository analyzerRepository)
     {  
         _analyzerRepository = analyzerRepository;
         _userNotifier = userNotifier;
@@ -25,9 +25,8 @@ public class SourdoughTelemetryService : ISourdoughTelemetryService
     public async Task ProcessSourdoughReadingAsync(Guid analyzerId, SourdoughReading reading)
     {
         var ownerId = await _analyzerRepository.GetOwnersUserIdAsync(analyzerId);
-
         if (ownerId.HasValue)
-        {
+        { 
             await _userNotifier.NotifySourdoughReadingAsync(ownerId.Value, reading);
         }
     }
