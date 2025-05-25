@@ -29,10 +29,22 @@ public class MailHogClient : IDisposable
 
     private async Task<string?> TryGetVerificationCodeAsync(string email)
     {
-        var response = await _httpClient.GetAsync($"{_mailhogBaseUrl}/api/v2/messages");
-        response.EnsureSuccessStatusCode();
+        var apiUrl = $"{_mailhogBaseUrl}/api/v2/messages";
+        var response = await _httpClient.GetAsync(apiUrl);
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            throw new InvalidOperationException($"MailHog API returned {response.StatusCode}. URL: {apiUrl}. Content: {content}");
+        }
         
         var json = await response.Content.ReadAsStringAsync();
+        
+        if (json.TrimStart().StartsWith("<"))
+        {
+            throw new InvalidOperationException($"MailHog API returned HTML instead of JSON. This usually means the URL is incorrect. URL: {apiUrl}");
+        }
+        
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var messages = JsonSerializer.Deserialize<MailHogResponse>(json, options);
         
