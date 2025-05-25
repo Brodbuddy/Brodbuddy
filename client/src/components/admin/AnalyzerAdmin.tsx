@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Loader2, Check } from 'lucide-react';
+import { Plus, Loader2, Check, Copy } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -47,6 +47,15 @@ export function AnalyzerAdmin() {
         const cleaned = value.replace(/[^A-F0-9]/gi, '').toUpperCase();
         const chunks = cleaned.match(/.{1,2}/g) || [];
         return chunks.slice(0, 6).join(':');
+    };
+
+    const copyToClipboard = async (text: string, label: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.success(`${label} copied to clipboard!`);
+        } catch {
+            toast.error('Failed to copy to clipboard');
+        }
     };
 
     const fetchAnalyzers = async () => {
@@ -200,15 +209,32 @@ export function AnalyzerAdmin() {
                                 <div className="space-y-4">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
+                                            <div className="flex items-center gap-3 mb-2 flex-wrap">
                                                 <h3 className="text-lg font-semibold">{analyzer.name}</h3>
-                                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                                    analyzer.isActivated 
-                                                        ? 'bg-green-100 text-green-800 dark:bg-slate-800 dark:text-green-400' 
-                                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400'
-                                                }`}>
-                                                    {analyzer.isActivated ? 'Activated' : 'Not Activated'}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                        analyzer.isActivated
+                                                            ? 'bg-green-100 text-green-800 dark:bg-slate-800 dark:text-green-400'
+                                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400'
+                                                    }`}>
+                                                        {analyzer.isActivated ? 'Activated' : 'Not Activated'}
+                                                    </span>
+                                                    {analyzer.activationCode && !analyzer.isActivated && (
+                                                        <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border">
+                                                            <span className="text-xs font-mono text-blue-700 dark:text-blue-300">
+                                                                {analyzer.activationCode}
+                                                            </span>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-4 w-4 p-0 hover:bg-blue-100 dark:hover:bg-blue-800/30"
+                                                                onClick={() => copyToClipboard(analyzer.activationCode!, 'Activation code')}
+                                                            >
+                                                                <Copy className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

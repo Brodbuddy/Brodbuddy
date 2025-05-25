@@ -56,6 +56,7 @@ export interface AdminAnalyzerListResponse {
   lastSeen: string | null;
   /** @format date-time */
   createdAt: string;
+  activationCode: string;
 }
 
 export interface CreateAnalyzerResponse {

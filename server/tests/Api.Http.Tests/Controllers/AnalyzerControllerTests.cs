@@ -263,6 +263,7 @@ public class AnalyzerControllerTests
             firstResponse.ActivatedAt.ShouldBe(analyzers[0].ActivatedAt);
             firstResponse.LastSeen.ShouldBe(analyzers[0].LastSeen);
             firstResponse.CreatedAt.ShouldBe(analyzers[0].CreatedAt);
+            firstResponse.ActivationCode.ShouldBe(analyzers[0].ActivationCode);
 
             // Verificer anden analyzer
             var secondResponse = responseList[1];
@@ -274,6 +275,7 @@ public class AnalyzerControllerTests
             secondResponse.ActivatedAt.ShouldBeNull(); 
             secondResponse.LastSeen.ShouldBeNull();  
             secondResponse.CreatedAt.ShouldBe(analyzers[1].CreatedAt);
+            secondResponse.ActivationCode.ShouldBe(analyzers[1].ActivationCode);
         }
     }
 
