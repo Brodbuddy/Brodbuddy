@@ -51,7 +51,7 @@ jobs:
     name: Build backend Docker image
     runs-on: ubuntu-latest
     if: success() # && (github.ref == 'refs/heads/master')
-    # needs: [ aggregate-mutation-results, continuous-integration ]
+   #  needs: [ aggregate-mutation-results, continuous-integration ]
     permissions:
       contents: read
       packages: write
@@ -95,7 +95,7 @@ jobs:
     name: Build frontend Docker image
     runs-on: ubuntu-latest
     if: success() # && (github.ref == 'refs/heads/master')
-    # needs: [ aggregate-mutation-results, continuous-integration ]
+   #  needs: [ aggregate-mutation-results, continuous-integration ]
     permissions:
       contents: read
       packages: write
@@ -132,10 +132,188 @@ jobs:
           
           echo "client_image_ci_tag=ghcr.io/${REPO_NAME}-frontend:${TAG}" >> $GITHUB_OUTPUT
 
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [ build-iot-firmware, build-backend-image, build-frontend-image ]
+    if: success() # && (github.ref == 'refs/heads/master')
+    environment:
+      name: staging
+      url: http://${{ vars.DOMAIN_NAME }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        id: create-dotenv
+        run: |
+          echo "Creating .env file..."
+          cat > .env << EOL
+          # --- Frontend environment variables ---
+          VITE_HTTP_URL=${{ vars.VITE_HTTP_URL }}
+          VITE_WS_URL=${{ vars.VITE_WS_URL }}
+          # --- General App Settings ---
+          APPOPTIONS__ENVIRONMENT=${{ vars.APPOPTIONS__ENVIRONMENT }}
+          APPOPTIONS__PUBLICPORT=${{ vars.APPOPTIONS__PUBLICPORT }}
+          # --- HTTP ---
+          APPOPTIONS__HTTP__PORT=${{ vars.APPOPTIONS__HTTP__PORT }}
+          # --- Websocket ---
+          APPOPTIONS__WEBSOCKET__PORT=${{ vars.APPOPTIONS__WEBSOCKET__PORT }}
+          # --- CORS ---
+          APPOPTIONS__CORS__ALLOWEDORIGINS__0=${{ vars.APPOPTIONS__CORS__ALLOWEDORIGINS__0 }}
+          APPOPTIONS__CORS__ALLOWEDORIGINS__1=${{ vars.APPOPTIONS__CORS__ALLOWEDORIGINS__1 }}
+          # --- Email ---
+          APPOPTIONS__EMAIL__HOST=${{ vars.APPOPTIONS__EMAIL__HOST }}
+          APPOPTIONS__EMAIL__PORT=${{ vars.APPOPTIONS__EMAIL__PORT }}
+          APPOPTIONS__EMAIL__SENDER=${{ vars.APPOPTIONS__EMAIL__SENDER }}
+          APPOPTIONS__EMAIL__FROMEMAIL=${{ vars.APPOPTIONS__EMAIL__FROMEMAIL }}
+          APPOPTIONS__EMAIL__SENDGRIDAPIKEY=${{ secrets.SENDGRID_API_KEY }}
+          # --- Postgres ---
+          APPOPTIONS__POSTGRES__HOST=${{ vars.APPOPTIONS__POSTGRES__HOST }}
+          APPOPTIONS__POSTGRES__PORT=${{ vars.APPOPTIONS__POSTGRES__PORT }}
+          APPOPTIONS__POSTGRES__DATABASE=${{ vars.APPOPTIONS__POSTGRES__DATABASE }}
+          APPOPTIONS__POSTGRES__USERNAME=${{ secrets.APPOPTIONS__POSTGRES__USERNAME }}
+          APPOPTIONS__POSTGRES__PASSWORD=${{ secrets.APPOPTIONS__POSTGRES__PASSWORD }}
+          # --- Dragonfly ---
+          APPOPTIONS__DRAGONFLY__HOST=${{ vars.APPOPTIONS__DRAGONFLY__HOST }}
+          APPOPTIONS__DRAGONFLY__PORT=${{ vars.APPOPTIONS__DRAGONFLY__PORT }}
+          APPOPTIONS__DRAGONFLY__ALLOWADMIN=${{ vars.APPOPTIONS__DRAGONFLY__ALLOWADMIN }}
+          APPOPTIONS__DRAGONFLY__ABORTONCONNECTFAIL=${{ vars.APPOPTIONS__DRAGONFLY__ABORTONCONNECTFAIL }}
+          # --- MQTT ---
+          APPOPTIONS__MQTT__HOST=${{ vars.APPOPTIONS__MQTT__HOST }}
+          APPOPTIONS__MQTT__MQTTPORT=${{ vars.APPOPTIONS__MQTT__MQTTPORT }}
+          APPOPTIONS__MQTT__WEBSOCKETPORT=${{ vars.APPOPTIONS__MQTT__WEBSOCKETPORT }}
+          APPOPTIONS__MQTT__USERNAME=${{ secrets.APPOPTIONS__MQTT__USERNAME }}
+          APPOPTIONS__MQTT__PASSWORD=${{ secrets.APPOPTIONS__MQTT__PASSWORD }}
+          # --- JWT ---
+          APPOPTIONS__JWT__SECRET=${{ secrets.APPOPTIONS__JWT__SECRET }}
+          APPOPTIONS__JWT__EXPIRATIONMINUTES=${{ vars.APPOPTIONS__JWT__EXPIRATIONMINUTES }}
+          APPOPTIONS__JWT__ISSUER=${{ vars.APPOPTIONS__JWT__ISSUER }}
+          APPOPTIONS__JWT__AUDIENCE=${{ vars.APPOPTIONS__JWT__AUDIENCE }}
+          # --- Seq ---
+          APPOPTIONS__SEQ__SERVERURL=${{ vars.APPOPTIONS__SEQ__SERVERURL }}
+          APPOPTIONS__SEQ__APIKEY=${{ secrets.APPOPTIONS__SEQ__APIKEY }}
+          # --- Zipkin --
+          APPOPTIONS__ZIPKIN__ENDPOINT=${{ vars.APPOPTIONS__ZIPKIN__ENDPOINT }}
+          EOL
+          # --- Image Tags ---
+          echo "SERVER_IMAGE_TAG=\"${{ needs.build-backend-image.outputs.server_image_ci_tag }}\"" >> .env
+          echo "CLIENT_IMAGE_TAG=\"${{ needs.build-frontend-image.outputs.client_image_ci_tag }}\"" >> .env
+
+      - name: Create Nginx .env file
+        id: create-dotenv-nginx
+        run: |
+          cat > .env_nginx << EOL
+          SERVER_NAME=${{ vars.DOMAIN_NAME }}
+          API_SERVER_NAME=${{ vars.API_SERVER_NAME }} 
+          SSL_CERT_PATH=/etc/ssl/certs/nginx-selfsigned.crt
+          SSL_KEY_PATH=/etc/ssl/private/nginx-selfsigned.key 
+          EOL
+
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ vars.SERVER_IP }}
+          username: ${{ vars.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "docker-compose.yml,.env,.env_nginx,deploy/nginx/nginx.template.conf,db/migrations/**"
+          target: ${{ vars.APP_DIR }}
+
+      - name: Prepare server
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ vars.SERVER_IP }}
+          username: ${{ vars.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            APP_DIR="${{ vars.APP_DIR }}"
+            NGINX_CONFIG_VOL_PATH="${{ vars.NGINX_CONFIG_VOL_PATH }}"
+            NGINX_CONTAINER_NAME="${{ vars.NGINX_CONTAINER_NAME }}"
+            
+            cd $APP_DIR
+            set -a; source .env_nginx; set +a
+            envsubst '${SERVER_NAME} ${API_SERVER_NAME}' < ./deploy/nginx/nginx.template.conf > ./nginx.staging.conf
+            mkdir -p $NGINX_CONFIG_VOL_PATH
+            cp ./nginx.staging.conf $NGINX_CONFIG_VOL_PATH/default.conf
+            
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ vars.GHCR_USERNAME }} --password-stdin
+            docker compose --env-file .env --profile staging pull
+            docker compose --profile staging up -d --remove-orphans
+            
+            echo "Waiting briefly before reloading Nginx..."
+            sleep 5
+            docker compose exec $NGINX_CONTAINER_NAME nginx -s reload
+
+  e2e-tests:
+    name: Run E2E tests
+    runs-on: ubuntu-latest
+    needs: [ deploy-staging ]
+    if: success() && (github.ref == 'refs/heads/master')
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        browser: [ chromium, firefox, webkit ]
+      fail-fast: false
+    env:
+      E2E_TEST_DIR: PlaywrightTests
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          cache: true
+          cache-dependency-path: ${{ env.E2E_TEST_DIR }}/packages.lock.json
+
+      - name: Restore dependencies
+        run: |
+          cd ${{ env.E2E_TEST_DIR }}
+          dotnet restore
+
+      - name: Build project
+        run: |
+          cd ${{ env.E2E_TEST_DIR }}
+          dotnet build --no-restore
+
+      - name: Install Playwright browsers
+        run: |
+          cd ${{ env.E2E_TEST_DIR }}
+          pwsh bin/Debug/net8.0/playwright.ps1 install --with-deps ${{ matrix.browser }}
+
+      - name: Run Playwright tests
+        run: |
+          cd ${{ env.E2E_TEST_DIR }}
+          mkdir -p TestResults
+          dotnet test \
+            --logger "trx;LogFileName=TestResults-${{ matrix.browser }}.trx" \
+            --logger "html;LogFileName=TestResults-${{ matrix.browser }}.html" \
+            --results-directory "./TestResults"
+        env:
+          PLAYWRIGHT_TEST_BASE_URL: https://${{ vars.STAGING_DOMAIN_NAME }}
+          BROWSER: ${{ matrix.browser }}
+
+      - name: Generate test summary
+        if: always()
+        run: |
+          cd ${{ env.E2E_TEST_DIR }}
+          chmod +x ../.github/scripts/generate_test_summary.py
+          python ../.github/scripts/generate_test_summary.py
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.browser }}-${{ github.sha }}
+          path: ${{ env.E2E_TEST_DIR }}/TestResults
+          retention-days: 30
+
   deploy-production:
     name: Deploy to Production 
     runs-on: ubuntu-latest
-    needs: [ build-iot-firmware, build-backend-image, build-frontend-image ]
+    needs: [ e2e-tests, build-iot-firmware, build-backend-image, build-frontend-image ]
     if: success() # && (github.ref == 'refs/heads/master')
     environment:
       name: production 
@@ -153,6 +331,7 @@ jobs:
           VITE_HTTP_URL=${{ vars.VITE_HTTP_URL }}
           VITE_WS_URL=${{ vars.VITE_WS_URL }}
           # --- General App Settings ---
+          APPOPTIONS__ENVIRONMENT=${{ vars.APPOPTIONS__ENVIRONMENT }}
           APPOPTIONS__PUBLICPORT=${{ vars.APPOPTIONS__PUBLICPORT }}
           # --- HTTP ---
           APPOPTIONS__HTTP__PORT=${{ vars.APPOPTIONS__HTTP__PORT }}
