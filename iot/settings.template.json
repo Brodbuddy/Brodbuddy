@@ -1,0 +1,21 @@
+{
+  "analyzerId": "${ANALYZER_ID}",
+  "mqtt": {
+    "server": "${MQTT_SERVER}",
+    "port": 1883,
+    "user": "${MQTT_USER}",
+    "password": "${MQTT_PASSWORD}"
+  },
+  "sensor": {
+    "intervalSeconds": 45
+  },
+  "display": {
+    "intervalSeconds": 300
+  },
+  "calibration": {
+    "tempOffsetCelsius": -1.7,
+    "humOffset": 7.3,
+    "containerHeightMillis": 200
+  },
+  "lowPowerMode": false
+}

@@ -58,7 +58,7 @@ void setup() {
         return;
     }
 
-    display.begin();
+    // display.begin();
     SourdoughData data = monitor.generateMockData();
     monitor.updateDisplay(data);
 
@@ -68,6 +68,7 @@ void setup() {
 
     sensorManager.setCalibration(settings.getTempOffset(), settings.getHumOffset());
     sensorManager.setReadInterval(TimeUtils::to_ms(std::chrono::seconds(settings.getSensorInterval())));
+    LOG_I(TAG, "Sensor interval configured: %d seconds", settings.getSensorInterval());
 
     buttonManager.begin();
     if (buttonManager.isStartupResetPressed()) {
@@ -198,6 +199,18 @@ void handleStateConnectingMqtt() {
 }
 
 void handleStateSensing() {
+    static unsigned long lastSensingTime = 0;
+    unsigned long currentTime = millis();
+    
+    if (lastSensingTime > 0) {
+        unsigned long timeSinceLastSensing = currentTime - lastSensingTime;
+        LOG_D(TAG, "New sensing cycle started - time since last: %lums (%.1fs), current_time=%s", 
+              timeSinceLastSensing, timeSinceLastSensing / 1000.0, timeManager.getLocalTimeString().c_str());
+    } else {
+        LOG_D(TAG, "First sensing cycle started - current_time=%s", timeManager.getLocalTimeString().c_str());
+    }
+    lastSensingTime = currentTime;
+    
     if (sensorManager.shouldRead()) {
         LOG_I(TAG, "Collecting sensor samples...");
         if (sensorManager.collectMultipleSamples()) {
@@ -260,6 +273,9 @@ void handleStateSleep() {
         stateMachine.transitionTo(STATE_CONNECTING_WIFI);
     } else {
         if (stateMachine.shouldTransition(TimeUtils::to_ms(std::chrono::seconds(settings.getSensorInterval())))) {
+            unsigned long timeInState = stateMachine.timeInCurrentState();
+            LOG_D(TAG, "State cycle timer: interval=%ds, time_in_state=%lums, current_time=%s", 
+                  settings.getSensorInterval(), timeInState, timeManager.getLocalTimeString().c_str());
             stateMachine.transitionTo(STATE_SENSING);
         }
     }
