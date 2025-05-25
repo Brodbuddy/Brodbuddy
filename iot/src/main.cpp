@@ -389,12 +389,51 @@ void handleStateOtaUpdate() {
         return;
     }
     
+    static uint8_t lastDisplayedProgress = 255;
+    uint8_t currentProgress = otaManager.getProgress();
+    
+    if (lastDisplayedProgress == 255 || 
+        (currentProgress - lastDisplayedProgress >= 10) || 
+        currentProgress == 100) {
+        
+        display.fillScreen(DisplayConstants::COLOR_WHITE);
+        display.setTextColor(DisplayConstants::COLOR_BLACK);
+        display.setTextSize(2);
+        
+        display.setCursor(10, 30);
+        display.print("OTA Update");
+        
+        display.setCursor(10, 60);
+        display.print("Progress: ");
+        display.print(currentProgress);
+        display.print("%");
+        
+        display.drawRect(10, 80, 276, 20, DisplayConstants::COLOR_BLACK);
+        display.fillRect(10, 80, (276 * currentProgress) / 100, 20, DisplayConstants::COLOR_BLACK);
+        
+        display.updateDisplay();
+        lastDisplayedProgress = currentProgress;
+    }
+    
     auto status = otaManager.getStatus();
     if (status == OtaManager::OtaStatus::ERROR) {
         LOG_E(TAG, "OTA error occurred, returning to normal operation");
+        display.fillScreen(DisplayConstants::COLOR_WHITE);
+        display.setTextColor(DisplayConstants::COLOR_RED);
+        display.setCursor(10, 150);
+        display.print("OTA Failed!");
+        display.updateDisplay();
+        TimeUtils::delay_for(std::chrono::seconds(3));
         stateMachine.transitionTo(STATE_SENSING);
     } else if (status == OtaManager::OtaStatus::COMPLETE) {
         LOG_I(TAG, "OTA complete, device will reboot");
+        display.fillScreen(DisplayConstants::COLOR_WHITE);
+        display.setTextColor(DisplayConstants::COLOR_BLACK);
+        display.setCursor(10, 150);
+        display.print("Update Complete!");
+        display.setCursor(10, 180);
+        display.print("Rebooting...");
+        display.updateDisplay();
     }
 }
 
