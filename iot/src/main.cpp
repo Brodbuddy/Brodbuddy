@@ -18,6 +18,7 @@
 #include "network/mqtt_topics.h"
 #include "network/time_manager.h"
 #include "network/mqtt_protocol.h"
+#include "network/ota_manager.h"
 #include "logging/logger.h"
 
 static const char* TAG = "Main";
@@ -33,6 +34,7 @@ Settings settings;
 EpaperDisplay display;
 EpaperMonitor monitor(display);
 SourdoughData historicalData = {};
+OtaManager otaManager;
 
 unsigned long lastStateCheck = 0;
 bool needsOtaValidation = false;
@@ -47,8 +49,11 @@ void handleStateUpdatingDisplay();
 void handleStatePublishingData();
 void handleStateSleep();
 void handleStateError();
+void handleStateOtaUpdate();
 void handleDiagnosticsRequest(char* topic, byte* payload, unsigned int length);
 void setupDiagnosticsHandler();
+void handleOtaMessage(char* topic, byte* payload, unsigned int length);
+void setupOtaHandler();
 void validateBootAfterOta();
 
 void validateBootAfterOta() {
@@ -164,6 +169,9 @@ void handleCurrentState() {
         case STATE_SLEEP:
             handleStateSleep();
             break;
+        case STATE_OTA_UPDATE:
+            handleStateOtaUpdate();
+            break;
         case STATE_ERROR:
             handleStateError();
             break;
@@ -222,6 +230,7 @@ void handleStateConnectingMqtt() {
             }
             
             setupDiagnosticsHandler();
+            setupOtaHandler();
             stateMachine.transitionTo(STATE_SENSING);
         } else {
             LOG_E(TAG, "MQTT connection failed, retrying in 5 seconds");
@@ -370,5 +379,108 @@ void handleDiagnosticsRequest(char* topic, byte* payload, unsigned int length) {
         LOG_I(TAG, "Diagnostics response sent");
     } else {
         LOG_E(TAG, "Failed to send diagnostics response");
+    }
+}
+
+void handleStateOtaUpdate() {
+    if (!otaManager.isInProgress()) {
+        LOG_W(TAG, "OTA state active but no update in progress, returning to normal operation");
+        stateMachine.transitionTo(STATE_SENSING);
+        return;
+    }
+    
+    auto status = otaManager.getStatus();
+    if (status == OtaManager::OtaStatus::ERROR) {
+        LOG_E(TAG, "OTA error occurred, returning to normal operation");
+        stateMachine.transitionTo(STATE_SENSING);
+    } else if (status == OtaManager::OtaStatus::COMPLETE) {
+        LOG_I(TAG, "OTA complete, device will reboot");
+    }
+}
+
+void setupOtaHandler() {
+    if (!mqttTopics) {
+        LOG_E(TAG, "Cannot setup OTA - topics not initialized");
+        return;
+    }
+    
+    otaManager.begin();
+    
+    otaManager.setBatteryCheckCallback([]() {
+        return true;
+    });
+    
+    mqttManager.setCallback(handleOtaMessage);
+    
+    if (mqttManager.subscribe(mqttTopics->getOtaStartTopic().c_str())) {
+        LOG_I(TAG, "Subscribed to OTA start topic: %s", 
+              mqttTopics->getOtaStartTopic().c_str());
+    }
+    
+    if (mqttManager.subscribe(mqttTopics->getOtaChunkTopic().c_str())) {
+        LOG_I(TAG, "Subscribed to OTA chunk topic: %s", 
+              mqttTopics->getOtaChunkTopic().c_str());
+    }
+}
+
+void handleOtaMessage(char* topic, byte* payload, unsigned int length) {
+    if (!mqttTopics) return;
+    
+    String topicStr(topic);
+    
+    if (topicStr == mqttTopics->getOtaStartTopic()) {
+        LOG_I(TAG, "Received OTA start command");
+        
+        DynamicJsonDocument doc(256);
+        DeserializationError error = deserializeJson(doc, payload, length);
+        
+        if (error) {
+            LOG_E(TAG, "Failed to parse OTA start message: %s", error.c_str());
+            return;
+        }
+        
+        OtaManager::OtaInfo info;
+        info.version = doc[MqttProtocol::OtaFields::VERSION].as<String>();
+        info.size = doc[MqttProtocol::OtaFields::SIZE];
+        info.crc32 = doc[MqttProtocol::OtaFields::CRC32];
+        
+        if (otaManager.startUpdate(info)) {
+            stateMachine.transitionTo(STATE_OTA_UPDATE);
+            
+            DynamicJsonDocument statusDoc(128);
+            statusDoc[MqttProtocol::OtaFields::STATUS] = MqttProtocol::OtaFields::StatusValues::STARTED;
+            statusDoc[MqttProtocol::OtaFields::VERSION] = info.version;
+            mqttManager.publish(mqttTopics->getOtaStatusTopic().c_str(), statusDoc);
+        } else {
+            DynamicJsonDocument statusDoc(128);
+            statusDoc[MqttProtocol::OtaFields::STATUS] = MqttProtocol::OtaFields::StatusValues::ERROR;
+            statusDoc[MqttProtocol::OtaFields::MESSAGE] = "Failed to start OTA";
+            mqttManager.publish(mqttTopics->getOtaStatusTopic().c_str(), statusDoc);
+        }
+    }
+    else if (topicStr == mqttTopics->getOtaChunkTopic()) {
+        if (length < 8) {
+            LOG_E(TAG, "Invalid OTA chunk - too small");
+            return;
+        }
+        
+        uint32_t chunkIndex, chunkSize;
+        memcpy(&chunkIndex, payload, 4);
+        memcpy(&chunkSize, payload + 4, 4);
+        
+        const uint8_t* data = payload + 8;
+        size_t dataLength = length - 8;
+        
+        if (!otaManager.processChunk(data, dataLength, chunkIndex, chunkSize)) {
+            LOG_E(TAG, "Failed to process OTA chunk %d", chunkIndex);
+            stateMachine.transitionTo(STATE_SENSING);
+        }
+        
+        if (chunkIndex % 10 == 0) {
+            DynamicJsonDocument statusDoc(128);
+            statusDoc[MqttProtocol::OtaFields::STATUS] = MqttProtocol::OtaFields::StatusValues::DOWNLOADING;
+            statusDoc[MqttProtocol::OtaFields::PROGRESS] = otaManager.getProgress();
+            mqttManager.publish(mqttTopics->getOtaStatusTopic().c_str(), statusDoc);
+        }
     }
 }
