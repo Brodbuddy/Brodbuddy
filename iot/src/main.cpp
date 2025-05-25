@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <WiFi.h>
+#include <Update.h>
+#include "esp_ota_ops.h"
 
 #include "config/constants.h"
 #include "config/settings.h"
@@ -33,6 +35,7 @@ EpaperMonitor monitor(display);
 SourdoughData historicalData = {};
 
 unsigned long lastStateCheck = 0;
+bool needsOtaValidation = false;
 
 void handleButtonEvents();
 void handleCurrentState();
@@ -46,12 +49,30 @@ void handleStateSleep();
 void handleStateError();
 void handleDiagnosticsRequest(char* topic, byte* payload, unsigned int length);
 void setupDiagnosticsHandler();
+void validateBootAfterOta();
+
+void validateBootAfterOta() {
+    const esp_partition_t* runningPartition = esp_ota_get_running_partition();
+    esp_ota_img_states_t otaState;
+    
+    if (esp_ota_get_state_partition(runningPartition, &otaState) == ESP_OK) {
+        if (otaState == ESP_OTA_IMG_PENDING_VERIFY) {
+            LOG_I(TAG, "First boot after OTA update, validation pending...");
+            LOG_I(TAG, "Running from partition: %s", runningPartition->label);
+            needsOtaValidation = true;
+        } else {
+            LOG_D(TAG, "Normal boot from partition: %s", runningPartition->label);
+        }
+    }
+}
 
 void setup() {
     Serial.begin(115200);
     Logger::begin(LOG_DEBUG, true);
 
     LOG_I(TAG, "--- Sourdough analyzer startup monitoring ---");
+    
+    validateBootAfterOta();
 
     if (!settings.begin()) {
         LOG_E(TAG, "Failed to initialize settings");
@@ -193,6 +214,13 @@ void handleStateConnectingMqtt() {
 
         if (mqttManager.begin(server.c_str(), port, user.c_str(), password.c_str(), analyzerId.c_str())) {
             LOG_I(TAG, "MQTT connection established");
+            
+            if (needsOtaValidation) {
+                LOG_I(TAG, "Marking OTA update as valid");
+                esp_ota_mark_app_valid_cancel_rollback();
+                needsOtaValidation = false;
+            }
+            
             setupDiagnosticsHandler();
             stateMachine.transitionTo(STATE_SENSING);
         } else {
