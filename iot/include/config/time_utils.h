@@ -81,6 +81,9 @@ namespace TimeConstants {
     constexpr auto LONG_SLEEP_THRESHOLD = 1h;
     constexpr time_t MIN_VALID_EPOCH = 1609459200;   // 1 januar 2021
     constexpr time_t FALLBACK_EPOCH = 1704067200UL;  // 1 januar 2024
+
+    // Notifikation over Nfty
+    constexpr auto NOTIFICATION_COOLDOWN = 1h;
 }
 
 #endif

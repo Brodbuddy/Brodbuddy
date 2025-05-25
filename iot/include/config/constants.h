@@ -27,7 +27,7 @@ namespace Pins {
     constexpr int RESET_BUTTON = 13;
 
     // Time of Flight
-    constexpr int XSHUT = 34;
+    constexpr int XSHUT = 14;
 
     // I2C (BME280 og Time of Flight)
     constexpr int I2C_SDA = 25;

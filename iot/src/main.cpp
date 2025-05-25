@@ -17,6 +17,7 @@
 #include "network/time_manager.h"
 #include "network/mqtt_protocol.h"
 #include "logging/logger.h"
+#include "app/ntfy_manager.h"
 
 static const char* TAG = "Main";
 
@@ -30,6 +31,7 @@ ButtonManager buttonManager;
 Settings settings;
 EpaperDisplay display;
 EpaperMonitor monitor(display);
+NtfyManager* ntfyManager = nullptr;
 
 unsigned long lastStateCheck = 0;
 
@@ -80,6 +82,9 @@ void setup() {
     wifiManager.begin();
 
     stateMachine.transitionTo(STATE_CONNECTING_WIFI);
+
+    String analyzerId = settings.getAnalyzerId();
+    ntfyManager = new NtfyManager(analyzerId);
 }
 
 void loop() {
@@ -202,6 +207,10 @@ void handleStateSensing() {
         LOG_I(TAG, "Collecting sensor samples...");
         if (sensorManager.collectMultipleSamples()) {
             LOG_I(TAG, "Sensor reading complete");
+            if (ntfyManager) {
+                const SensorData& data = sensorManager.getCurrentData();
+                ntfyManager->checkRiseValue(data.currentRisePercent);
+            }
             stateMachine.transitionTo(STATE_UPDATING_DISPLAY);
         }
     }
