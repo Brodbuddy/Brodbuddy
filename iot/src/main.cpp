@@ -298,11 +298,23 @@ void handleStatePublishingData() {
         } else {
             LOG_E(TAG, "Failed to publish data");
         }
-        stateMachine.transitionTo(STATE_SLEEP);
+        
+        if (otaManager.isInProgress()) {
+            LOG_I(TAG, "OTA in progress, staying awake");
+            stateMachine.transitionTo(STATE_OTA_UPDATE);
+        } else {
+            stateMachine.transitionTo(STATE_SLEEP);
+        }
     }
 }
 
 void handleStateSleep() {
+    if (otaManager.isInProgress()) {
+        LOG_W(TAG, "OTA in progress, preventing sleep");
+        stateMachine.transitionTo(STATE_OTA_UPDATE);
+        return;
+    }
+    
     if (settings.getLowPowerMode()) {
         WiFi.disconnect(true);
         WiFi.mode(WIFI_OFF);
@@ -446,6 +458,9 @@ void setupOtaHandler() {
     otaManager.begin();
     
     otaManager.setBatteryCheckCallback([]() {
+        // TODO: Integrer med battery manager når det er implementeret
+        // Skal tjekke om batteriniveau er over sikker grænse (f.eks. 30%)
+        // Indtil videre tillader vi altid OTA
         return true;
     });
     
