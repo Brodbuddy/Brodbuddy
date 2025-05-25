@@ -121,16 +121,18 @@ bool SensorManager::collectMultipleSamples() {
 #ifdef SIMULATE_SENSORS
     _currentData.inTemp = _simTemp + (random(-10, 10) / 10.0f);
     _currentData.inHumidity = _simHum + (random(-20, 20) / 10.0f);
-    _currentData.distanceMillis = _simDistance + random(-5, 5);
-
-    if (_firstReading || _baselineDistance == 0) {
-        _baselineDistance = _currentData.distanceMillis;
-        _currentData.currentRisePercent = 0.0f;
-    } else {
-        int riseAmount = _baselineDistance - _currentData.distanceMillis;
-        _currentData.currentRisePercent = (float)riseAmount / (float)_baselineDistance * 100.0f;
-        _currentData.peakRisePercent = max(_currentData.peakRisePercent, _currentData.currentRisePercent);
-    }
+    
+    static int simTime = 0;
+    simTime++;
+    int simulatedGrowth = 100 + (simTime * 15) + random(-10, 10);
+    simulatedGrowth = min(simulatedGrowth, 400);
+    
+    _currentData.distanceMillis = _simDistance - (simulatedGrowth - 100);
+    _currentData.currentRisePercent = simulatedGrowth;
+    _currentData.peakRisePercent = max(_currentData.peakRisePercent, _currentData.currentRisePercent);
+    
+    LOG_D(TAG, "Simulated data: temp=%.1f, hum=%.1f, growth=%d%%", 
+          _currentData.inTemp, _currentData.inHumidity, simulatedGrowth);
 
     _firstReading = false;
     _lastReadTime = millis();
@@ -213,11 +215,13 @@ bool SensorManager::collectMultipleSamples() {
 
             if (_firstReading || _baselineDistance == 0) {
                 _baselineDistance = medianDist;
-                _currentData.currentRisePercent = 0.0f;
-                LOG_D(TAG, "Distance baseline set: %dmm", _baselineDistance);
+                _currentData.currentRisePercent = 100.0f;
+                _currentData.peakRisePercent = 100.0f;
+                LOG_D(TAG, "Distance baseline set: %dmm, starting at 100%%", _baselineDistance);
             } else {
                 int riseAmount = _baselineDistance - medianDist;
-                _currentData.currentRisePercent = (float)riseAmount / (float)_baselineDistance * 100.0f;
+                float risePercent = (float)riseAmount / (float)_baselineDistance * 100.0f;
+                _currentData.currentRisePercent = 100.0f + risePercent;
                 _currentData.peakRisePercent = max(_currentData.peakRisePercent, _currentData.currentRisePercent);
                 LOG_D(TAG, "Distance result: median=%dmm, rise=%.2f%%, peak=%.2f%%", medianDist,
                       _currentData.currentRisePercent, _currentData.peakRisePercent);

@@ -29,6 +29,10 @@ namespace TimeUtils {
     template <typename Rep, typename Period> inline int to_seconds(const duration<Rep, Period>& d) {
         return duration_cast<seconds>(d).count();
     }
+
+    template <typename Rep, typename Period> inline int to_minutes(const duration<Rep, Period>& d) {
+        return duration_cast<minutes>(d).count();
+    }
 }
 
 namespace TimeConstants {
@@ -56,6 +60,8 @@ namespace TimeConstants {
     constexpr auto LED_BLINK_NORMAL = 500ms;
     constexpr auto LED_BLINK_SLOW = 1s;
 
+    constexpr auto GRAPH_WINDOW = 10min;
+    
     // MQTT
     constexpr auto MQTT_KEEP_ALIVE = 60s;
     constexpr auto MQTT_SOCKET_TIMEOUT_DURATION = 30s;

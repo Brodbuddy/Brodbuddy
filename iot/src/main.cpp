@@ -30,6 +30,7 @@ ButtonManager buttonManager;
 Settings settings;
 EpaperDisplay display;
 EpaperMonitor monitor(display);
+SourdoughData historicalData = {};
 
 unsigned long lastStateCheck = 0;
 
@@ -58,9 +59,14 @@ void setup() {
         return;
     }
 
-    // display.begin();
-    SourdoughData data = monitor.generateMockData();
-    monitor.updateDisplay(data);
+    display.begin();
+    
+    historicalData.dataCount = 0;
+    historicalData.oldestIndex = 0;
+    historicalData.bufferFull = false;
+    historicalData.outTemp = 21.0;
+    historicalData.outHumidity = 44;
+    historicalData.batteryLevel = 100;
 
     if (!sensorManager.begin()) {
         LOG_E(TAG, "Failed to initialize sensors");
@@ -215,13 +221,23 @@ void handleStateSensing() {
         LOG_I(TAG, "Collecting sensor samples...");
         if (sensorManager.collectMultipleSamples()) {
             LOG_I(TAG, "Sensor reading complete");
+            
+            SensorData sensorData = sensorManager.getCurrentData();
+            historicalData.inTemp = sensorData.inTemp;
+            historicalData.inHumidity = (int)sensorData.inHumidity;
+            historicalData.currentGrowth = (int)sensorData.currentRisePercent;
+            
+            unsigned long timestamp = timeManager.getEpochTime();
+            monitor.addDataPoint(historicalData, (int)sensorData.currentRisePercent, timestamp);
+            LOG_I(TAG, "Added data point: growth=%d%%, timestamp=%lu", (int)sensorData.currentRisePercent, timestamp);
+            
             stateMachine.transitionTo(STATE_UPDATING_DISPLAY);
         }
     }
 }
 
 void handleStateUpdatingDisplay() {
-    display.updateDisplay();
+    monitor.updateDisplay(historicalData);
     LOG_I(TAG, "Display updated");
     stateMachine.transitionTo(STATE_PUBLISHING_DATA);
 }
