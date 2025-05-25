@@ -237,8 +237,8 @@ jobs:
             cp ./nginx.production.conf $NGINX_CONFIG_VOL_PATH/default.conf
 
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ vars.GHCR_USERNAME }} --password-stdin
-            docker compose --env-file .env --profile deploy pull
-            docker compose --profile deploy up -d --remove-orphans
+            docker compose --env-file .env --profile production pull
+            docker compose --profile production up -d --remove-orphans
 
             echo "Waiting briefly before reloading Nginx..."
             sleep 5
