@@ -37,7 +37,9 @@
       "!/**/ClaimExtensions.cs",
       "!/**/Models/**/*",
       "!/**/RedisSubscriptionListener.cs",
-      "!/**/EfTransactionManager.cs"
+      "!/**/EfTransactionManager.cs",
+      "!/**/Brodbuddy.WebSocket/**/*",
+      "!/**/Brodbuddy.TcpProxy/**/*"
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest",
