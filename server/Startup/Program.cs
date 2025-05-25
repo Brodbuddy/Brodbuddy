@@ -107,7 +107,7 @@ public class Program
             var seeder = scope.ServiceProvider.GetRequiredService<ISeederService>();
             await seeder.SeedFeaturesAsync();
             await seeder.SeedAdminAsync();
-            await seeder.SeedTestDataAsync(true);
+            await seeder.SeedTestDataAsync(false);
         }
         catch (Exception ex)
         {

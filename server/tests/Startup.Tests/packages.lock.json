@@ -70,24 +70,6 @@
         "resolved": "2.4.0",
         "contentHash": "SwXsAV3sMvAU/Nn31pbjhWurYSjJ+/giI/0n6tCrYoupEK34iIHCuk3STAd9fx8yudM85KkLSVdn951vTng/vQ=="
       },
-      "Brodbuddy.TcpProxy": {
-        "type": "Transitive",
-        "resolved": "0.0.1",
-        "contentHash": "TutXTbfQxs8iVKJWEcbTA5BUWi0db7aQFcaYqc7e6ma7GkLqPNQOKKNfQ0nh61LQNser4WJcJxjiUO9g7hiGhg==",
-        "dependencies": {
-          "Microsoft.Extensions.Logging.Abstractions": "9.0.3"
-        }
-      },
-      "Brodbuddy.WebSocket": {
-        "type": "Transitive",
-        "resolved": "0.0.17",
-        "contentHash": "QT4N+rrV/ZS+5j25uFLHPS+bDf/GbL/lMQmziCXTip7zL+lGD28emNlpF4aXzqvsdDfiOFa2dk4QUhSp3jlZsw==",
-        "dependencies": {
-          "Fleck": "1.2.0",
-          "FluentValidation": "11.11.0",
-          "Microsoft.Extensions.Logging.Abstractions": "9.0.2"
-        }
-      },
       "Castle.Core": {
         "type": "Transitive",
         "resolved": "5.1.1",
@@ -1764,9 +1746,9 @@
         "type": "Project",
         "dependencies": {
           "Application": "[1.0.0, )",
+          "Brodbuddy.WebSocket": "[1.0.0, )",
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
-          "NSwag.AspNetCore": "[14.3.0, )",
-          "brodbuddy.websocket": "[0.0.17, )"
+          "NSwag.AspNetCore": "[14.3.0, )"
         }
       },
       "application": {
@@ -1777,6 +1759,20 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.3, )",
           "Microsoft.Extensions.Options": "[9.0.3, )"
+        }
+      },
+      "brodbuddy.tcpproxy": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "[9.0.3, )"
+        }
+      },
+      "brodbuddy.websocket": {
+        "type": "Project",
+        "dependencies": {
+          "Fleck": "[1.2.0, )",
+          "FluentValidation": "[11.11.0, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.0.2, )"
         }
       },
       "core": {
@@ -1792,6 +1788,7 @@
         "type": "Project",
         "dependencies": {
           "Application": "[1.0.0, )",
+          "Brodbuddy.WebSocket": "[1.0.0, )",
           "FluentEmail.MailKit": "[3.0.2, )",
           "FluentEmail.Razor": "[3.0.2, )",
           "FluentEmail.SendGrid": "[3.0.2, )",
@@ -1800,8 +1797,7 @@
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
           "Microsoft.Extensions.Options": "[9.0.3, )",
           "RazorLight": "[2.3.1, )",
-          "StackExchange.Redis": "[2.8.31, )",
-          "brodbuddy.websocket": "[0.0.17, )"
+          "StackExchange.Redis": "[2.8.31, )"
         }
       },
       "infrastructure.data": {
@@ -1869,11 +1865,11 @@
           "Api.Mqtt": "[1.0.0, )",
           "Api.Websocket": "[1.0.0, )",
           "Application": "[1.0.0, )",
+          "Brodbuddy.TcpProxy": "[1.0.0, )",
           "Infrastructure.Auth": "[1.0.0, )",
           "Infrastructure.Communication": "[1.0.0, )",
           "Infrastructure.Data": "[1.0.0, )",
-          "Infrastructure.Monitoring": "[1.0.0, )",
-          "brodbuddy.tcpproxy": "[0.0.1, )"
+          "Infrastructure.Monitoring": "[1.0.0, )"
         }
       }
     }

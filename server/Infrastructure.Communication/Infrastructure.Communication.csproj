@@ -2,10 +2,11 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Application\Application.csproj"/>
+        <ProjectReference Include="..\Brodbuddy.WebSocket\Brodbuddy.WebSocket.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="brodbuddy.websocket" Version="0.0.17"/>
+        <!-- <PackageReference Include="brodbuddy.websocket" Version="0.0.17"/> -->
         <PackageReference Include="HiveMQtt" Version="0.26.1"/>
         <PackageReference Include="FluentEmail.MailKit" Version="3.0.2"/>
         <PackageReference Include="FluentEmail.Razor" Version="3.0.2"/>

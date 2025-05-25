@@ -2,17 +2,6 @@
   "version": 1,
   "dependencies": {
     "net8.0": {
-      "Brodbuddy.WebSocket": {
-        "type": "Direct",
-        "requested": "[0.0.17, )",
-        "resolved": "0.0.17",
-        "contentHash": "QT4N+rrV/ZS+5j25uFLHPS+bDf/GbL/lMQmziCXTip7zL+lGD28emNlpF4aXzqvsdDfiOFa2dk4QUhSp3jlZsw==",
-        "dependencies": {
-          "Fleck": "1.2.0",
-          "FluentValidation": "11.11.0",
-          "Microsoft.Extensions.Logging.Abstractions": "9.0.2"
-        }
-      },
       "Microsoft.Extensions.Hosting": {
         "type": "Direct",
         "requested": "[9.0.3, )",
@@ -475,6 +464,14 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.3, )",
           "Microsoft.Extensions.Options": "[9.0.3, )"
+        }
+      },
+      "brodbuddy.websocket": {
+        "type": "Project",
+        "dependencies": {
+          "Fleck": "[1.2.0, )",
+          "FluentValidation": "[11.11.0, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.0.2, )"
         }
       },
       "core": {
