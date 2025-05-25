@@ -10,6 +10,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${APPOPTIONS__POSTGRES__USERNAME:-user} -d ${APPOPTIONS__POSTGRES__DATABASE:-db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
   flyway:
     image: flyway/flyway:latest
@@ -33,6 +38,11 @@ services:
       - '${APPOPTIONS__DRAGONFLY__PORT:-6379}:6379'
     volumes:
       - dragonflydata:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
   mailhog:
     image: mailhog/mailhog
@@ -72,6 +82,11 @@ services:
     volumes:
       - vernemq-data:/var/lib/vernemq # Behøves ikke, men gør sådan at vi kan opbevare data
     restart: unless-stopped # Gør sådan at broker genstarter på system reboot
+    healthcheck:
+      test: [ "CMD-SHELL", "vernemq ping | grep -q pong" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
   backend:
     image: ${SERVER_IMAGE_TAG:-ghcr.io/brodbuddy/brodbuddy-backend:latest}
@@ -79,9 +94,12 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
-      - dragonfly
-      - vernemq
+      postgres:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+      vernemq:
+        condition: service_healthy
     profiles: ["deploy"]
 
   frontend:
@@ -114,8 +132,10 @@ services:
         target: /etc/letsencrypt
         read_only: true
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_started 
+      frontend:
+        condition: service_started
     profiles: ["deploy"]
 
 volumes:

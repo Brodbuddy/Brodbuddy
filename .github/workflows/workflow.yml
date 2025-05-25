@@ -232,9 +232,9 @@ jobs:
 
             cd $APP_DIR
             set -a; source .env_nginx; set +a
-            envsubst '${SERVER_NAME} ${API_SERVER_NAME}' < ./deploy/nginx/nginx.template.conf > ./nginx.staging.conf
+            envsubst '${SERVER_NAME} ${API_SERVER_NAME}' < ./deploy/nginx/nginx.template.conf > ./nginx.production.conf
             mkdir -p $NGINX_CONFIG_VOL_PATH
-            cp ./nginx.staging.conf $NGINX_CONFIG_VOL_PATH/default.conf
+            cp ./nginx.production.conf $NGINX_CONFIG_VOL_PATH/default.conf
 
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ vars.GHCR_USERNAME }} --password-stdin
             docker compose --env-file .env --profile deploy pull
