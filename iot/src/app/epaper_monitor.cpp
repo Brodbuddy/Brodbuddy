@@ -27,7 +27,6 @@ SourdoughData EpaperMonitor::generateMockData() {
     data.inHumidity = 100;
     data.batteryLevel = 20;
 
-    // Beregn start-tidsstempel
     unsigned long now = millis() / 1000;
     unsigned long windowSeconds = TimeUtils::to_seconds(TimeConstants::GRAPH_WINDOW);
     unsigned long startTime = now - windowSeconds;
@@ -186,10 +185,8 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
     _display.drawLine(xLabelStartX, graphY + graphHeight, graphX + graphWidth, graphY + graphHeight,
                       DisplayConstants::COLOR_BLACK);
 
-    // Dynamically create time labels and grid lines
     unsigned long windowMinutes = TimeUtils::to_minutes(TimeConstants::GRAPH_WINDOW);
     
-    // Determine grid interval based on window size
     int gridInterval;
     if (windowMinutes <= 10) {
         gridInterval = 1;  // Every minute
@@ -209,13 +206,11 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
         
         // Tegn gitterlinje
         if (i == 0) {
-            // First vertical line (Y-axis) extends up a bit more as a tick
             _display.drawLine(x, graphY - 3, x, graphY + graphHeight, DisplayConstants::COLOR_BLACK);
         } else {
             _display.drawLine(x, graphY, x, graphY + graphHeight, DisplayConstants::COLOR_BLACK);
         }
         
-        // Show labels only at even intervals
         int minutesFromStart = i * gridInterval;
         int minutesAgo = windowMinutes - minutesFromStart;
         
