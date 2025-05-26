@@ -21,6 +21,7 @@
 #include "network/ota_manager.h"
 #include "network/mqtt_message_router.h"
 #include "logging/logger.h"
+#include "app/ntfy_manager.h"
 
 static const char* TAG = "Main";
 
@@ -37,6 +38,7 @@ EpaperDisplay display;
 EpaperMonitor monitor(display);
 SourdoughData historicalData = {};
 OtaManager otaManager;
+NtfyManager* ntfyManager = nullptr;
 
 unsigned long lastStateCheck = 0;
 bool needsOtaValidation = false;
@@ -101,6 +103,9 @@ void setup() {
     wifiManager.begin();
 
     stateMachine.transitionTo(STATE_CONNECTING_WIFI);
+
+    String analyzerId = settings.getAnalyzerId();
+    ntfyManager = new NtfyManager(analyzerId);
 }
 
 void loop() {
@@ -265,6 +270,10 @@ void handleStateSensing() {
             
             unsigned long timestamp = timeManager.getEpochTime();
             monitor.addDataPoint(historicalData, (int)sensorData.currentRisePercent, timestamp);
+            
+            if (ntfyManager) {
+                ntfyManager->checkRiseValue(sensorData.currentRisePercent);
+            }
             
             stateMachine.transitionTo(STATE_UPDATING_DISPLAY);
         }

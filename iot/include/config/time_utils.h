@@ -97,6 +97,9 @@ namespace TimeConstants {
     constexpr auto OTA_RESUME_REQUEST_INTERVAL = 15s;
     constexpr auto OTA_MQTT_LOOP_INTERVAL = 10ms;
     constexpr auto OTA_REBOOT_DELAY = 3s;
+
+    // Notifikation over Nfty
+    constexpr auto NOTIFICATION_COOLDOWN = 1h;
 }
 
 #endif
