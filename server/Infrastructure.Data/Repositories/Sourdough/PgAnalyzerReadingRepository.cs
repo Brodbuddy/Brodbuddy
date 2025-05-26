@@ -2,7 +2,6 @@ using Application.Interfaces.Data.Repositories.Sourdough;
 using Core.Entities;
 using Core.ValueObjects;
 using Infrastructure.Data.Persistence;
-using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Data.Repositories.Sourdough;
 
