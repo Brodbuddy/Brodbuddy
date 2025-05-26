@@ -27,7 +27,7 @@ namespace Pins {
     constexpr int RESET_BUTTON = 13;
 
     // Time of Flight
-    constexpr int XSHUT = 34;
+    constexpr int XSHUT = 14;
 
     // I2C (BME280 og Time of Flight)
     constexpr int I2C_SDA = 25;
@@ -36,7 +36,7 @@ namespace Pins {
 
 namespace Sensors {
     // I2C Konfiguration
-    constexpr int I2C_CLOCK_SPEED = 50000;
+    constexpr int I2C_CLOCK_SPEED = 10000;  // 10kHz for bedre pålidelighed med vores kabler
 
     // BME280 adresser
     constexpr uint8_t BME280_ADDR_PRIMARY = 0x76;   // SDO -> GND (eller uden SDO sluttet til)

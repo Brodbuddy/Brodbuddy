@@ -69,6 +69,8 @@ class SensorManager {
         _readInterval = interval;
     }
     bool shouldRead() const;
+    
+    void scanI2C();
 };
 
 #endif
