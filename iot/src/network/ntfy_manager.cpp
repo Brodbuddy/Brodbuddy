@@ -1,4 +1,4 @@
-#include "app/ntfy_manager.h"
+#include "network/ntfy_manager.h"
 #include "config/time_utils.h"
 #include "logging/logger.h"
 
