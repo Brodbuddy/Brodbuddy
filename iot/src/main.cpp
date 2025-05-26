@@ -21,7 +21,7 @@
 #include "network/ota_manager.h"
 #include "network/mqtt_message_router.h"
 #include "logging/logger.h"
-#include "app/ntfy_manager.h"
+#include "network/ntfy_manager.h"
 
 static const char* TAG = "Main";
 
