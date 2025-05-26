@@ -86,6 +86,7 @@ public static class Extensions
     private static IServiceCollection AddNotifiers(this IServiceCollection services)
     {
         services.AddScoped<IUserNotifier, WsUserNotifier>();
+        services.AddScoped<IAdminNotifier, WsAdminNotifier>();
         return services;
     }
 }

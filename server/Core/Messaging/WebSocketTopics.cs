@@ -6,4 +6,10 @@ public static class WebSocketTopics
     {
         public static string SourdoughData(Guid userId) => $"sourdough-data:{userId}";
     }
+
+    public static class Admin
+    {
+        public static string AllDiagnostics => "admin:diagnostics";
+        public static string DiagnosticsResponse(Guid analyzerId) => $"admin:diagnostics:{analyzerId}";
+    }
 }
