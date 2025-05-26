@@ -75,7 +75,8 @@ public class AnalyzerController : ControllerBase
             a.IsActivated,
             a.ActivatedAt,
             a.LastSeen,
-            a.CreatedAt
+            a.CreatedAt,
+            a.ActivationCode!
         ));
         
         return Ok(response);

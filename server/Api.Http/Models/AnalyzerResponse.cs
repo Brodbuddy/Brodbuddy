@@ -33,5 +33,6 @@ public record AdminAnalyzerListResponse(
     bool IsActivated,
     DateTime? ActivatedAt,
     DateTime? LastSeen,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    string ActivationCode
 );
