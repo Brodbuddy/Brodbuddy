@@ -19,6 +19,7 @@
 #include "network/time_manager.h"
 #include "network/mqtt_protocol.h"
 #include "network/ota_manager.h"
+#include "network/mqtt_message_router.h"
 #include "logging/logger.h"
 
 static const char* TAG = "Main";
@@ -26,6 +27,7 @@ static const char* TAG = "Main";
 WifiManager wifiManager;
 MqttManager mqttManager;
 MqttTopics* mqttTopics = nullptr;
+MqttMessageRouter messageRouter;
 TimeManager timeManager;
 StateMachine stateMachine;
 SensorManager sensorManager;
@@ -50,32 +52,18 @@ void handleStatePublishingData();
 void handleStateSleep();
 void handleStateError();
 void handleStateOtaUpdate();
-void handleDiagnosticsRequest(char* topic, byte* payload, unsigned int length);
+void handleDiagnosticsRequest(const String& topic, const uint8_t* payload, unsigned int length);
+void handleOtaMessageWrapper(const String& topic, const uint8_t* payload, unsigned int length);
 void setupDiagnosticsHandler();
-void handleOtaMessage(char* topic, byte* payload, unsigned int length);
 void setupOtaHandler();
 void validateBootAfterOta();
-
-void validateBootAfterOta() {
-    const esp_partition_t* runningPartition = esp_ota_get_running_partition();
-    esp_ota_img_states_t otaState;
-    
-    if (esp_ota_get_state_partition(runningPartition, &otaState) == ESP_OK) {
-        if (otaState == ESP_OTA_IMG_PENDING_VERIFY) {
-            LOG_I(TAG, "First boot after OTA update, validation pending...");
-            LOG_I(TAG, "Running from partition: %s", runningPartition->label);
-            needsOtaValidation = true;
-        } else {
-            LOG_D(TAG, "Normal boot from partition: %s", runningPartition->label);
-        }
-    }
-}
+void publishOtaStatus(const String& status, uint8_t progress);
 
 void setup() {
     Serial.begin(115200);
-    Logger::begin(LOG_DEBUG, true);
+    Logger::begin(LOG_INFO, true, true);
 
-    LOG_I(TAG, "--- Sourdough analyzer startup monitoring ---");
+    LOG_I(TAG, "--- Sourdough analyzer startup ---");
     
     validateBootAfterOta();
 
@@ -128,6 +116,19 @@ void loop() {
 
         handleButtonEvents();
         handleCurrentState();
+    }
+}
+
+void validateBootAfterOta() {
+    const esp_partition_t* runningPartition = esp_ota_get_running_partition();
+    esp_ota_img_states_t otaState;
+    
+    if (esp_ota_get_state_partition(runningPartition, &otaState) == ESP_OK) {
+        if (otaState == ESP_OTA_IMG_PENDING_VERIFY) {
+            LOG_I(TAG, "First boot after OTA update, validation pending...");
+            LOG_I(TAG, "Running from partition: %s", runningPartition->label);
+            needsOtaValidation = true;
+        }
     }
 }
 
@@ -192,11 +193,7 @@ void handleStateConnectingWifi() {
         
         if (!timeManager.isTimeValid()) {
             LOG_I(TAG, "Synchronizing time with NTP server");
-            if (timeManager.begin()) {
-                LOG_I(TAG, "Time synchronized: %s", timeManager.getLocalTimeString().c_str());
-            } else {
-                LOG_W(TAG, "Time sync failed, continuing without accurate time");
-            }
+            timeManager.trySync();
         }
         
         stateMachine.transitionTo(STATE_CONNECTING_MQTT);
@@ -211,12 +208,12 @@ void handleStateConnectingMqtt() {
         String password = settings.getMqttPassword();
         String analyzerId = settings.getAnalyzerId();
 
-        LOG_D(TAG, "Connecting to MQTT - Server: %s, Port: %d, User: %s, Device: %s", server.c_str(), port,
-              user.c_str(), analyzerId.c_str());
+        LOG_D(TAG, "Connecting to MQTT - Server: %s, Port: %d", server.c_str(), port);
               
         if (mqttTopics == nullptr) {
             mqttTopics = new MqttTopics(analyzerId);
             mqttManager.setTopics(mqttTopics);
+            messageRouter.setTopics(mqttTopics);
             LOG_I(TAG, "MQTT topics initialized for device: %s", analyzerId.c_str());
         }
 
@@ -229,8 +226,18 @@ void handleStateConnectingMqtt() {
                 needsOtaValidation = false;
             }
             
+            mqttManager.setCallback([](char* topic, byte* payload, unsigned int length) {
+                messageRouter.routeMessage(topic, payload, length);
+            });
+            
+            messageRouter.setDiagnosticsHandler(handleDiagnosticsRequest);
+            messageRouter.setOtaHandler(handleOtaMessageWrapper);
+            
             setupDiagnosticsHandler();
             setupOtaHandler();
+            
+            timeManager.trySync();
+            
             stateMachine.transitionTo(STATE_SENSING);
         } else {
             LOG_E(TAG, "MQTT connection failed, retrying in 5 seconds");
@@ -242,17 +249,9 @@ void handleStateConnectingMqtt() {
 }
 
 void handleStateSensing() {
-    static unsigned long lastSensingTime = 0;
-    unsigned long currentTime = millis();
-    
-    if (lastSensingTime > 0) {
-        unsigned long timeSinceLastSensing = currentTime - lastSensingTime;
-        LOG_D(TAG, "New sensing cycle started - time since last: %lums (%.1fs), current_time=%s", 
-              timeSinceLastSensing, timeSinceLastSensing / 1000.0, timeManager.getLocalTimeString().c_str());
-    } else {
-        LOG_D(TAG, "First sensing cycle started - current_time=%s", timeManager.getLocalTimeString().c_str());
+    if (timeManager.shouldRetrySync()) {
+        timeManager.trySync();
     }
-    lastSensingTime = currentTime;
     
     if (sensorManager.shouldRead()) {
         LOG_I(TAG, "Collecting sensor samples...");
@@ -266,7 +265,6 @@ void handleStateSensing() {
             
             unsigned long timestamp = timeManager.getEpochTime();
             monitor.addDataPoint(historicalData, (int)sensorData.currentRisePercent, timestamp);
-            LOG_I(TAG, "Added data point: growth=%d%%, timestamp=%lu", (int)sensorData.currentRisePercent, timestamp);
             
             stateMachine.transitionTo(STATE_UPDATING_DISPLAY);
         }
@@ -298,6 +296,8 @@ void handleStatePublishingData() {
         } else {
             LOG_E(TAG, "Failed to publish data");
         }
+        
+        mqttManager.loop();
         
         if (otaManager.isInProgress()) {
             LOG_I(TAG, "OTA in progress, staying awake");
@@ -332,24 +332,103 @@ void handleStateSleep() {
         }
 
         WiFi.mode(WIFI_STA);
-        WiFi.reconnect();
-        TimeUtils::delay_for(std::chrono::seconds(1));
-
+        
         stateMachine.transitionTo(STATE_CONNECTING_WIFI);
     } else {
-        if (stateMachine.shouldTransition(TimeUtils::to_ms(std::chrono::seconds(settings.getSensorInterval())))) {
-            unsigned long timeInState = stateMachine.timeInCurrentState();
-            LOG_D(TAG, "State cycle timer: interval=%ds, time_in_state=%lums, current_time=%s", 
-                  settings.getSensorInterval(), timeInState, timeManager.getLocalTimeString().c_str());
-            stateMachine.transitionTo(STATE_SENSING);
-        }
+        stateMachine.transitionTo(STATE_SENSING);
     }
 }
 
 void handleStateError() {
-    LOG_E(TAG, "System in error state");
+    LOG_E(TAG, "Error state - resetting in 5 seconds");
     TimeUtils::delay_for(TimeConstants::ERROR_STATE_DELAY);
     ESP.restart();
+}
+
+void handleStateOtaUpdate() {
+    using namespace std::chrono;
+    
+    static steady_clock::time_point otaStartTime;
+    static steady_clock::time_point lastMqttLoop;
+    static steady_clock::time_point lastProgressTime;
+    static uint8_t lastProgress = 0;
+    static bool wasConnected = true;
+    static bool initialized = false;
+    
+    auto now = steady_clock::now();
+    
+    if (!initialized) {
+        otaStartTime = now;
+        lastMqttLoop = now;
+        lastProgressTime = now;
+        initialized = true;
+        LOG_I(TAG, "OTA Update state entered");
+    }
+    
+    bool isConnected = mqttManager.isConnected();
+    if (!wasConnected && isConnected) {
+        LOG_W(TAG, "MQTT reconnected during OTA - re-subscribing");
+        setupOtaHandler();
+        
+        if (mqttTopics) {
+            DynamicJsonDocument statusDoc(128);
+            statusDoc[MqttProtocol::OtaFields::STATUS] = MqttProtocol::OtaFields::StatusValues::DOWNLOADING;
+            statusDoc[MqttProtocol::OtaFields::PROGRESS] = otaManager.getProgress();
+            statusDoc["resumed"] = true;
+            mqttManager.publish(mqttTopics->getOtaStatusTopic().c_str(), statusDoc);
+        }
+    }
+    wasConnected = isConnected;
+    
+    if (isConnected && duration_cast<milliseconds>(now - lastMqttLoop) > TimeConstants::OTA_MQTT_LOOP_INTERVAL) {
+        mqttManager.loop();
+        lastMqttLoop = now;
+    }
+    
+    if (!otaManager.isInProgress()) {
+        LOG_W(TAG, "OTA state active but no update in progress");
+        stateMachine.transitionTo(STATE_SENSING);
+        initialized = false;
+        return;
+    }
+    
+    uint8_t currentProgress = otaManager.getProgress();
+    if (currentProgress != lastProgress) {
+        lastProgress = currentProgress;
+        lastProgressTime = now;
+        LOG_I(TAG, "OTA Progress: %d%%", currentProgress);
+    }
+    
+    auto timeSinceProgress = duration_cast<seconds>(now - lastProgressTime);
+    
+    if (timeSinceProgress > TimeConstants::OTA_PROGRESS_STALL_WARNING && currentProgress > 0) {
+        if (timeSinceProgress > TimeConstants::OTA_PROGRESS_STALL_TIMEOUT) {
+            LOG_E(TAG, "OTA timeout - stuck at %d%%", currentProgress);
+            otaManager.abort("OTA stalled");
+            stateMachine.transitionTo(STATE_SENSING);
+            initialized = false;
+            return;
+        }
+    }
+    
+    auto timeInOta = duration_cast<seconds>(now - otaStartTime);
+    if (timeInOta > TimeConstants::OTA_INITIAL_TIMEOUT && currentProgress == 0) {
+        LOG_E(TAG, "OTA timeout - no chunks received");
+        otaManager.abort("No chunks received");
+        stateMachine.transitionTo(STATE_SENSING);
+        initialized = false;
+        return;
+    }
+    
+    auto status = otaManager.getStatus();
+    if (status == OtaManager::OtaStatus::ERROR) {
+        LOG_E(TAG, "OTA error occurred");
+        stateMachine.transitionTo(STATE_SENSING);
+        initialized = false;
+    } else if (status == OtaManager::OtaStatus::COMPLETE) {
+        LOG_I(TAG, "OTA complete, device will reboot");
+        initialized = false;
+    }
 }
 
 void setupDiagnosticsHandler() {
@@ -358,29 +437,21 @@ void setupDiagnosticsHandler() {
         return;
     }
     
-    mqttManager.setCallback(handleDiagnosticsRequest);
-    
     if (mqttManager.subscribe(mqttTopics->getDiagnosticsRequestTopic().c_str())) {
-        LOG_I(TAG, "Diagnostics handler registered on topic: %s", 
-              mqttTopics->getDiagnosticsRequestTopic().c_str());
+        LOG_I(TAG, "Diagnostics handler registered");
     }
 }
 
-void handleDiagnosticsRequest(char* topic, byte* payload, unsigned int length) {
-    LOG_I(TAG, "Received diagnostics request");
+void handleDiagnosticsRequest(const String& topic, const uint8_t* payload, unsigned int length) {
+    LOG_I(TAG, "Diagnostics request received");
     
-    DynamicJsonDocument responseDoc(512);
+    DynamicJsonDocument responseDoc(1024);
     
     responseDoc[MqttProtocol::DiagnosticsFields::ANALYZER_ID] = settings.getAnalyzerId();
-    responseDoc[MqttProtocol::DiagnosticsFields::EPOCH_TIME] = timeManager.getEpochTime();
-    responseDoc[MqttProtocol::DiagnosticsFields::TIMESTAMP] = timeManager.getISOTime();
-    responseDoc[MqttProtocol::DiagnosticsFields::LOCAL_TIME] = timeManager.getLocalTimeISO();
     responseDoc[MqttProtocol::DiagnosticsFields::UPTIME] = millis();
     responseDoc[MqttProtocol::DiagnosticsFields::FREE_HEAP] = ESP.getFreeHeap();
+    responseDoc[MqttProtocol::DiagnosticsFields::WIFI_RSSI] = WiFi.RSSI();
     responseDoc[MqttProtocol::DiagnosticsFields::STATE] = stateMachine.getStateName();
-    
-    responseDoc[MqttProtocol::DiagnosticsFields::WIFI][MqttProtocol::DiagnosticsFields::WIFI_CONNECTED] = WiFi.isConnected();
-    responseDoc[MqttProtocol::DiagnosticsFields::WIFI][MqttProtocol::DiagnosticsFields::WIFI_RSSI] = WiFi.RSSI();
     
     SensorData sensorData = sensorManager.getCurrentData();
     responseDoc[MqttProtocol::DiagnosticsFields::SENSORS][MqttProtocol::DiagnosticsFields::SENSOR_TEMPERATURE] = sensorData.inTemp;
@@ -389,63 +460,6 @@ void handleDiagnosticsRequest(char* topic, byte* payload, unsigned int length) {
     
     if (mqttTopics && mqttManager.publish(mqttTopics->getDiagnosticsResponseTopic().c_str(), responseDoc)) {
         LOG_I(TAG, "Diagnostics response sent");
-    } else {
-        LOG_E(TAG, "Failed to send diagnostics response");
-    }
-}
-
-void handleStateOtaUpdate() {
-    if (!otaManager.isInProgress()) {
-        LOG_W(TAG, "OTA state active but no update in progress, returning to normal operation");
-        stateMachine.transitionTo(STATE_SENSING);
-        return;
-    }
-    
-    static uint8_t lastDisplayedProgress = 255;
-    uint8_t currentProgress = otaManager.getProgress();
-    
-    if (lastDisplayedProgress == 255 || 
-        (currentProgress - lastDisplayedProgress >= 10) || 
-        currentProgress == 100) {
-        
-        display.fillScreen(DisplayConstants::COLOR_WHITE);
-        display.setTextColor(DisplayConstants::COLOR_BLACK);
-        display.setTextSize(2);
-        
-        display.setCursor(10, 30);
-        display.print("OTA Update");
-        
-        display.setCursor(10, 60);
-        display.print("Progress: ");
-        display.print(currentProgress);
-        display.print("%");
-        
-        display.drawRect(10, 80, 276, 20, DisplayConstants::COLOR_BLACK);
-        display.fillRect(10, 80, (276 * currentProgress) / 100, 20, DisplayConstants::COLOR_BLACK);
-        
-        display.updateDisplay();
-        lastDisplayedProgress = currentProgress;
-    }
-    
-    auto status = otaManager.getStatus();
-    if (status == OtaManager::OtaStatus::ERROR) {
-        LOG_E(TAG, "OTA error occurred, returning to normal operation");
-        display.fillScreen(DisplayConstants::COLOR_WHITE);
-        display.setTextColor(DisplayConstants::COLOR_RED);
-        display.setCursor(10, 150);
-        display.print("OTA Failed!");
-        display.updateDisplay();
-        TimeUtils::delay_for(std::chrono::seconds(3));
-        stateMachine.transitionTo(STATE_SENSING);
-    } else if (status == OtaManager::OtaStatus::COMPLETE) {
-        LOG_I(TAG, "OTA complete, device will reboot");
-        display.fillScreen(DisplayConstants::COLOR_WHITE);
-        display.setTextColor(DisplayConstants::COLOR_BLACK);
-        display.setCursor(10, 150);
-        display.print("Update Complete!");
-        display.setCursor(10, 180);
-        display.print("Rebooting...");
-        display.updateDisplay();
     }
 }
 
@@ -458,83 +472,49 @@ void setupOtaHandler() {
     otaManager.begin();
     
     otaManager.setBatteryCheckCallback([]() {
-        // TODO: Integrer med battery manager når det er implementeret
-        // Skal tjekke om batteriniveau er over sikker grænse (f.eks. 30%)
-        // Indtil videre tillader vi altid OTA
         return true;
     });
     
-    mqttManager.setCallback(handleOtaMessage);
+    otaManager.setStatusCallback(publishOtaStatus);
     
-    if (mqttManager.subscribe(mqttTopics->getOtaStartTopic().c_str())) {
-        LOG_I(TAG, "Subscribed to OTA start topic: %s", 
-              mqttTopics->getOtaStartTopic().c_str());
+    String otaStartTopic = mqttTopics->getOtaStartTopic();
+    String otaChunkTopic = mqttTopics->getOtaChunkTopic();
+    
+    if (mqttManager.subscribe(otaStartTopic.c_str())) {
+        LOG_I(TAG, "Subscribed to OTA start topic");
     }
     
-    if (mqttManager.subscribe(mqttTopics->getOtaChunkTopic().c_str())) {
-        LOG_I(TAG, "Subscribed to OTA chunk topic: %s", 
-              mqttTopics->getOtaChunkTopic().c_str());
+    if (mqttManager.subscribe(otaChunkTopic.c_str())) {
+        LOG_I(TAG, "Subscribed to OTA chunk topic");
     }
 }
 
-void handleOtaMessage(char* topic, byte* payload, unsigned int length) {
+void handleOtaMessageWrapper(const String& topic, const uint8_t* payload, unsigned int length) {
     if (!mqttTopics) return;
     
-    String topicStr(topic);
+    bool handled = otaManager.handleOtaMessage(topic, payload, length, 
+                                              mqttTopics->getOtaStartTopic(), 
+                                              mqttTopics->getOtaChunkTopic());
     
-    if (topicStr == mqttTopics->getOtaStartTopic()) {
-        LOG_I(TAG, "Received OTA start command");
-        
-        DynamicJsonDocument doc(256);
-        DeserializationError error = deserializeJson(doc, payload, length);
-        
-        if (error) {
-            LOG_E(TAG, "Failed to parse OTA start message: %s", error.c_str());
-            return;
-        }
-        
-        OtaManager::OtaInfo info;
-        info.version = doc[MqttProtocol::OtaFields::VERSION].as<String>();
-        info.size = doc[MqttProtocol::OtaFields::SIZE];
-        info.crc32 = doc[MqttProtocol::OtaFields::CRC32];
-        
-        if (otaManager.startUpdate(info)) {
-            stateMachine.transitionTo(STATE_OTA_UPDATE);
-            
-            DynamicJsonDocument statusDoc(128);
-            statusDoc[MqttProtocol::OtaFields::STATUS] = MqttProtocol::OtaFields::StatusValues::STARTED;
-            statusDoc[MqttProtocol::OtaFields::VERSION] = info.version;
-            mqttManager.publish(mqttTopics->getOtaStatusTopic().c_str(), statusDoc);
-        } else {
-            DynamicJsonDocument statusDoc(128);
-            statusDoc[MqttProtocol::OtaFields::STATUS] = MqttProtocol::OtaFields::StatusValues::ERROR;
-            statusDoc[MqttProtocol::OtaFields::MESSAGE] = "Failed to start OTA";
-            mqttManager.publish(mqttTopics->getOtaStatusTopic().c_str(), statusDoc);
-        }
+    if (handled && topic == mqttTopics->getOtaStartTopic()) {
+        stateMachine.transitionTo(STATE_OTA_UPDATE);
     }
-    else if (topicStr == mqttTopics->getOtaChunkTopic()) {
-        if (length < 8) {
-            LOG_E(TAG, "Invalid OTA chunk - too small");
-            return;
-        }
+}
+
+void publishOtaStatus(const String& status, uint8_t progress) {
+    if (!mqttTopics || !mqttManager.isConnected()) return;
+    
+    static unsigned long lastPublish = 0;
+    unsigned long now = millis();
+    
+    if (progress % OtaConstants::PROGRESS_UPDATE_CHUNK_INTERVAL == 0 || 
+        now - lastPublish > 5000) {
         
-        uint32_t chunkIndex, chunkSize;
-        memcpy(&chunkIndex, payload, 4);
-        memcpy(&chunkSize, payload + 4, 4);
+        DynamicJsonDocument statusDoc(128);
+        statusDoc[MqttProtocol::OtaFields::STATUS] = status;
+        statusDoc[MqttProtocol::OtaFields::PROGRESS] = progress;
         
-        const uint8_t* data = payload + 8;
-        size_t dataLength = length - 8;
-        
-        if (!otaManager.processChunk(data, dataLength, chunkIndex, chunkSize)) {
-            LOG_E(TAG, "Failed to process OTA chunk %d", chunkIndex);
-            stateMachine.transitionTo(STATE_SENSING);
-        }
-        
-        if (chunkIndex % 10 == 0) {
-            DynamicJsonDocument statusDoc(128);
-            statusDoc[MqttProtocol::OtaFields::STATUS] = MqttProtocol::OtaFields::StatusValues::DOWNLOADING;
-            statusDoc[MqttProtocol::OtaFields::PROGRESS] = otaManager.getProgress();
-            mqttManager.publish(mqttTopics->getOtaStatusTopic().c_str(), statusDoc);
-        }
+        mqttManager.publish(mqttTopics->getOtaStatusTopic().c_str(), statusDoc);
+        lastPublish = now;
     }
 }

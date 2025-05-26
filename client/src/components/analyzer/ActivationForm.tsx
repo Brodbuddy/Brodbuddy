@@ -69,6 +69,9 @@ function ActivationForm({ onSuccess, className }: ActivationFormProps) {
         name: response.data.name,
         nickname: response.data.nickname,
         isOwner: response.data.isOwner,
+        lastSeen: null,
+        firmwareVersion: null,
+        hasUpdate: false,
         activatedAt: new Date().toISOString()
       };
 

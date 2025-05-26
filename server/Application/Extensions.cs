@@ -32,6 +32,15 @@ public static class Extensions
         // Andet
         services.AddScoped<IFeatureToggleService, FeatureToggleService>();
         
+        // Firmware
+        services.AddScoped<IFirmwareStorageService, FirmwareStorageService>();
+        services.AddScoped<IFirmwareTransferService, FirmwareTransferService>();
+        services.AddScoped<IFirmwareUpdateBackgroundService, FirmwareUpdateBackgroundService>();
+        services.AddScoped<IFirmwareManagementService, FirmwareManagementService>();
+        
+        // Ota
+        services.AddScoped<IOtaService, OtaService>();
+        
         return services;
     }
 }

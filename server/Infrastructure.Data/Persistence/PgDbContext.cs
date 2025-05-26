@@ -20,6 +20,10 @@ public partial class PgDbContext : DbContext
 
     public virtual DbSet<FeatureUser> FeatureUsers { get; set; }
 
+    public virtual DbSet<FirmwareUpdate> FirmwareUpdates { get; set; }
+
+    public virtual DbSet<FirmwareVersion> FirmwareVersions { get; set; }
+
     public virtual DbSet<OneTimePassword> OneTimePasswords { get; set; }
 
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
@@ -161,6 +165,80 @@ public partial class PgDbContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.FeatureUsers)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("feature_users_user_id_fkey");
+        });
+
+        modelBuilder.Entity<FirmwareUpdate>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("firmware_updates_pkey");
+
+            entity.ToTable("firmware_updates");
+
+            entity.HasIndex(e => e.AnalyzerId, "idx_firmware_updates_analyzer_id");
+
+            entity.HasIndex(e => e.StartedAt, "idx_firmware_updates_started_at").IsDescending();
+
+            entity.HasIndex(e => e.Status, "idx_firmware_updates_status");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.AnalyzerId).HasColumnName("analyzer_id");
+            entity.Property(e => e.CompletedAt).HasColumnName("completed_at");
+            entity.Property(e => e.ErrorMessage).HasColumnName("error_message");
+            entity.Property(e => e.FirmwareVersionId).HasColumnName("firmware_version_id");
+            entity.Property(e => e.Progress)
+                .HasDefaultValue(0)
+                .HasColumnName("progress");
+            entity.Property(e => e.StartedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("started_at");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasColumnName("status");
+
+            entity.HasOne(d => d.Analyzer).WithMany(p => p.FirmwareUpdates)
+                .HasForeignKey(d => d.AnalyzerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("firmware_updates_analyzer_id_fkey");
+
+            entity.HasOne(d => d.FirmwareVersion).WithMany(p => p.FirmwareUpdates)
+                .HasForeignKey(d => d.FirmwareVersionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("firmware_updates_firmware_version_id_fkey");
+        });
+
+        modelBuilder.Entity<FirmwareVersion>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("firmware_versions_pkey");
+
+            entity.ToTable("firmware_versions");
+
+            entity.HasIndex(e => e.CreatedAt, "idx_firmware_versions_created_at").IsDescending();
+
+            entity.HasIndex(e => e.Version, "idx_firmware_versions_version");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.Crc32).HasColumnName("crc32");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("now()")
+                .HasColumnName("created_at");
+            entity.Property(e => e.CreatedBy).HasColumnName("created_by");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.FileSize).HasColumnName("file_size");
+            entity.Property(e => e.FileUrl).HasColumnName("file_url");
+            entity.Property(e => e.IsStable)
+                .HasDefaultValue(false)
+                .HasColumnName("is_stable");
+            entity.Property(e => e.ReleaseNotes).HasColumnName("release_notes");
+            entity.Property(e => e.Version)
+                .HasMaxLength(20)
+                .HasColumnName("version");
+
+            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.FirmwareVersions)
+                .HasForeignKey(d => d.CreatedBy)
+                .HasConstraintName("firmware_versions_created_by_fkey");
         });
 
         modelBuilder.Entity<OneTimePassword>(entity =>

@@ -82,6 +82,8 @@ services:
       - postgres
       - dragonfly
       - vernemq
+    volumes:
+      - ./firmware:/app/firmware
     profiles: ["deploy"]
 
   frontend:

@@ -1,7 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { AnalyzerAdmin } from '../components/admin/AnalyzerAdmin';
-import { FeatureToggleAdmin } from '../components/admin/FeatureToggleAdmin';
-import { LoggingAdmin } from '../components/admin/LoggingAdmin';
+import { AnalyzerAdmin, FeatureToggleAdmin, LoggingAdmin, FirmwareAdmin } from '../components/admin';
 import { useAtom } from 'jotai';
 import { adminTabAtom, AdminTab } from '../atoms/adminTab';
 
@@ -20,10 +18,11 @@ export function AdminPage() {
             </div>
             
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="analyzers">Sourdough Analyzers</TabsTrigger>
                     <TabsTrigger value="features">Feature Toggles</TabsTrigger>
                     <TabsTrigger value="logging">Logging</TabsTrigger>
+                    <TabsTrigger value="firmware">Firmware</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="analyzers" className="mt-6">
@@ -36,6 +35,10 @@ export function AdminPage() {
                 
                 <TabsContent value="logging" className="mt-6">
                     <LoggingAdmin />
+                </TabsContent>
+                
+                <TabsContent value="firmware" className="mt-6">
+                    <FirmwareAdmin />
                 </TabsContent>
             </Tabs>
         </div>

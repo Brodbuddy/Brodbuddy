@@ -1,4 +1,7 @@
 #include "network/ota_manager.h"
+#include <ArduinoJson.h>
+#include "network/mqtt_protocol.h"
+#include "config/constants.h"
 
 const char* OtaManager::TAG = "OtaManager";
 
@@ -11,7 +14,8 @@ OtaManager::OtaManager()
     , receivedBytes(0)
     , expectedCrc32(0)
     , calculatedCrc32(0)
-    , batteryCheck(nullptr) {
+    , batteryCheck(nullptr)
+    , statusCallback(nullptr) {
 }
 
 bool OtaManager::begin() {
@@ -67,7 +71,7 @@ bool OtaManager::startUpdate(const OtaInfo& info) {
 
 bool OtaManager::processChunk(const uint8_t* data, size_t length, uint32_t chunkIndex, uint32_t chunkSize) {
     if (!inProgress || status != OtaStatus::DOWNLOADING) {
-        LOG_W(TAG, "Not ready to process chunk - inProgress: %d, status: %d", 
+        LOG_E(TAG, "Not ready to process chunk - inProgress: %d, status: %d", 
               inProgress, static_cast<int>(status));
         return false;
     }
@@ -75,7 +79,7 @@ bool OtaManager::processChunk(const uint8_t* data, size_t length, uint32_t chunk
     auto now = std::chrono::steady_clock::now();
     auto timeSinceLastChunk = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastChunkTime);
     
-    if (timeSinceLastChunk > CHUNK_TIMEOUT) {
+    if (timeSinceLastChunk > TimeConstants::OTA_CHUNK_TIMEOUT) {
         abort("Chunk timeout");
         return false;
     }
@@ -89,6 +93,7 @@ bool OtaManager::processChunk(const uint8_t* data, size_t length, uint32_t chunk
     
     esp_err_t err = esp_ota_write(otaHandle, data, length);
     if (err != ESP_OK) {
+        LOG_E(TAG, "esp_ota_write failed: %s (0x%x)", esp_err_to_name(err), err);
         abort("Write failed: " + String(esp_err_to_name(err)));
         return false;
     }
@@ -96,12 +101,17 @@ bool OtaManager::processChunk(const uint8_t* data, size_t length, uint32_t chunk
     receivedBytes += length;
     lastChunkTime = now;
     
-    if (chunkIndex % 10 == 0 || receivedBytes >= totalBytes) {
-        LOG_I(TAG, "Progress: %d/%d bytes (%d%%)", 
+    if (chunkIndex % OtaConstants::CHUNK_LOG_INTERVAL == 0 || receivedBytes >= totalBytes) {
+        LOG_I(TAG, "OTA Progress: %d/%d bytes (%d%%)", 
               receivedBytes, totalBytes, getProgress());
+        
+        if (statusCallback) {
+            statusCallback(MqttProtocol::OtaFields::StatusValues::DOWNLOADING, getProgress());
+        }
     }
     
     if (receivedBytes >= totalBytes) {
+        LOG_I(TAG, "All bytes received! Starting completion process...");
         completeUpdate();
     }
     
@@ -110,6 +120,10 @@ bool OtaManager::processChunk(const uint8_t* data, size_t length, uint32_t chunk
 
 void OtaManager::completeUpdate() {
     status = OtaStatus::APPLYING;
+    
+    if (statusCallback) {
+        statusCallback(MqttProtocol::OtaFields::StatusValues::APPLYING, 100);
+    }
     
     LOG_I(TAG, "Download complete, verifying CRC32...");
     
@@ -136,10 +150,14 @@ void OtaManager::completeUpdate() {
     status = OtaStatus::COMPLETE;
     inProgress = false;
     
+    if (statusCallback) {
+        statusCallback(MqttProtocol::OtaFields::StatusValues::COMPLETE, 100);
+    }
+    
     LOG_I(TAG, "OTA update successful, rebooting in 3 seconds...");
     
     status = OtaStatus::REBOOTING;
-    TimeUtils::delay_for(std::chrono::seconds(3));
+    TimeUtils::delay_for(TimeConstants::OTA_REBOOT_DELAY);
     ESP.restart();
 }
 
@@ -175,4 +193,63 @@ uint32_t OtaManager::updateCrc32(uint32_t crc, const uint8_t* data, size_t lengt
     }
     
     return ~crc;
+}
+
+bool OtaManager::handleOtaMessage(const String& topic, const uint8_t* payload, unsigned int length, 
+                                  const String& otaStartTopic, const String& otaChunkTopic) {
+    if (topic == otaStartTopic) {
+        DynamicJsonDocument doc(256);
+        DeserializationError error = deserializeJson(doc, payload, length);
+        
+        if (error) {
+            LOG_E(TAG, "Failed to parse OTA start message: %s", error.c_str());
+            return false;
+        }
+        
+        OtaInfo info;
+        info.version = doc[MqttProtocol::OtaFields::VERSION].as<String>();
+        info.size = doc[MqttProtocol::OtaFields::SIZE];
+        info.crc32 = doc[MqttProtocol::OtaFields::CRC32];
+        
+        if (startUpdate(info)) {
+            if (statusCallback) {
+                statusCallback(MqttProtocol::OtaFields::StatusValues::STARTED, 0);
+            }
+            return true;
+        } else {
+            if (statusCallback) {
+                statusCallback(MqttProtocol::OtaFields::StatusValues::ERROR, 0);
+            }
+            return false;
+        }
+    }
+    else if (topic == otaChunkTopic) {
+        if (length < OtaConstants::CHUNK_HEADER_SIZE) {
+            LOG_E(TAG, "Invalid OTA chunk - too small");
+            return false;
+        }
+        
+        uint32_t chunkIndex, chunkSize;
+        memcpy(&chunkIndex, payload, 4);
+        memcpy(&chunkSize, payload + 4, 4);
+        
+        const uint8_t* data = payload + OtaConstants::CHUNK_HEADER_SIZE;
+        size_t dataLength = length - OtaConstants::CHUNK_HEADER_SIZE;
+        
+        if (chunkIndex % OtaConstants::CHUNK_LOG_INTERVAL == 0) {
+            LOG_I(TAG, "Processing OTA chunk %d/%d", chunkIndex, OtaConstants::ESTIMATED_TOTAL_CHUNKS);
+        }
+        
+        bool result = processChunk(data, dataLength, chunkIndex, chunkSize);
+        
+        if (!result) {
+            if (statusCallback) {
+                statusCallback(MqttProtocol::OtaFields::StatusValues::ERROR, getProgress());
+            }
+        }
+        
+        return result;
+    }
+    
+    return false;
 }

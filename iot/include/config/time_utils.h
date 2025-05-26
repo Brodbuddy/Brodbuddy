@@ -87,6 +87,16 @@ namespace TimeConstants {
     constexpr auto LONG_SLEEP_THRESHOLD = 1h;
     constexpr time_t MIN_VALID_EPOCH = 1609459200;   // 1 januar 2021
     constexpr time_t FALLBACK_EPOCH = 1704067200UL;  // 1 januar 2024
+    constexpr auto TIME_SYNC_RETRY_INTERVAL = 30s;
+    
+    // OTA
+    constexpr auto OTA_CHUNK_TIMEOUT = 30s;
+    constexpr auto OTA_PROGRESS_STALL_WARNING = 10s;
+    constexpr auto OTA_PROGRESS_STALL_TIMEOUT = 60s;
+    constexpr auto OTA_INITIAL_TIMEOUT = 30s;
+    constexpr auto OTA_RESUME_REQUEST_INTERVAL = 15s;
+    constexpr auto OTA_MQTT_LOOP_INTERVAL = 10ms;
+    constexpr auto OTA_REBOOT_DELAY = 3s;
 }
 
 #endif

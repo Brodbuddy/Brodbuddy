@@ -12,6 +12,7 @@ private:
     const char* _ntpServer;
     unsigned long _lastSyncMillis;
     unsigned long _syncInterval;
+    unsigned long _lastRetryAttempt;
     
     static const char* TAG;
 
@@ -32,9 +33,12 @@ public:
     
     bool syncWithNTP();
     
-    bool isTimeValid();
+    bool isTimeValid() const;
     
     void adjustAfterSleep(unsigned long sleepTimeMs);
+    
+    bool trySync();
+    bool shouldRetrySync() const;
 };
 
 #endif

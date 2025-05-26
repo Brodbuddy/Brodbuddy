@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Application.Interfaces.Data;
+using Application.Interfaces.Data.Repositories;
 using Application.Interfaces.Data.Repositories.Auth;
 using Application.Interfaces.Data.Repositories.Sourdough;
 using Application.Models.DTOs;
@@ -13,7 +14,7 @@ namespace Application.Services.Sourdough;
 public interface ISourdoughAnalyzerService
 {
     Task<RegisterAnalyzerResult> RegisterAnalyzerAsync(RegisterAnalyzerInput input);
-    Task<IEnumerable<SourdoughAnalyzer>> GetUserAnalyzersAsync(Guid userId);
+    Task<IEnumerable<AnalyzerWithUpdateStatus>> GetUserAnalyzersAsync(Guid userId);
     Task<IEnumerable<SourdoughAnalyzer>> GetAllAnalyzersAsync();
     Task<SourdoughAnalyzer> CreateAnalyzerAsync(string macAddress, string name);
 }
@@ -23,6 +24,7 @@ public class SourdoughAnalyzerService : ISourdoughAnalyzerService
     private readonly ISourdoughAnalyzerRepository _analyzerRepository;
     private readonly IUserAnalyzerRepository _userAnalyzerRepository;
     private readonly IUserIdentityRepository _userRepository;
+    private readonly IFirmwareRepository _firmwareRepository;
     private readonly ITransactionManager _transactionManager;
     private readonly TimeProvider _timeProvider;
 
@@ -30,12 +32,14 @@ public class SourdoughAnalyzerService : ISourdoughAnalyzerService
         ISourdoughAnalyzerRepository analyzerRepository,
         IUserAnalyzerRepository userAnalyzerRepository,
         IUserIdentityRepository userRepository,
+        IFirmwareRepository firmwareRepository,
         ITransactionManager transactionManager,
         TimeProvider timeProvider)
     {
         _analyzerRepository = analyzerRepository;
         _userAnalyzerRepository = userAnalyzerRepository;
         _userRepository = userRepository;
+        _firmwareRepository = firmwareRepository;
         _transactionManager = transactionManager;
         _timeProvider = timeProvider;
     }
@@ -77,9 +81,19 @@ public class SourdoughAnalyzerService : ISourdoughAnalyzerService
         });
     }
 
-    public async Task<IEnumerable<SourdoughAnalyzer>> GetUserAnalyzersAsync(Guid userId)
+    public async Task<IEnumerable<AnalyzerWithUpdateStatus>> GetUserAnalyzersAsync(Guid userId)
     {
-        return await _analyzerRepository.GetByUserIdAsync(userId);
+        var analyzers = await _analyzerRepository.GetByUserIdAsync(userId);
+        var latestFirmware = await _firmwareRepository.GetLatestStableAsync();
+        
+        return analyzers.Select(analyzer => new AnalyzerWithUpdateStatus
+        {
+            Analyzer = analyzer,
+            HasUpdate = latestFirmware != null && 
+                       !string.IsNullOrEmpty(analyzer.FirmwareVersion) && 
+                       !string.IsNullOrEmpty(latestFirmware.Version) &&
+                       analyzer.FirmwareVersion != latestFirmware.Version
+        });
     }
 
     public async Task<IEnumerable<SourdoughAnalyzer>> GetAllAnalyzersAsync()

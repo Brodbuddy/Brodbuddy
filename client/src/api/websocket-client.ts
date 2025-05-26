@@ -24,23 +24,35 @@ export const ErrorCodes = {
 
 // Request type constants
 export const Requests = {
+    firmwareNotificationSubscription: "FirmwareNotificationSubscription",
+    makeFirmwareAvailable: "MakeFirmwareAvailable",
+    otaProgressSubscription: "OtaProgressSubscription",
     ping: "Ping",
     sourdoughData: "SourdoughData",
+    startOtaUpdate: "StartOtaUpdate",
 } as const;
 
 // Response type constants
 export const Responses = {
+    firmwareNotificationsSubscribed: "FirmwareNotificationsSubscribed",
+    makeFirmwareAvailableResponse: "MakeFirmwareAvailableResponse",
+    otaProgressSubscribed: "OtaProgressSubscribed",
     pong: "Pong",
     sourdoughDataSubscribed: "SourdoughDataSubscribed",
+    startOtaUpdateResponse: "StartOtaUpdateResponse",
 } as const;
 
 // Broadcast type constants
 export const Broadcasts = {
+    firmwareAvailable: "FirmwareAvailable",
+    otaProgressUpdate: "OtaProgressUpdate",
     sourdoughReading: "SourdoughReading",
 } as const;
 
 // Subscription methods
 export const SubscriptionMethods = {
+    firmwareNotificationSubscription: "FirmwareNotificationSubscription",
+    otaProgressSubscription: "OtaProgressSubscription",
     sourdoughData: "SourdoughData",
 } as const;
 
@@ -58,6 +70,30 @@ export interface BaseBroadcast {
 }
 
 // Message interfaces
+export interface SubscribeToFirmwareNotifications extends BaseMessage {
+    clientType: string;
+}
+
+export interface FirmwareNotificationsSubscribed extends BaseMessage {
+    topic: string;
+}
+
+export interface MakeFirmwareAvailableRequest extends BaseMessage {
+    firmwareId: string;
+}
+
+export interface MakeFirmwareAvailableResponse extends BaseMessage {
+    firmwareId: string;
+}
+
+export interface SubscribeToOtaProgress extends BaseMessage {
+    analyzerId: string;
+}
+
+export interface OtaProgressSubscribed extends BaseMessage {
+    topic: string;
+}
+
 export interface Ping extends BaseMessage {
     timestamp: number;
 }
@@ -76,6 +112,34 @@ export interface SourdoughDataSubscribed extends BaseMessage {
     connectionId: string;
 }
 
+export interface StartOtaUpdateRequest extends BaseMessage {
+    userId: string;
+    analyzerId: string;
+    firmwareVersionId: string;
+}
+
+export interface StartOtaUpdateResponse extends BaseMessage {
+    updateId: string;
+    status: string;
+}
+
+export interface FirmwareAvailable extends BaseBroadcast {
+    firmwareId: string;
+    version: string;
+    description: string;
+    releaseNotes: string;
+    isStable: boolean;
+    fileSize: number;
+}
+
+export interface OtaProgressUpdate extends BaseBroadcast {
+    analyzerId: string;
+    updateId: string;
+    status: string;
+    progress: number;
+    message: string;
+}
+
 export interface SourdoughReading extends BaseBroadcast {
     rise: number;
     temperature: number;
@@ -87,8 +151,12 @@ export interface SourdoughReading extends BaseBroadcast {
 
 // Request-response type mapping
 export type RequestResponseMap = {
+    [Requests.firmwareNotificationSubscription]: [SubscribeToFirmwareNotifications, FirmwareNotificationsSubscribed];
+    [Requests.makeFirmwareAvailable]: [MakeFirmwareAvailableRequest, MakeFirmwareAvailableResponse];
+    [Requests.otaProgressSubscription]: [SubscribeToOtaProgress, OtaProgressSubscribed];
     [Requests.ping]: [Ping, Pong];
     [Requests.sourdoughData]: [SubscribeToSourdoughData, SourdoughDataSubscribed];
+    [Requests.startOtaUpdate]: [StartOtaUpdateRequest, StartOtaUpdateResponse];
 };
 
 
@@ -369,11 +437,23 @@ export class WebSocketClient {
 
 
     send = {
+    firmwareNotificationSubscription: (payload: Omit<SubscribeToFirmwareNotifications, 'requestId'>): Promise<FirmwareNotificationsSubscribed> => {
+        return this.sendRequest<FirmwareNotificationsSubscribed>('FirmwareNotificationSubscription', payload);
+    },
+    makeFirmwareAvailable: (payload: Omit<MakeFirmwareAvailableRequest, 'requestId'>): Promise<MakeFirmwareAvailableResponse> => {
+        return this.sendRequest<MakeFirmwareAvailableResponse>('MakeFirmwareAvailable', payload);
+    },
+    otaProgressSubscription: (payload: Omit<SubscribeToOtaProgress, 'requestId'>): Promise<OtaProgressSubscribed> => {
+        return this.sendRequest<OtaProgressSubscribed>('OtaProgressSubscription', payload);
+    },
     ping: (payload: Omit<Ping, 'requestId'>): Promise<Pong> => {
         return this.sendRequest<Pong>('Ping', payload);
     },
     sourdoughData: (payload: Omit<SubscribeToSourdoughData, 'requestId'>): Promise<SourdoughDataSubscribed> => {
         return this.sendRequest<SourdoughDataSubscribed>('SourdoughData', payload);
+    },
+    startOtaUpdate: (payload: Omit<StartOtaUpdateRequest, 'requestId'>): Promise<StartOtaUpdateResponse> => {
+        return this.sendRequest<StartOtaUpdateResponse>('StartOtaUpdate', payload);
     },
 };
 

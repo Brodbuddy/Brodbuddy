@@ -1,13 +1,12 @@
 using Api.Websocket.Auth;
 using Api.Websocket.ExceptionHandler;
 using Api.Websocket.Middleware;
-using Application.Interfaces;
 using Brodbuddy.WebSocket.Auth;
 using Brodbuddy.WebSocket.Core;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Api.Websocket;
+namespace Api.Websocket.Extensions;
 
 public static class Extensions
 {

@@ -10,6 +10,7 @@ public interface IMqttPublisher
 {
     Task PublishAsync(string topic, string payload, QualityOfService qos = QualityOfService.AtLeastOnceDelivery, bool retain = false);
     Task PublishAsync<T>(string topic, T payload, QualityOfService qos = QualityOfService.AtLeastOnceDelivery, bool retain = false) where T : class;
+    Task PublishBinaryAsync(string topic, byte[] payload, QualityOfService qos = QualityOfService.AtLeastOnceDelivery, bool retain = false);
 }
 
 public class HiveMqttPublisher : IMqttPublisher
@@ -72,6 +73,39 @@ public class HiveMqttPublisher : IMqttPublisher
         {
             _logger.LogError(ex, "Failed to serialize payload of type {PayloadType} for MQTT topic {Topic}", typeof(T).Name, topic);
             throw new JsonException($"Failed to serialize payload of type {typeof(T).Name} for MQTT topic {topic}");
+        }
+    }
+
+    public async Task PublishBinaryAsync(string topic, byte[] payload, QualityOfService qos = QualityOfService.AtLeastOnceDelivery, bool retain = false)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(topic);
+        ArgumentNullException.ThrowIfNull(payload);
+
+        if (!_mqttClient.IsConnected())
+        {
+            _logger.LogWarning("MQTT client is not connected. Cannot publish binary message to topic {Topic}", topic);
+            throw new InvalidOperationException("MQTT client is not connected");
+        }
+
+        try
+        {
+            var message = new MQTT5PublishMessage
+            {
+                Topic = topic,
+                Payload = payload,
+                QoS = qos,
+                Retain = retain
+            };
+            
+            await _mqttClient.PublishAsync(message);
+            
+            _logger.LogDebug("Successfully published binary message ({Size} bytes) to topic {Topic} with QoS {QoS}", 
+                payload.Length, topic, qos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish binary MQTT message to topic {Topic}", topic);
+            throw new InvalidOperationException($"Failed to publish binary MQTT message to topic {topic}");
         }
     }
 }

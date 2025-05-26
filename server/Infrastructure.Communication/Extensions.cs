@@ -80,6 +80,7 @@ public static class Extensions
     {
         services.AddScoped<IMqttPublisher, HiveMqttPublisher>();
         services.AddScoped<IDevicePublisher, TestMqttDevicePublisher>();
+        services.AddScoped<IOtaPublisher, OtaPublisher>();
         return services;
     }
 

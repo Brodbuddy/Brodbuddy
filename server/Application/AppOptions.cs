@@ -63,7 +63,7 @@ public class DragonflyOptions
 
 public class MqttOptions
 {
-    public string Host { get; set; } = "localhost";
+    public string Host { get; set; } = "mqtt.staging.brodbuddy.com";
     public int MqttPort { get; set; } = 1883;
     public int WebSocketPort { get; set; } = 8080;
     public string Username { get; set; } = "user";

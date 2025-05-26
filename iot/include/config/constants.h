@@ -27,7 +27,7 @@ namespace Pins {
     constexpr int RESET_BUTTON = 13;
 
     // Time of Flight
-    constexpr int XSHUT = 34;
+    constexpr int XSHUT = 14;
 
     // I2C (BME280 og Time of Flight)
     constexpr int I2C_SDA = 25;
@@ -36,7 +36,7 @@ namespace Pins {
 
 namespace Sensors {
     // I2C Konfiguration
-    constexpr int I2C_CLOCK_SPEED = 50000;
+    constexpr int I2C_CLOCK_SPEED = 10000;
 
     // BME280 adresser
     constexpr uint8_t BME280_ADDR_PRIMARY = 0x76;   // SDO -> GND (eller uden SDO sluttet til)
@@ -93,8 +93,16 @@ namespace NetworkConstants {
     constexpr const char* HOSTNAME = "sourdough_monitor";
     constexpr int WIFI_CONNECT_ATTEMPTS = 30;
     
-    constexpr size_t MQTT_BUFFER_SIZE = 1024;
+    constexpr size_t MQTT_BUFFER_SIZE = 8192;
 } 
+
+namespace OtaConstants {
+    constexpr uint32_t PROGRESS_UPDATE_CHUNK_INTERVAL = 50;
+    constexpr uint32_t MQTT_MESSAGE_LOG_INTERVAL = 50;
+    constexpr uint32_t CHUNK_LOG_INTERVAL = 10;
+    constexpr uint32_t CHUNK_HEADER_SIZE = 8;
+    constexpr uint32_t ESTIMATED_TOTAL_CHUNKS = 272;
+}
 
 namespace UIConstants {
     constexpr int FACTORY_RESET_BLINK_COUNT = 40;

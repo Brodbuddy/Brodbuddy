@@ -114,12 +114,12 @@ export function LoggingAdmin() {
                                         value={selectedLevel || ''} 
                                         onValueChange={(value) => setSelectedLevel(value as LoggingLevel)}
                                     >
-                                        <SelectTrigger className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
+                                        <SelectTrigger className="w-full border-border-brown focus:ring-accent-foreground">
                                             <SelectValue placeholder="Choose log level" />
                                         </SelectTrigger>
-                                        <SelectContent className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
+                                        <SelectContent>
                                             {Object.values(LoggingLevel).map((level) => (
-                                                <SelectItem key={level} value={level} className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                <SelectItem key={level} value={level}>
                                                     <div className="flex items-center gap-2">
                                                         <span className={`text-xs px-2 py-1 rounded ${LOG_LEVEL_COLORS[level]}`}>
                                                             {level}
@@ -151,7 +151,7 @@ export function LoggingAdmin() {
                                 <Button
                                     onClick={handleUpdateLogLevel}
                                     disabled={updateLoading || !selectedLevel || selectedLevel === currentLevel}
-                                    className="w-full bg-orange-500 text-black hover:bg-orange-600 dark:bg-orange-600 dark:text-white"
+                                    className="w-full bg-accent-foreground text-primary-foreground hover:bg-accent-foreground/90"
                                 >
                                     <Save className="w-4 h-4 mr-2" />
                                     {updateLoading ? 'Updating...' : 'Update Log Level'}

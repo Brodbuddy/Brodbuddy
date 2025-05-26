@@ -25,6 +25,7 @@ public:
     };
 
     using BatteryCheckCallback = std::function<bool()>;
+    using StatusCallback = std::function<void(const String& status, uint8_t progress)>;
 
     OtaManager();
     
@@ -34,14 +35,20 @@ public:
     void abort(const String& reason);
     
     void setBatteryCheckCallback(BatteryCheckCallback callback) { batteryCheck = callback; }
+    void setStatusCallback(StatusCallback callback) { statusCallback = callback; }
+    
+    bool handleOtaMessage(const String& topic, const uint8_t* payload, unsigned int length, 
+                         const String& otaStartTopic, const String& otaChunkTopic);
     
     OtaStatus getStatus() const { return status; }
     uint8_t getProgress() const;
     bool isInProgress() const { return inProgress; }
+    uint32_t getReceivedBytes() const { return receivedBytes; }
+    uint32_t getTotalBytes() const { return totalBytes; }
+    std::chrono::steady_clock::time_point getLastChunkTime() const { return lastChunkTime; }
     
 private:
     static const char* TAG;
-    static constexpr auto CHUNK_TIMEOUT = std::chrono::seconds(30);
     
     OtaStatus status;
     bool inProgress;
@@ -55,6 +62,7 @@ private:
     std::chrono::steady_clock::time_point lastChunkTime;
     
     BatteryCheckCallback batteryCheck;
+    StatusCallback statusCallback;
     
     void completeUpdate();
     uint32_t updateCrc32(uint32_t crc, const uint8_t* data, size_t length);

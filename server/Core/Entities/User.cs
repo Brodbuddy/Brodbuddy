@@ -15,6 +15,8 @@ public partial class User
 
     public virtual ICollection<FeatureUser> FeatureUsers { get; set; } = new List<FeatureUser>();
 
+    public virtual ICollection<FirmwareVersion> FirmwareVersions { get; set; } = new List<FirmwareVersion>();
+
     public virtual ICollection<TokenContext> TokenContexts { get; set; } = new List<TokenContext>();
 
     public virtual ICollection<UserAnalyzer> UserAnalyzers { get; set; } = new List<UserAnalyzer>();

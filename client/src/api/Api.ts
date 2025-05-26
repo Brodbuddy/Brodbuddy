@@ -41,6 +41,8 @@ export interface AnalyzerListResponse {
   /** @format date-time */
   lastSeen: string | null;
   isOwner: boolean;
+  firmwareVersion: string | null;
+  hasUpdate: boolean;
 }
 
 export interface AdminAnalyzerListResponse {
@@ -111,6 +113,32 @@ export interface LogLevelUpdateRequest {
   logLevel: LoggingLevel;
 }
 
+export interface UploadFirmwareResponse {
+  /** @format guid */
+  id: string;
+  version: string;
+  /** @format int64 */
+  size: number;
+  crc32: number;
+}
+
+export interface FirmwareVersionResponse {
+  /** @format guid */
+  id: string;
+  version: string;
+  description: string;
+  /** @format int64 */
+  fileSize: number;
+  /** @format int64 */
+  crc32: number;
+  releaseNotes: string | null;
+  isStable: boolean;
+  /** @format date-time */
+  createdAt: string;
+  /** @format guid */
+  createdBy: string | null;
+}
+
 export interface TestTokenResponse {
   accessToken: string;
 }
@@ -134,6 +162,7 @@ export interface RefreshTokenResponse {
 }
 
 export interface UserInfoResponse {
+  userId: string;
   email: string;
   isAdmin: boolean;
 }
@@ -549,6 +578,53 @@ export class Api<
         body: data,
         secure: true,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+  };
+  ota = {
+    /**
+     * No description
+     *
+     * @tags Ota
+     * @name UploadFirmware
+     * @request POST:/api/ota/firmware
+     * @secure
+     */
+    uploadFirmware: (
+      data: {
+        /** @format binary */
+        File?: File | null;
+        Version?: string | null;
+        Description?: string | null;
+        ReleaseNotes?: string | null;
+        IsStable?: boolean;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<UploadFirmwareResponse, any>({
+        path: `/api/ota/firmware`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.FormData,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags Ota
+     * @name GetFirmwareVersions
+     * @request GET:/api/ota/firmware
+     * @secure
+     */
+    getFirmwareVersions: (params: RequestParams = {}) =>
+      this.request<FirmwareVersionResponse[], any>({
+        path: `/api/ota/firmware`,
+        method: "GET",
+        secure: true,
         format: "json",
         ...params,
       }),

@@ -101,8 +101,8 @@ export function AnalyzerAdmin() {
                 </div>
                 <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="bg-orange-500 text-black hover:bg-orange-600 dark:bg-orange-600 dark:text-white dark:hover:bg-orange-700 dark:hover:text-white">
-                            <Plus className="w-4 h-4 mr-2 dark:text-white" />
+                        <Button className="bg-accent-foreground text-primary-foreground hover:bg-accent-foreground/90">
+                            <Plus className="w-4 h-4 mr-2" />
                             Add Analyzer
                         </Button>
                     </DialogTrigger>
@@ -123,7 +123,7 @@ export function AnalyzerAdmin() {
                                     <Input
                                         id="macAddress"
                                         placeholder="XX:XX:XX:XX:XX:XX"
-                                        className="font-mono tracking-wider border border-gray-300 dark:border-gray-800"
+                                        className="font-mono tracking-wider border-border-brown focus:ring-accent-foreground"
                                         disabled={form.formState.isSubmitting || createSuccess}
                                         {...form.register('macAddress')}
                                         onChange={(e) => {
@@ -148,7 +148,7 @@ export function AnalyzerAdmin() {
                                     <Input
                                         id="name"
                                         placeholder="Kitchen Analyzer"
-                                        className="border border-gray-300 dark:border-gray-800"
+                                        className="border-border-brown focus:ring-accent-foreground"
                                         disabled={form.formState.isSubmitting || createSuccess}
                                         {...form.register('name')}
                                         maxLength={50}
@@ -164,7 +164,7 @@ export function AnalyzerAdmin() {
                                 <Button
                                     type="submit"
                                     disabled={form.formState.isSubmitting || createSuccess}
-                                    className="w-full bg-orange-500 text-black hover:bg-orange-600 dark:bg-orange-600 dark:text-white mt-4"
+                                    className="w-full bg-accent-foreground text-primary-foreground hover:bg-accent-foreground/90 mt-4"
                                 >
                                     {form.formState.isSubmitting ? (
                                         <>

@@ -50,6 +50,7 @@ public static class Extensions
         
         // Andet
         services.AddScoped<IFeatureToggleRepository, PgFeatureToggleRepository>();
+        services.AddScoped<IFirmwareRepository, PgFirmwareRepository>();
         
         return services;
     }

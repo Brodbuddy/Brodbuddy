@@ -30,7 +30,10 @@ public class WebSocketDispatcher(IServiceProvider serviceProvider,
         
         foreach (var handlerType in handlerTypes)
         {
-            if (ActivatorUtilities.CreateInstance(serviceProvider, handlerType) is not IWebSocketHandler handler) continue;
+            // Create a temporary instance ONLY to get the MessageType property
+            // This instance will be disposed and not used for actual handling
+            using var tempScope = serviceProvider.CreateScope();
+            if (ActivatorUtilities.CreateInstance(tempScope.ServiceProvider, handlerType) is not IWebSocketHandler handler) continue;
             
             var handlerInterface = handlerType.GetInterfaces().First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IWebSocketHandler<,>));
             var requestType = handlerInterface.GetGenericArguments()[0];
@@ -40,7 +43,11 @@ public class WebSocketDispatcher(IServiceProvider serviceProvider,
                                                              t.BaseType.GetGenericTypeDefinition() == typeof(AbstractValidator<>) &&
                                                              t.BaseType.GetGenericArguments()[0] == requestType);
                                                         
-            var validator = validatorType != null ? ActivatorUtilities.CreateInstance(serviceProvider, validatorType) as IValidator : null;
+            IValidator? validator = null;
+            if (validatorType != null)
+            {
+                validator = ActivatorUtilities.CreateInstance(tempScope.ServiceProvider, validatorType) as IValidator;
+            }
             
             var authAttribute = handlerType.GetCustomAttribute<AuthorizeAttribute>();
             var hasAllowAnonymous = handlerType.GetCustomAttribute<AllowAnonymousAttribute>() != null;

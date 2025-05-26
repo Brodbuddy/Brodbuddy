@@ -9,7 +9,8 @@ TimeManager::TimeManager() :
     _timeZone("CET-1CEST,M3.5.0,M10.5.0/3"),
     _ntpServer("pool.ntp.org"),
     _lastSyncMillis(0),
-    _syncInterval(TimeUtils::to_ms(TimeConstants::NTP_SYNC_INTERVAL)) {
+    _syncInterval(TimeUtils::to_ms(TimeConstants::NTP_SYNC_INTERVAL)),
+    _lastRetryAttempt(0) {
 }
 
 bool TimeManager::begin(const char* timeZone, const char* ntpServer) {
@@ -106,7 +107,7 @@ bool TimeManager::syncWithNTP() {
     return false;
 }
 
-bool TimeManager::isTimeValid() {
+bool TimeManager::isTimeValid() const {
     time_t now = time(nullptr);
     return now > TimeConstants::MIN_VALID_EPOCH;
 }
@@ -118,4 +119,24 @@ void TimeManager::adjustAfterSleep(unsigned long sleepTimeMs) {
     } else {
         LOG_D(TAG, "Skipping NTP sync after short sleep (%lu ms)", sleepTimeMs);
     }
+}
+
+bool TimeManager::trySync() {
+    if (!isTimeValid()) {
+        LOG_W(TAG, "Time not valid, attempting sync");
+        if (begin(_timeZone.c_str(), _ntpServer)) {
+            LOG_I(TAG, "Time synchronized successfully: %s", getLocalTimeString().c_str());
+            return true;
+        } else {
+            LOG_W(TAG, "Time sync failed");
+            _lastRetryAttempt = millis();
+            return false;
+        }
+    }
+    return true;
+}
+
+bool TimeManager::shouldRetrySync() const {
+    return !isTimeValid() && 
+           (millis() - _lastRetryAttempt) > TimeUtils::to_ms(TimeConstants::TIME_SYNC_RETRY_INTERVAL);
 }

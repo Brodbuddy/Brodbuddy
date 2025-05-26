@@ -21,6 +21,7 @@ import {Droplet, Thermometer, TrendingUp} from 'lucide-react';
 import {sourdoughHistoricalData} from '@/data/sourdoughData';
 import SourdoughManager from '@/components/analyzer/SourdoughManager';
 import {useWebSocket} from '@/hooks/useWebsocket';
+import {useAuth} from '@/hooks/useAuth';
 import {Broadcasts, SourdoughReading} from '@/api/websocket-client';
 
 const HomeDashboard: React.FC = () => {
@@ -33,6 +34,7 @@ const HomeDashboard: React.FC = () => {
         growth: number;
     }>>([]);
     const {client, connected} = useWebSocket();
+    const {user} = useAuth();
 
     const getDataFreshnessColor = (reading: SourdoughReading | null): string => {
         if (!reading) return "text-gray-400";
@@ -47,12 +49,12 @@ const HomeDashboard: React.FC = () => {
     };
 
     useEffect(() => {
-        if (!client || !connected) return;
+        if (!client || !connected || !user?.userId) return;
 
         const subscribeToData = async () => {
             try {
                 await client.send.sourdoughData({
-                    userId: '38915d56-2322-4a6b-8506-a1831535e62b'
+                    userId: user.userId
                 });
             } catch (err) {
                 console.error('Failed to subscribe to sourdough data:', err);
@@ -72,8 +74,12 @@ const HomeDashboard: React.FC = () => {
                 growth: payload.rise
             };
 
+            console.log('New data point:', newDataPoint);
+            console.log('Is valid date?', !isNaN(new Date(payload.localTime).getTime()));
+
             setRealTimeData(prevData => {
                 const updatedData = [...prevData, newDataPoint];
+                console.log('Updated realTimeData length:', updatedData.length);
                 return updatedData.slice(-100);
             });
         });
@@ -84,24 +90,12 @@ const HomeDashboard: React.FC = () => {
     const getFilteredData = () => {
         if (realTimeData.length === 0) return [];
 
-        const now = new Date();
-        let cutoffTime: Date;
-
-        if (timeRange === "1h") {
-            cutoffTime = new Date(now.getTime() - 60 * 60 * 1000);
-        } else if (timeRange === "6h") {
-            cutoffTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-        } else {
-            cutoffTime = new Date(now.getTime() - 12 * 60 * 60 * 1000);
-        }
-
-        return realTimeData.filter(item => {
-            const itemDate = new Date(item.date);
-            return itemDate >= cutoffTime;
-        });
+        // For now, just return all data to see if it shows in the graph
+        return realTimeData;
     };
 
     const chartData = getFilteredData();
+    console.log('Chart data after filtering:', chartData);
 
 
     const latestData = sourdoughHistoricalData[sourdoughHistoricalData.length - 1];
