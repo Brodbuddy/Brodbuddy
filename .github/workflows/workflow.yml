@@ -395,7 +395,7 @@ jobs:
           host: ${{ vars.SERVER_IP }}
           username: ${{ vars.SERVER_USERNAME }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          source: "docker-compose.yml,.env,.env_nginx,deploy/nginx/nginx.template.conf,db/migrations/**"
+          source: "docker-compose.yml,.env,.env_nginx,deploy/nginx/nginx.production.template.conf,db/migrations/**"
           target: ${{ vars.APP_DIR }}
 
       - name: Prepare server
@@ -412,7 +412,7 @@ jobs:
 
             cd $APP_DIR
             set -a; source .env_nginx; set +a
-            envsubst '${SERVER_NAME} ${API_SERVER_NAME}' < ./deploy/nginx/nginx.template.conf > ./nginx.production.conf
+            envsubst '${SERVER_NAME} ${API_SERVER_NAME}' < ./deploy/nginx/nginx.production.template.conf > ./nginx.production.conf
             mkdir -p $NGINX_CONFIG_VOL_PATH
             cp ./nginx.production.conf $NGINX_CONFIG_VOL_PATH/default.conf
 
