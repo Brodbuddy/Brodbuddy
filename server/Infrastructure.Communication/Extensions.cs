@@ -16,30 +16,31 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using Environments = Application.Environments;
 
 namespace Infrastructure.Communication;
 
 public static class Extensions
 {
-    public static IServiceCollection AddCommunicationInfrastructure(this IServiceCollection services, IHostEnvironment environment)
+    public static IServiceCollection AddCommunicationInfrastructure(this IServiceCollection services)
     {
-        services.AddMail(environment);
+        services.AddMail();
         services.AddSocketManager();
         services.AddMqttPublisher();
         services.AddNotifiers();
         return services;
     }
 
-    private static IServiceCollection AddMail(this IServiceCollection services, IHostEnvironment environment)
+    private static IServiceCollection AddMail(this IServiceCollection services)
     {
         var serviceProvider = services.BuildServiceProvider();
         var appOptions = serviceProvider.GetRequiredService<IOptions<AppOptions>>().Value;
         
-        if (environment.IsProduction() && !string.IsNullOrEmpty(appOptions.Email.SendGridApiKey))
+        if (appOptions.Environment == Environments.Production && !string.IsNullOrEmpty(appOptions.Email.SendGridApiKey))
         {
             services.AddFluentEmail(appOptions.Email.FromEmail, appOptions.Email.Sender)
-                    .AddRazorRenderer()
-                    .AddSendGridSender(apiKey: appOptions.Email.SendGridApiKey);
+                .AddRazorRenderer()
+                .AddSendGridSender(apiKey: appOptions.Email.SendGridApiKey);
         }
         else
         {
