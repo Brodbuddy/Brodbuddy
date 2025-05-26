@@ -24,23 +24,27 @@ export const ErrorCodes = {
 
 // Request type constants
 export const Requests = {
+    diagnostics: "Diagnostics",
     ping: "Ping",
     sourdoughData: "SourdoughData",
 } as const;
 
 // Response type constants
 export const Responses = {
+    diagnosticsDataSubscribed: "DiagnosticsDataSubscribed",
     pong: "Pong",
     sourdoughDataSubscribed: "SourdoughDataSubscribed",
 } as const;
 
 // Broadcast type constants
 export const Broadcasts = {
+    diagnosticsResponse: "DiagnosticsResponse",
     sourdoughReading: "SourdoughReading",
 } as const;
 
 // Subscription methods
 export const SubscriptionMethods = {
+    diagnostics: "Diagnostics",
     sourdoughData: "SourdoughData",
 } as const;
 
@@ -58,6 +62,15 @@ export interface BaseBroadcast {
 }
 
 // Message interfaces
+export interface SubscribeToDiagnosticsData extends BaseMessage {
+    userId: string;
+}
+
+export interface DiagnosticsDataSubscribed extends BaseMessage {
+    userId: string;
+    connectionId: string;
+}
+
 export interface Ping extends BaseMessage {
     timestamp: number;
 }
@@ -76,6 +89,19 @@ export interface SourdoughDataSubscribed extends BaseMessage {
     connectionId: string;
 }
 
+export interface DiagnosticsResponse extends BaseBroadcast {
+    analyzerId: string;
+    epochTime: number;
+    timestamp: string;
+    localTime: string;
+    uptime: number;
+    freeHeap: number;
+    state: string;
+    wifi: any;
+    sensors: any;
+    humidity: number;
+}
+
 export interface SourdoughReading extends BaseBroadcast {
     rise: number;
     temperature: number;
@@ -87,6 +113,7 @@ export interface SourdoughReading extends BaseBroadcast {
 
 // Request-response type mapping
 export type RequestResponseMap = {
+    [Requests.diagnostics]: [SubscribeToDiagnosticsData, DiagnosticsDataSubscribed];
     [Requests.ping]: [Ping, Pong];
     [Requests.sourdoughData]: [SubscribeToSourdoughData, SourdoughDataSubscribed];
 };
@@ -369,6 +396,9 @@ export class WebSocketClient {
 
 
     send = {
+    diagnostics: (payload: Omit<SubscribeToDiagnosticsData, 'requestId'>): Promise<DiagnosticsDataSubscribed> => {
+        return this.sendRequest<DiagnosticsDataSubscribed>('Diagnostics', payload);
+    },
     ping: (payload: Omit<Ping, 'requestId'>): Promise<Pong> => {
         return this.sendRequest<Pong>('Ping', payload);
     },

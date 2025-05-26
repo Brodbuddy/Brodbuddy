@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { AnalyzerAdmin } from '../components/admin/AnalyzerAdmin';
 import { FeatureToggleAdmin } from '../components/admin/FeatureToggleAdmin';
 import { LoggingAdmin } from '../components/admin/LoggingAdmin';
+import { DiagnosticsAdmin } from '../components/admin/DiagnosticsAdmin';
 import { useAtom } from 'jotai';
 import { adminTabAtom, AdminTab } from '../atoms/adminTab';
 
@@ -20,14 +21,19 @@ export function AdminPage() {
             </div>
             
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="analyzers">Sourdough Analyzers</TabsTrigger>
+                    <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
                     <TabsTrigger value="features">Feature Toggles</TabsTrigger>
                     <TabsTrigger value="logging">Logging</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="analyzers" className="mt-6">
                     <AnalyzerAdmin />
+                </TabsContent>
+
+                <TabsContent value="diagnostics" className="mt-6">
+                    <DiagnosticsAdmin />
                 </TabsContent>
                 
                 <TabsContent value="features" className="mt-6">
