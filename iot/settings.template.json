@@ -14,8 +14,10 @@
   },
   "calibration": {
     "tempOffsetCelsius": -1.7,
-    "humOffset": 7.3,
-    "containerHeightMillis": 200
+    "humOffset": 7.3
+  },
+  "sourdough": {
+    "feedingNumber": 1
   },
   "lowPowerMode": false
 }

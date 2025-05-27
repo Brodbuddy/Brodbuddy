@@ -15,10 +15,13 @@ class ButtonManager {
     void clearResetRequest() { resetRequest = false; }
     bool isPortalRequested() const { return portalRequest; }
     void clearPortalRequest() { portalRequest = false; }
+    bool isTofResetRequested() const { return tofResetRequest; }
+    void clearTofResetRequest() { tofResetRequest = false; }
 
   private:
     bool buttonPressed;
     unsigned long buttonPressStart;
     bool resetRequest;
     bool portalRequest;
+    bool tofResetRequest;
 };

@@ -32,6 +32,9 @@ namespace Pins {
     // I2C (BME280 og Time of Flight)
     constexpr int I2C_SDA = 25;
     constexpr int I2C_SCL = 26;
+    
+    // Batteri
+    constexpr int BATTERY = A2;  // GPIO34 - ADC pin for batteri spænding
 }
 
 namespace Sensors {
@@ -110,6 +113,27 @@ namespace UIConstants {
 
 namespace MonitoringConstants {
     constexpr int MAX_DATA_POINTS = 144; // Maks 12 timer ved 5-minutter intervaller
+}
+
+namespace Battery {
+    // ADC konfiguration
+    constexpr int ADC_RESOLUTION = 12;
+    constexpr int ADC_MAX_VALUE = 4095;
+    constexpr float ADC_REF_VOLTAGE = 3300.0f; // millivolts
+    
+    // Batteri karakteristika
+    constexpr int MIN_VOLTAGE = 3300;              // mV - Li-ion minimum sikker spænding
+    constexpr int MAX_VOLTAGE = 4200;              // mV - Li-ion fuldt opladet
+    constexpr float VOLTAGE_DIVIDER_RATIO = 2.0f;  // Spændingsdeler forhold
+    
+    // Sampling konfiguration
+    constexpr int SAMPLE_COUNT = 64;
+    constexpr int SAMPLE_DELAY_MS = 2;
+    
+    // Tærskelværdier
+    constexpr int LOW_BATTERY_THRESHOLD = 15;
+    constexpr int CRITICAL_BATTERY_THRESHOLD = 10;
+    constexpr int OTA_BATTERY_THRESHOLD = 20;
 }
 
 namespace DisplayConstants {

@@ -13,6 +13,8 @@
 #include "hardware/button_manager.h"
 #include "hardware/epaper_display.h"
 #include "hardware/sensor_manager.h"
+#include "hardware/battery_manager.h"
+#include "hardware/led_manager.h"
 #include "network/wifi_manager.h"
 #include "network/mqtt_manager.h"
 #include "network/mqtt_topics.h"
@@ -33,6 +35,8 @@ TimeManager timeManager;
 StateMachine stateMachine;
 SensorManager sensorManager;
 ButtonManager buttonManager;
+BatteryManager batteryManager;
+LedManager ledManager;
 Settings settings;
 EpaperDisplay display;
 EpaperMonitor monitor(display);
@@ -63,7 +67,7 @@ void publishOtaStatus(const String& status, uint8_t progress);
 
 void setup() {
     Serial.begin(115200);
-    Logger::begin(LOG_INFO, true, true);
+    Logger::begin(LOG_DEBUG, true, true);
 
     LOG_I(TAG, "--- Sourdough analyzer startup ---");
     
@@ -82,7 +86,7 @@ void setup() {
     historicalData.bufferFull = false;
     historicalData.outTemp = 21.0;
     historicalData.outHumidity = 44;
-    historicalData.batteryLevel = 100;
+    historicalData.batteryLevel = batteryManager.getPercentage();
 
     if (!sensorManager.begin()) {
         LOG_E(TAG, "Failed to initialize sensors");
@@ -90,9 +94,13 @@ void setup() {
 
     sensorManager.setCalibration(settings.getTempOffset(), settings.getHumOffset());
     sensorManager.setReadInterval(TimeUtils::to_ms(std::chrono::seconds(settings.getSensorInterval())));
+    sensorManager.setLoopCallback([]() { ledManager.loop(); });
     LOG_I(TAG, "Sensor interval configured: %d seconds", settings.getSensorInterval());
 
     buttonManager.begin();
+    batteryManager.begin();
+    ledManager.begin();
+    
     if (buttonManager.isStartupResetPressed()) {
         LOG_I(TAG, "Reset button pressed during startup - clearing WiFi settings");
         wifiManager.resetSettings();
@@ -115,6 +123,7 @@ void loop() {
     buttonManager.loop();
     mqttManager.loop();
     timeManager.loop();
+    ledManager.loop();
 
     if (currentMillis - lastStateCheck >= TimeUtils::to_ms(TimeConstants::STATE_CHECK_INTERVAL)) {
         lastStateCheck = currentMillis;
@@ -140,15 +149,28 @@ void validateBootAfterOta() {
 void handleButtonEvents() {
     if (buttonManager.isResetRequested()) {
         LOG_W(TAG, "WiFi reset requested");
+        ledManager.setPattern(LedManager::WIFI_RESET_CONFIRM);
+        TimeUtils::delay_for(std::chrono::milliseconds(100));
         wifiManager.resetSettings();
         buttonManager.clearResetRequest();
-        stateMachine.transitionTo(STATE_ERROR);
+        TimeUtils::delay_for(std::chrono::milliseconds(500));
+        ESP.restart();
     }
 
     if (buttonManager.isPortalRequested()) {
         LOG_I(TAG, "Manual portal requested");
         buttonManager.clearPortalRequest();
         wifiManager.startCaptivePortal();
+    }
+    
+    if (buttonManager.isTofResetRequested()) {
+        LOG_I(TAG, "ToF reset requested - incrementing feeding number");
+        ledManager.setPattern(LedManager::TOF_RESET_CONFIRM);
+        sensorManager.resetBaseline();
+        settings.incrementFeedingNumber();
+        settings.save();
+        LOG_I(TAG, "New feeding number: %d", settings.getFeedingNumber());
+        buttonManager.clearTofResetRequest();
     }
 }
 
@@ -189,12 +211,22 @@ void handleStateBoot() {
 }
 
 void handleStateConnectingWifi() {
+    static bool ledSet = false;
+    if (!ledSet) {
+        ledManager.setPattern(LedManager::WIFI_CONNECTING);
+        ledSet = true;
+    }
+    
     if (wifiManager.hasError()) {
         LOG_E(TAG, "WiFi manager error detected");
+        ledManager.setPattern(LedManager::OFF);
+        ledSet = false;
         stateMachine.transitionTo(STATE_ERROR);
     } else if (wifiManager.getStatus() == WIFI_CONNECTED) {
         TimeUtils::delay_for(TimeConstants::WIFI_STABILIZATION_DELAY);
         LOG_I(TAG, "WiFi connected");
+        ledManager.setPattern(LedManager::CONNECTED);
+        ledSet = false;
         
         if (!timeManager.isTimeValid()) {
             LOG_I(TAG, "Synchronizing time with NTP server");
@@ -267,6 +299,7 @@ void handleStateSensing() {
             historicalData.inTemp = sensorData.inTemp;
             historicalData.inHumidity = (int)sensorData.inHumidity;
             historicalData.currentGrowth = (int)sensorData.currentRisePercent;
+            historicalData.batteryLevel = batteryManager.getPercentage();
             
             unsigned long timestamp = timeManager.getEpochTime();
             monitor.addDataPoint(historicalData, (int)sensorData.currentRisePercent, timestamp);
@@ -299,6 +332,7 @@ void handleStatePublishingData() {
         doc[MqttProtocol::TelemetryFields::TEMPERATURE] = data.inTemp;
         doc[MqttProtocol::TelemetryFields::HUMIDITY] = data.inHumidity;
         doc[MqttProtocol::TelemetryFields::RISE] = data.currentRisePercent;
+        doc["feedingNumber"] = settings.getFeedingNumber();
 
         if (mqttTopics && mqttManager.publish(mqttTopics->getTelemetryTopic().c_str(), doc)) {
             LOG_I(TAG, "Data published to %s", mqttTopics->getTelemetryTopic().c_str());
@@ -467,6 +501,10 @@ void handleDiagnosticsRequest(const String& topic, const uint8_t* payload, unsig
     responseDoc[MqttProtocol::DiagnosticsFields::SENSORS][MqttProtocol::DiagnosticsFields::SENSOR_HUMIDITY] = sensorData.inHumidity;
     responseDoc[MqttProtocol::DiagnosticsFields::SENSORS][MqttProtocol::DiagnosticsFields::SENSOR_RISE] = sensorData.currentRisePercent;
     
+    responseDoc["battery"]["voltage"] = batteryManager.getVoltage();
+    responseDoc["battery"]["percentage"] = batteryManager.getPercentage();
+    responseDoc["battery"]["charging"] = batteryManager.isCharging();
+    
     if (mqttTopics && mqttManager.publish(mqttTopics->getDiagnosticsResponseTopic().c_str(), responseDoc)) {
         LOG_I(TAG, "Diagnostics response sent");
     }
@@ -481,7 +519,7 @@ void setupOtaHandler() {
     otaManager.begin();
     
     otaManager.setBatteryCheckCallback([]() {
-        return true;
+        return batteryManager.isSafeForOta();
     });
     
     otaManager.setStatusCallback(publishOtaStatus);

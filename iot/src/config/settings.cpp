@@ -41,7 +41,7 @@ void Settings::setDefaults() {
     _doc["lowPowerMode"] = true;
     _doc["calibration"]["tempOffsetCelsius"] = -1.7;
     _doc["calibration"]["humOffset"] = 7.3;
-    _doc["calibration"]["containerHeightMillis"] = 200;
+    _doc["sourdough"]["feedingNumber"] = 1;
     _loaded = true;
 }
 
@@ -174,12 +174,17 @@ void Settings::setHumOffset(float offset) {
     _doc["calibration"]["humOffset"] = offset;
 }
 
-int Settings::getContainerHeight() const {
-    return _doc["calibration"]["containerHeightMillis"].as<int>();
+int Settings::getFeedingNumber() const {
+    return _doc["sourdough"]["feedingNumber"] | 1;
 }
 
-void Settings::setContainerHeight(int height) {
-    _doc["calibration"]["containerHeightMillis"] = height;
+void Settings::setFeedingNumber(int number) {
+    _doc["sourdough"]["feedingNumber"] = number;
+}
+
+void Settings::incrementFeedingNumber() {
+    int current = getFeedingNumber();
+    setFeedingNumber(current + 1);
 }
 
 void Settings::printSettings() const {
