@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Card, CardContent,} from '@/components/ui/card';
-import {AlertCircle, PlusCircle, Download} from 'lucide-react';
+import {AlertCircle, PlusCircle} from 'lucide-react';
 import SourdoughManager from '@/components/analyzer/SourdoughManager';
 import {useWebSocket} from '@/hooks/useWebsocket';
 import {useOptimizedAnalyzerData} from '@/hooks/useOptimizedAnalyzerData';
@@ -8,7 +8,7 @@ import {useAtomValue} from 'jotai';
 import {getDefaultStore} from 'jotai';
 import {analyzersAtom, userInfoAtom} from '@/atoms';
 import {api} from '@/hooks/useHttp';
-import {Broadcasts, SourdoughReading, OtaProgressUpdate} from '@/api/websocket-client';
+import {Broadcasts, SourdoughReading} from '@/api/websocket-client';
 import {DashboardHeader, MetricsGrid, SourdoughChart,} from '@/components/dashboard';
 import {getTimeRangeInMs, TimeRange,} from '@/helpers/dashboardUtils';
 import {Button} from "@/components";

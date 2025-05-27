@@ -2,7 +2,6 @@ import React from 'react';
 import { Download, Loader2, WifiOff, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AnalyzerSelector } from '@/components/analyzer/AnalyzerSelector';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format } from 'date-fns';
 import { useWebSocket } from '@/hooks/useWebsocket';
 
@@ -34,17 +33,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     const { connected } = useWebSocket();
     const currentProgress = otaProgress[selectedAnalyzerId];
     const hasUpdate = selectedAnalyzer?.hasUpdate;
-    const currentVersion = selectedAnalyzer?.firmwareVersion;
 
-    const availableUpdates = firmwareVersions.filter(v => 
-        v.version !== currentVersion
-    );
-
-    const handleFirmwareUpdate = (versionId: string) => {
-        if (onStartOtaUpdate && selectedAnalyzerId && userId) {
-            onStartOtaUpdate(userId, selectedAnalyzerId, versionId);
-        }
-    };
 
     return (
         <div className="flex justify-between items-center mb-6">

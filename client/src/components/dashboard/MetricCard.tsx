@@ -9,7 +9,6 @@ interface MetricCardProps {
     unit: string;
     icon: LucideIcon;
     isLoading: boolean;
-    freshness: 'fresh' | 'stale' | 'old';
     showEmptyState?: boolean;
 }
 
@@ -19,21 +18,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
                                                           unit,
                                                           icon: Icon,
                                                           isLoading,
-                                                          freshness = 'fresh',
                                                           showEmptyState = true,
 
                                                       }) => {
-    const freshnessColors = {
-        fresh: 'bg-green-500',
-        stale: 'bg-yellow-500',
-        old: 'bg-red-500'
-    };
-
-    const freshnessTooltip = {
-        fresh: 'Data is fresh (< 5 minutes old)',
-        stale: 'Data is getting stale (5-30 minutes old)',
-        old: 'Data is old (> 30 minutes old)'
-    };
 
 
     if (!isLoading && value === null && !showEmptyState) {

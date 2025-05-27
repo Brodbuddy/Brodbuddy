@@ -24,7 +24,6 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({
                 unit="°C"
                 icon={Thermometer}
                 isLoading={false}
-                freshness="fresh"
                 showEmptyState={!hasData}
             />
             <MetricCard
@@ -33,8 +32,6 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({
                 unit="%"
                 icon={Droplet}
                 isLoading={false}
-                freshness="fresh"
-
                 showEmptyState={!hasData}
             />
             <MetricCard
@@ -43,7 +40,6 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({
                 unit="%"
                 icon={TrendingUp}
                 isLoading={false}
-                freshness="fresh"
                 showEmptyState={!hasData}
             />
         </div>
