@@ -49,7 +49,6 @@ public class OtaController : ControllerBase
     }
 
     [HttpGet("firmware")]
-    [Authorize]
     public async Task<ActionResult<IEnumerable<FirmwareVersionResponse>>> GetFirmwareVersions()
     {
         var versions = await _firmwareService.GetAllFirmwareVersionsAsync();

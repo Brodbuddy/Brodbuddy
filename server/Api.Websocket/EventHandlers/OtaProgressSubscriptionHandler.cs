@@ -22,7 +22,6 @@ public class SubscribeToOtaProgressValidator : AbstractValidator<SubscribeToOtaP
     }
 }
 
-[AllowAnonymous]
 public class OtaProgressSubscriptionHandler(ISocketManager manager) : ISubscriptionHandler<SubscribeToOtaProgress, OtaProgressSubscribed>
 {
     public string GetTopicKey(SubscribeToOtaProgress request, string clientId) 

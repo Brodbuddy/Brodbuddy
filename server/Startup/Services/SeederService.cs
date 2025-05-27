@@ -152,7 +152,7 @@ public class SeederService : ISeederService
 
     private async Task CreateMissingFeaturesAsync(List<EndpointFeature> discoveredFeatures, IServiceProvider serviceProvider)
     {
-        var dbContext = serviceProvider.GetRequiredService<Infrastructure.Data.Persistence.PgDbContext>();
+        var dbContext = serviceProvider.GetRequiredService<PgDbContext>();
         var existingFeatures = await dbContext.Features.Select(f => f.Name).ToHashSetAsync();
 
         var newFeatures = discoveredFeatures

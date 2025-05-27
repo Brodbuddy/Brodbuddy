@@ -10,7 +10,6 @@ namespace Api.Websocket.EventHandlers;
 public record SubscribeToFirmwareNotifications([property: JsonPropertyName("clientType")] string ClientType = "WebClient");
 public record FirmwareNotificationsSubscribed([property: JsonPropertyName("topic")] string Topic);
 
-[AllowAnonymous]
 public class FirmwareNotificationSubscriptionHandler(ISocketManager manager) : ISubscriptionHandler<SubscribeToFirmwareNotifications, FirmwareNotificationsSubscribed>
 {
     public string GetTopicKey(SubscribeToFirmwareNotifications request, string clientId) => WebSocketTopics.Everyone.FirmwareAvailable;

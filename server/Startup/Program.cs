@@ -100,6 +100,21 @@ public class Program
         app.ConfigureMonitoringInfrastructure();
         app.MapGet("/", () => "Hej, nu med multi API :)");
     }
+    
+    private static async Task SeedDatabaseAsync(WebApplication app)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var seeder = scope.ServiceProvider.GetRequiredService<ISeederService>();
+            await seeder.SeedFeaturesAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error during database seeding");
+        }
+    }
+
 
     public static async Task Main(string[] args)
     {
@@ -116,6 +131,7 @@ public class Program
             var app = builder.Build();
             ConfigureMiddleware(app);
 
+            await SeedDatabaseAsync(app);
             LogSwaggerUrl(app);
 
             await app.RunAsync();

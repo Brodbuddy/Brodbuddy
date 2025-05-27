@@ -19,7 +19,6 @@ namespace Api.Http.Controllers;
 public class PasswordlessAuthController : ControllerBase
 {
     private readonly IPasswordlessAuthService _authService;
-    private readonly IJwtService _jwtService;
     private readonly TimeProvider _timeProvider;
     private readonly IOptions<AppOptions> _appOptions;
     private const string RefreshTokenCookieName = "refreshToken";
@@ -31,17 +30,8 @@ public class PasswordlessAuthController : ControllerBase
         IOptions<AppOptions> appOptions)
     {
         _authService = passwordlessAuthService;
-        _jwtService = jwtService;
         _timeProvider = timeProvider;
         _appOptions = appOptions;
-    }
-
-    [HttpGet("test-token")]
-    [AllowAnonymous]
-    public TestTokenResponse TestToken()
-    {
-        var accessToken = _jwtService.Generate(Guid.NewGuid().ToString(), "kakao@mælk.dk", Role.Admin);
-        return new TestTokenResponse(AccessToken: accessToken);
     }
 
     [HttpPost("initiate")]

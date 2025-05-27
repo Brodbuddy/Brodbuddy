@@ -4,6 +4,7 @@ using Application.Interfaces.Data.Repositories;
 using Brodbuddy.WebSocket.Auth;
 using Brodbuddy.WebSocket.Core;
 using Brodbuddy.WebSocket.State;
+using Core.Entities;
 using Core.Messaging;
 using Core.ValueObjects;
 using Fleck;
@@ -24,7 +25,7 @@ public class MakeFirmwareAvailableRequestValidator : AbstractValidator<MakeFirmw
     }
 }
 
-[AllowAnonymous]
+[Authorize(Roles = Role.Admin)]
 public class MakeFirmwareAvailableHandler(ISocketManager manager, IFirmwareRepository repository, ILogger<MakeFirmwareAvailableHandler> logger) : IWebSocketHandler<MakeFirmwareAvailableRequest, MakeFirmwareAvailableResponse>
 {
     public async Task<MakeFirmwareAvailableResponse> HandleAsync(MakeFirmwareAvailableRequest incoming, string clientId, IWebSocketConnection socket)

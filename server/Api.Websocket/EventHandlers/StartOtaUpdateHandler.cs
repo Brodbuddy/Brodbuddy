@@ -32,7 +32,6 @@ public class StartOtaUpdateRequestValidator : AbstractValidator<StartOtaUpdateRe
     }
 }
 
-[AllowAnonymous]
 public class StartOtaUpdateHandler(IOtaService otaService, ILogger<StartOtaUpdateHandler> logger) : IWebSocketHandler<StartOtaUpdateRequest, StartOtaUpdateResponse>
 {
     public async Task<StartOtaUpdateResponse> HandleAsync(StartOtaUpdateRequest incoming, string clientId, IWebSocketConnection socket)

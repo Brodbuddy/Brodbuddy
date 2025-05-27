@@ -16,7 +16,6 @@ public record SourdoughDataSubscribed(
     [property: JsonPropertyName("connectionId")] Guid ConnectionId
 );
 
-[AllowAnonymous]
 public class SourdoughDataHandler(ISocketManager manager) : ISubscriptionHandler<SubscribeToSourdoughData, SourdoughDataSubscribed>
 {
     public string GetTopicKey(SubscribeToSourdoughData request, string clientId) => WebSocketTopics.User.SourdoughData(request.UserId);
