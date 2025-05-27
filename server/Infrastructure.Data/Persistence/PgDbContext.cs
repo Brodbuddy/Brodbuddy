@@ -12,6 +12,8 @@ public partial class PgDbContext : DbContext
     {
     }
 
+    public virtual DbSet<AnalyzerReading> AnalyzerReadings { get; set; }
+
     public virtual DbSet<Device> Devices { get; set; }
 
     public virtual DbSet<DeviceRegistry> DeviceRegistries { get; set; }
@@ -45,6 +47,54 @@ public partial class PgDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension("uuid-ossp");
+
+        modelBuilder.Entity<AnalyzerReading>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("analyzer_readings_pkey");
+
+            entity.ToTable("analyzer_readings");
+
+            entity.HasIndex(e => e.AnalyzerId, "idx_analyzer_readings_analyzer_id");
+
+            entity.HasIndex(e => e.CreatedAt, "idx_analyzer_readings_created_at");
+
+            entity.HasIndex(e => e.EpochTime, "idx_analyzer_readings_epoch_time");
+
+            entity.HasIndex(e => e.Timestamp, "idx_analyzer_readings_timestamp");
+
+            entity.HasIndex(e => e.UserId, "idx_analyzer_readings_user_id");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("gen_random_uuid()")
+                .HasColumnName("id");
+            entity.Property(e => e.AnalyzerId).HasColumnName("analyzer_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.EpochTime).HasColumnName("epoch_time");
+            entity.Property(e => e.Humidity)
+                .HasPrecision(5, 2)
+                .HasColumnName("humidity");
+            entity.Property(e => e.LocalTime)
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("local_time");
+            entity.Property(e => e.Rise)
+                .HasPrecision(10, 8)
+                .HasColumnName("rise");
+            entity.Property(e => e.Temperature)
+                .HasPrecision(10, 8)
+                .HasColumnName("temperature");
+            entity.Property(e => e.Timestamp).HasColumnName("timestamp");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Analyzer).WithMany(p => p.AnalyzerReadings)
+                .HasForeignKey(d => d.AnalyzerId)
+                .HasConstraintName("analyzer_readings_analyzer_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.AnalyzerReadings)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("analyzer_readings_user_id_fkey");
+        });
 
         modelBuilder.Entity<Device>(entity =>
         {

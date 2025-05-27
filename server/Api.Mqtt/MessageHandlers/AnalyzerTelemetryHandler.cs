@@ -30,5 +30,6 @@ public class AnalyzerTelemetryHandler(ISourdoughTelemetryService service, ILogge
         logger.LogInformation("Data: {Data}", message);
         
         await service.ProcessSourdoughReadingAsync(analyzerId, message);
+        await service.SaveSourdoughReadingAsync(analyzerId, message);
     }
 }

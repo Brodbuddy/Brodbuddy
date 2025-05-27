@@ -9,6 +9,7 @@ using FluentEmail.MailKitSmtp;
 using Infrastructure.Communication.Mail;
 using Infrastructure.Communication.Websocket;
 using Application.Interfaces.Communication.Publishers;
+using Application.Interfaces.Data.Repositories.Sourdough;
 using Infrastructure.Communication.Mqtt;
 using Infrastructure.Communication.Notifiers;
 using Infrastructure.Communication.Publishers;
@@ -54,6 +55,7 @@ public static class Extensions
         }
 
         services.AddScoped<IEmailSender, FluentEmailSender>();
+       
    
         return services;
     }

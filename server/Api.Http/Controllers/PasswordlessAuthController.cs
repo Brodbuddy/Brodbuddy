@@ -95,7 +95,10 @@ public class PasswordlessAuthController : ControllerBase
     {
         var userId = HttpContext.User.GetUserId();
         var userInfo = await _authService.UserInfoAsync(userId);
-        return new UserInfoResponse(UserId: userId.ToString(), Email: userInfo.email, IsAdmin: userInfo.role == Role.Admin);
+        return new UserInfoResponse(
+            UserId: userId,
+            Email: userInfo.email, 
+            IsAdmin: userInfo.role == Role.Admin);
     }
     
     private CookieOptions GetRefreshTokenCookieOptions() => new()
