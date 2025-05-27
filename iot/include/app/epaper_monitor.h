@@ -8,8 +8,6 @@
 
 struct SourdoughData {
     // Temperatur og fugtighed
-    float outTemp;
-    int outHumidity;
     float inTemp;
     int inHumidity;
 

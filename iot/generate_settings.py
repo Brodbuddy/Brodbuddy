@@ -77,7 +77,6 @@ def generate_settings_file(*args, **kwargs):
         print(f"    mqtt.user: {settings['mqtt']['user']}")
         print(f"    mqtt.password: {'*' * len(settings['mqtt']['password'])}")
         print(f"    sensor.intervalSeconds: {settings['sensor']['intervalSeconds']}s")
-        print(f"    display.intervalSeconds: {settings['display']['intervalSeconds']}s")
         print(f"    lowPowerMode: {settings['lowPowerMode']}")
     except json.JSONDecodeError as e:
         print(f"*** ERROR parsing JSON after variable substitution: {e}")

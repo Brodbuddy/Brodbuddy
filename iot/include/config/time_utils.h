@@ -60,7 +60,7 @@ namespace TimeConstants {
     constexpr auto LED_BLINK_NORMAL = 500ms;
     constexpr auto LED_BLINK_SLOW = 1s;
 
-    constexpr auto GRAPH_WINDOW = 10min;
+    constexpr auto GRAPH_WINDOW = 12h;
     
     // MQTT
     constexpr auto MQTT_KEEP_ALIVE = 60s;

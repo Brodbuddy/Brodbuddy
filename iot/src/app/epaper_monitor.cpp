@@ -21,8 +21,6 @@ SourdoughData EpaperMonitor::generateMockData() {
     data.oldestIndex = 0;
     data.bufferFull = false;
 
-    data.outTemp = 21.0;
-    data.outHumidity = 44;
     data.inTemp = 20.7;
     data.inHumidity = 100;
     data.batteryLevel = 20;
@@ -124,35 +122,28 @@ void EpaperMonitor::updateDisplay(const SourdoughData& data) {
 }
 
 void EpaperMonitor::drawHeader(const SourdoughData& data) {
-    // Første række: Udendørs temperatur, fugtighed og vækst
-    _display.setTextColor(DisplayConstants::COLOR_BLACK);
-    _display.setCursor(10, 5);
-    _display.print("Out: ");
-    _display.print(data.outTemp, 1);
-    _display.print("C ");
-    _display.print(data.outHumidity);
-    _display.print("%");
-
+    // Venstre side: Vækst info
     _display.setTextColor(DisplayConstants::COLOR_RED);
-    _display.setCursor(170, 5);
+    _display.setCursor(10, 5);
     _display.print("Growth: ");
     _display.print(data.currentGrowth);
     _display.print("%");
 
-    // Anden række: Indendørs temperatur, fugtighed og peak vækst
-    _display.setTextColor(DisplayConstants::COLOR_BLACK);
     _display.setCursor(10, 20);
-    _display.print("In: ");
-    _display.print(data.inTemp, 1);
-    _display.print("C ");
-    _display.print(data.inHumidity);
-    _display.print("%");
-
-    _display.setTextColor(DisplayConstants::COLOR_RED);
-    _display.setCursor(170, 20);
+    _display.print("Peak ");
     _display.print(data.peakHoursAgo, 1);
     _display.print("h ago: ");
     _display.print(data.peakGrowth);
+    _display.print("%");
+
+    // Højre side: Temperatur og fugtighed
+    _display.setTextColor(DisplayConstants::COLOR_BLACK);
+    _display.setCursor(225, 5);
+    _display.print(data.inTemp, 1);
+    _display.print("C");
+
+    _display.setCursor(225, 20);
+    _display.print(data.inHumidity);
     _display.print("%");
 }
 
@@ -189,13 +180,13 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
     
     int gridInterval;
     if (windowMinutes <= 10) {
-        gridInterval = 1;  // Every minute
+        gridInterval = 1;  
     } else if (windowMinutes <= 60) {
-        gridInterval = 5;  // Every 5 minutes
+        gridInterval = 5;  
     } else if (windowMinutes <= 360) {
-        gridInterval = 30; // Every 30 minutes
+        gridInterval = 30; 
     } else {
-        gridInterval = 60; // Every hour
+        gridInterval = 60;
     }
     
     int numGridLines = windowMinutes / gridInterval;
@@ -216,15 +207,15 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
         
         bool showLabel = false;
         if (i == numGridLines) {
-            showLabel = true; // Always show "now"
+            showLabel = true;
         } else if (windowMinutes <= 10 && minutesAgo % 2 == 0) {
-            showLabel = true; // For 10m window: 10, 8, 6, 4, 2
+            showLabel = true; 
         } else if (windowMinutes <= 60 && minutesAgo % 10 == 0) {
-            showLabel = true; // For 1h window: 60, 50, 40, 30, 20, 10
+            showLabel = true; 
         } else if (windowMinutes <= 360 && minutesAgo % 60 == 0) {
-            showLabel = true; // For 6h window: 6h, 5h, 4h, 3h, 2h, 1h
+            showLabel = true; 
         } else if (minutesAgo % 120 == 0) {
-            showLabel = true; // For 12h window: 12h, 10h, 8h, 6h, 4h, 2h
+            showLabel = true; 
         }
         
         if (showLabel) {
@@ -256,7 +247,7 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
     for (int i = 0; i < numYLabels; i++) {
         int y = graphY + graphHeight - (i * graphHeight / (numYLabels - 1));
 
-        // Tegn vandret gitterlinje - find the rightmost grid line position
+        // Tegn vandret gitterlinje
         int rightmostX = xLabelStartX + (numGridLines * gridWidth);
         _display.drawLine(xLabelStartX, y, rightmostX, y, DisplayConstants::COLOR_BLACK);
 
@@ -276,7 +267,7 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
         return;
     }
 
-    // Beregn tidsramme (12 timer total) - find newest timestamp as "now"
+    // Beregn tidsramme (12 timer total)
     unsigned long now = 0;
     if (data.dataCount > 0) {
         // Find den nyeste timestamp
