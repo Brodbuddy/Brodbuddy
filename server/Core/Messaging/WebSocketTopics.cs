@@ -12,4 +12,10 @@ public static class WebSocketTopics
     {
         public static string FirmwareAvailable => "firmware-available";
     }
+
+    public static class Admin
+    {
+        public static string AllDiagnostics => "admin:diagnostics";
+        public static string DiagnosticsResponse(Guid analyzerId) => $"admin:diagnostics:{analyzerId}";
+    }
 }

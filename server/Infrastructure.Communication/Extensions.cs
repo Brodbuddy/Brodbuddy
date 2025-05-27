@@ -80,7 +80,7 @@ public static class Extensions
     private static IServiceCollection AddMqttPublisher(this IServiceCollection services)
     {
         services.AddScoped<IMqttPublisher, HiveMqttPublisher>();
-        services.AddScoped<IDevicePublisher, TestMqttDevicePublisher>();
+        services.AddScoped<IAnalyzerPublisher, AnalyzerPublisher>();
         services.AddScoped<IOtaPublisher, OtaPublisher>();
         return services;
     }
@@ -88,6 +88,7 @@ public static class Extensions
     private static IServiceCollection AddNotifiers(this IServiceCollection services)
     {
         services.AddScoped<IUserNotifier, WsUserNotifier>();
+        services.AddScoped<IAdminNotifier, WsAdminNotifier>();
         return services;
     }
 }

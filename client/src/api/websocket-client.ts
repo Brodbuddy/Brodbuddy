@@ -28,6 +28,8 @@ export const Requests = {
     makeFirmwareAvailable: "MakeFirmwareAvailable",
     otaProgressSubscription: "OtaProgressSubscription",
     ping: "Ping",
+    requestDiagnostics: "RequestDiagnostics",
+    responseDiagnostics: "ResponseDiagnostics",
     sourdoughData: "SourdoughData",
     startOtaUpdate: "StartOtaUpdate",
 } as const;
@@ -38,12 +40,15 @@ export const Responses = {
     makeFirmwareAvailableResponse: "MakeFirmwareAvailableResponse",
     otaProgressSubscribed: "OtaProgressSubscribed",
     pong: "Pong",
+    diagnosticsResponse: "DiagnosticsResponse",
+    diagnosticsDataSubscribed: "DiagnosticsDataSubscribed",
     sourdoughDataSubscribed: "SourdoughDataSubscribed",
     startOtaUpdateResponse: "StartOtaUpdateResponse",
 } as const;
 
 // Broadcast type constants
 export const Broadcasts = {
+    diagnosticsResponse: "DiagnosticsResponse",
     firmwareAvailable: "FirmwareAvailable",
     otaProgressUpdate: "OtaProgressUpdate",
     sourdoughReading: "SourdoughReading",
@@ -53,6 +58,7 @@ export const Broadcasts = {
 export const SubscriptionMethods = {
     firmwareNotificationSubscription: "FirmwareNotificationSubscription",
     otaProgressSubscription: "OtaProgressSubscription",
+    responseDiagnostics: "ResponseDiagnostics",
     sourdoughData: "SourdoughData",
 } as const;
 
@@ -101,6 +107,32 @@ export interface Ping extends BaseMessage {
 export interface Pong extends BaseMessage {
     timestamp: number;
     serverTimestamp: number;
+}
+
+export interface DiagnosticsRequest extends BaseMessage {
+    analyzerId: string;
+}
+
+export interface DiagnosticsResponse extends BaseMessage {
+    analyzerId: string;
+    epochTime: number;
+    timestamp: string;
+    localTime: string;
+    uptime: number;
+    freeHeap: number;
+    state: string;
+    wifi: any;
+    sensors: any;
+    humidity: number;
+}
+
+export interface SubscribeToDiagnosticsData extends BaseMessage {
+    userId: string;
+}
+
+export interface DiagnosticsDataSubscribed extends BaseMessage {
+    userId: string;
+    connectionId: string;
 }
 
 export interface SubscribeToSourdoughData extends BaseMessage {
@@ -155,6 +187,8 @@ export type RequestResponseMap = {
     [Requests.makeFirmwareAvailable]: [MakeFirmwareAvailableRequest, MakeFirmwareAvailableResponse];
     [Requests.otaProgressSubscription]: [SubscribeToOtaProgress, OtaProgressSubscribed];
     [Requests.ping]: [Ping, Pong];
+    [Requests.requestDiagnostics]: [DiagnosticsRequest, DiagnosticsResponse];
+    [Requests.responseDiagnostics]: [SubscribeToDiagnosticsData, DiagnosticsDataSubscribed];
     [Requests.sourdoughData]: [SubscribeToSourdoughData, SourdoughDataSubscribed];
     [Requests.startOtaUpdate]: [StartOtaUpdateRequest, StartOtaUpdateResponse];
 };
@@ -448,6 +482,12 @@ export class WebSocketClient {
     },
     ping: (payload: Omit<Ping, 'requestId'>): Promise<Pong> => {
         return this.sendRequest<Pong>('Ping', payload);
+    },
+    requestDiagnostics: (payload: Omit<DiagnosticsRequest, 'requestId'>): Promise<DiagnosticsResponse> => {
+        return this.sendRequest<DiagnosticsResponse>('RequestDiagnostics', payload);
+    },
+    responseDiagnostics: (payload: Omit<SubscribeToDiagnosticsData, 'requestId'>): Promise<DiagnosticsDataSubscribed> => {
+        return this.sendRequest<DiagnosticsDataSubscribed>('ResponseDiagnostics', payload);
     },
     sourdoughData: (payload: Omit<SubscribeToSourdoughData, 'requestId'>): Promise<SourdoughDataSubscribed> => {
         return this.sendRequest<SourdoughDataSubscribed>('SourdoughData', payload);

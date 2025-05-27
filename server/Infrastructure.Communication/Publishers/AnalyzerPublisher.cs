@@ -4,10 +4,16 @@ using Infrastructure.Communication.Mqtt;
 
 namespace Infrastructure.Communication.Publishers;
 
-public class TestMqttDevicePublisher(IMqttPublisher publisher) : IDevicePublisher
+public class AnalyzerPublisher(IMqttPublisher publisher) : IAnalyzerPublisher
 {
     public async Task NotifyDeviceAsync(string deviceId, double temperature, double humidity, DateTime timestamp)
     {
         await publisher.PublishAsync("kakao", deviceId, QualityOfService.AtLeastOnceDelivery, true);
+    }
+
+    public async Task RequestDiagnosticsAsync(Guid analyzerId)
+    {
+        
+        await publisher.PublishAsync($"analyzer/{analyzerId}/diagnostics/request", "", QualityOfService.AtLeastOnceDelivery, true);
     }
 }
