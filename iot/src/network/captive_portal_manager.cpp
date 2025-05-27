@@ -7,7 +7,6 @@
 
 static const char* TAG = "CaptivePortal";
 
-#define LED_PIN Pins::LED
 
 CaptivePortalManager::CaptivePortalManager()
     : server(nullptr), dns(nullptr), portalRunning(false), apModeStartTime(0), apModeTimeoutEnabled(false) {}
@@ -174,7 +173,6 @@ void CaptivePortalManager::handleConnect() {
         if (statusCallback) {
             statusCallback(WIFI_CONNECTED);
         }
-        digitalWrite(LED_PIN, HIGH);
 
         TimeUtils::delay_for(TimeConstants::WIFI_STABILIZATION_DELAY);
 

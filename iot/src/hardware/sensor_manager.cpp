@@ -8,7 +8,7 @@ static const char* TAG = "SensorManager";
 
 SensorManager::SensorManager()
     : _lastReadTime(0), _readInterval(15000), _tempOffset(0.0f), _humOffset(0.0f), _firstReading(true),
-      _filteredTemp(0.0f), _filteredHum(0.0f), _baselineDistance(0) {
+      _filteredTemp(0.0f), _filteredHum(0.0f), _baselineDistance(0), _loopCallback(nullptr) {
     memset(&_currentData, 0, sizeof(_currentData));
     memset(&_health, 0, sizeof(_health));
 
@@ -144,6 +144,12 @@ bool SensorManager::shouldRead() const {
     return (millis() - _lastReadTime) >= _readInterval;
 }
 
+void SensorManager::resetBaseline() {
+    _baselineDistance = 0;
+    _firstReading = true;
+    LOG_I(TAG, "ToF baseline reset - next reading will set new baseline");
+}
+
 bool SensorManager::collectMultipleSamples() {
 #ifdef SIMULATE_SENSORS
     _currentData.inTemp = _simTemp + (random(-10, 10) / 10.0f);
@@ -213,7 +219,15 @@ bool SensorManager::collectMultipleSamples() {
         }
 
         if (i < Sensors::MAX_SAMPLES - 1) {
-            TimeUtils::delay_for(TimeConstants::SENSOR_SAMPLE_INTERVAL);
+            unsigned long delayStart = millis();
+            unsigned long delayDuration = TimeUtils::to_ms(TimeConstants::SENSOR_SAMPLE_INTERVAL);
+            
+            while (millis() - delayStart < delayDuration) {
+                if (_loopCallback) {
+                    _loopCallback();
+                }
+                TimeUtils::delay_for(std::chrono::milliseconds(10));
+            }
         }
     }
 

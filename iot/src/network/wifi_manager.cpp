@@ -17,11 +17,8 @@ WifiManager::WifiManager()
       apModeStartTime(0), apModeTimeoutEnabled(true), apModeTimeoutOccurred(false) {}
 
 void WifiManager::begin() {
-    pinMode(Pins::LED, OUTPUT);
-
     currentStatus = WIFI_CONNECTING;
     ledState = LOW;
-    digitalWrite(Pins::LED, ledState);
     connectStartTime = millis();
 
     createBlinkTask();
@@ -55,7 +52,6 @@ void WifiManager::begin() {
         WiFi.setHostname(NetworkConstants::HOSTNAME);
 
         currentStatus = WIFI_CONNECTED;
-        digitalWrite(Pins::LED, HIGH);
     } else {
         LOG_W(TAG, "Failed to connect with saved credentials, starting custom portal");
         captivePortalManager.setSaveCredentialsCallback(
@@ -85,16 +81,6 @@ void WifiManager::loop() {
         currentStatus = WIFI_DISCONNECTED;
     }
 
-    if (currentStatus == WIFI_CONNECTED) {
-        digitalWrite(Pins::LED, HIGH);
-    } else if (currentStatus == WIFI_CONNECTING && !captivePortalManager.isRunning()) {
-        unsigned long currentMillis = millis();
-        if (currentMillis - previousMillis >= BLINK_INTERVAL) {
-            previousMillis = currentMillis;
-            ledState = !ledState;
-            digitalWrite(Pins::LED, ledState);
-        }
-    }
 
     checkWiFiStatus();
 }
@@ -107,10 +93,7 @@ void WifiManager::createBlinkTask() {
 
     xTaskCreate(
         [](void* parameter) {
-            bool localLedState = false;
             while (true) {
-                localLedState = !localLedState;
-                digitalWrite(Pins::LED, localLedState ? HIGH : LOW);
                 vTaskDelay(BLINK_INTERVAL / portTICK_PERIOD_MS);
             }
         },
@@ -144,11 +127,16 @@ void WifiManager::saveWiFiCredentials(const String& ssid, const String& password
 }
 
 void WifiManager::resetSettings() {
+    LOG_I(TAG, "Clearing WiFi settings from preferences");
     preferences.begin(WiFiConstants::PREFERENCES_NAMESPACE, false);
     preferences.clear();
     preferences.end();
 
-    WiFi.disconnect(true);
+    LOG_I(TAG, "Disconnecting and erasing WiFi config from ESP32");
+    WiFi.disconnect(true, true);
+    TimeUtils::delay_for(std::chrono::milliseconds(100));
+    
+    LOG_I(TAG, "WiFi settings have been reset");
 }
 
 void WifiManager::enableAPModeTimeout() {

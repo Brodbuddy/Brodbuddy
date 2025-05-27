@@ -5,7 +5,7 @@
 
 static const char* TAG = "ButtonManager";
 
-ButtonManager::ButtonManager() : buttonPressed(false), buttonPressStart(0), resetRequest(false), portalRequest(false) {}
+ButtonManager::ButtonManager() : buttonPressed(false), buttonPressStart(0), resetRequest(false), portalRequest(false), tofResetRequest(false) {}
 
 void ButtonManager::begin() {
     pinMode(Pins::RESET_BUTTON, INPUT_PULLUP);
@@ -21,22 +21,19 @@ void ButtonManager::loop() {
             buttonPressStart = millis();
             buttonPressed = true;
         } else if (millis() - buttonPressStart > TimeUtils::to_ms(TimeConstants::BUTTON_LONG_PRESS)) {
-            LOG_W(TAG, "Factory reset initiated");
-
-            for (int i = 0; i < UIConstants::FACTORY_RESET_BLINK_COUNT; i++) {
-                digitalWrite(Pins::LED, HIGH);
-                TimeUtils::delay_for(TimeConstants::BUTTON_LED_BLINK);
-                digitalWrite(Pins::LED, LOW);
-                TimeUtils::delay_for(TimeConstants::BUTTON_LED_BLINK);
-            }
-
+            LOG_W(TAG, "WiFi reset initiated");
             resetRequest = true;
         }
     } else {
-        if (buttonPressed && millis() - buttonPressStart < TimeUtils::to_ms(TimeConstants::BUTTON_SHORT_PRESS)) {
-            LOG_I(TAG, "Starting config portal");
-
-            portalRequest = true;
+        if (buttonPressed) {
+            unsigned long pressDuration = millis() - buttonPressStart;
+            if (pressDuration < TimeUtils::to_ms(TimeConstants::BUTTON_SHORT_PRESS)) {
+                LOG_I(TAG, "ToF reset requested");
+                tofResetRequest = true;
+            } else if (pressDuration < TimeUtils::to_ms(TimeConstants::BUTTON_LONG_PRESS)) {
+                LOG_I(TAG, "Starting config portal");
+                portalRequest = true;
+            }
         }
         buttonPressed = false;
     }
