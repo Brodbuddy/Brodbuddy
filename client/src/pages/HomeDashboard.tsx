@@ -5,7 +5,9 @@ import SourdoughManager from '@/components/analyzer/SourdoughManager';
 import {useWebSocket} from '@/hooks/useWebsocket';
 import {useOptimizedAnalyzerData} from '@/hooks/useOptimizedAnalyzerData';
 import {useAtomValue} from 'jotai';
+import {getDefaultStore} from 'jotai';
 import {analyzersAtom, userInfoAtom} from '@/atoms';
+import {api} from '@/hooks/useHttp';
 import {Broadcasts, SourdoughReading, OtaProgressUpdate} from '@/api/websocket-client';
 import {DashboardHeader, MetricsGrid, SourdoughChart,} from '@/components/dashboard';
 import {getTimeRangeInMs, TimeRange,} from '@/helpers/dashboardUtils';
@@ -43,7 +45,21 @@ const HomeDashboard: React.FC = () => {
     } = useOptimizedAnalyzerData(selectedAnalyzerId);
 
     const analyzerIds = useMemo(() => analyzers.map(a => a.id), [analyzers]);
-    const { otaProgress, updatingAnalyzers, startOtaUpdate } = useOtaSubscription(analyzerIds, refetch);
+    
+    const handleOtaComplete = useCallback(async () => {
+        refetch();
+        
+        try {
+            const response = await api.analyzer.getUserAnalyzers();
+            console.log('[Dashboard] Refreshed analyzers after OTA complete:', response.data);
+            const store = getDefaultStore();
+            store.set(analyzersAtom, response.data);
+        } catch (error) {
+            console.error('Failed to refresh analyzers after OTA:', error);
+        }
+    }, [refetch]);
+    
+    const { otaProgress, updatingAnalyzers, startOtaUpdate } = useOtaSubscription(analyzerIds, handleOtaComplete);
 
     useEffect(() => {
         if (historicalReadings && historicalReadings.length > 0 && chartData.length === 0) {
@@ -134,10 +150,19 @@ const HomeDashboard: React.FC = () => {
             });
         });
 
-        const unsubscribeFirmware = client.on(Broadcasts.firmwareAvailable, (firmware: any) => {
+        const unsubscribeFirmware = client.on(Broadcasts.firmwareAvailable, async (firmware: any) => {
             console.log('[WebSocket] New firmware available:', firmware);
             toast.info(`New firmware v${firmware.version} is available!`);
             refetch();
+            
+            try {
+                const response = await api.analyzer.getUserAnalyzers();
+                console.log('[Dashboard] Refreshed analyzers after firmware notification:', response.data);
+                const store = getDefaultStore();
+                store.set(analyzersAtom, response.data);
+            } catch (error) {
+                console.error('Failed to refresh analyzers:', error);
+            }
         });
 
         return () => {
@@ -154,10 +179,13 @@ const HomeDashboard: React.FC = () => {
         setSelectedAnalyzerId(analyzerId);
     }, []);
 
-    const selectedAnalyzer = useMemo(() => 
-        analyzers.find(a => a.id === selectedAnalyzerId),
-        [analyzers, selectedAnalyzerId]
-    );
+    const selectedAnalyzer = useMemo(() => {
+        const analyzer = analyzers.find(a => a.id === selectedAnalyzerId);
+        console.log('[Dashboard] Selected analyzer:', analyzer);
+        console.log('[Dashboard] Has update?', analyzer?.hasUpdate);
+        console.log('[Dashboard] Firmware version:', analyzer?.firmwareVersion);
+        return analyzer;
+    }, [analyzers, selectedAnalyzerId]);
 
     // Hvis der ikke er nogen analyzers, vis kun SourdoughManager
     if (!analyzers || analyzers.length === 0) {

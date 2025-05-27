@@ -65,7 +65,11 @@ export const useOptimizedAnalyzerData = (analyzerId?: string) => {
     }, []);
 
     const fetchData = useCallback(async (analyzerIdToFetch: string) => {
-        if (!analyzerIdToFetch) return;
+        if (!analyzerIdToFetch) {
+            setLoading(false);
+            setError(null);
+            return;
+        }
 
 
         const cached = getCachedData(analyzerIdToFetch);

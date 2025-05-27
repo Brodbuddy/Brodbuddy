@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { Activity } from 'lucide-react';
 import { Card } from '../ui/card';
 import { useWebSocket } from '@/hooks';
 import { Broadcasts, DiagnosticsResponse } from '@/api/websocket-client.ts';
 import { diagnosticsAtom } from '@/atoms/diagnosticsAtom.ts';
+import { userInfoAtom } from '@/atoms/auth';
 import { api } from '@/hooks';
 import { AdminAnalyzerListResponse } from '@/api/Api.ts';
 
@@ -87,6 +88,7 @@ export function DiagnosticsAdmin() {
     const [analyzers, setAnalyzers] = useState<AdminAnalyzerListResponse[]>([]);
     const [loading, setLoading] = useState(diagnostics.length === 0);
     const { client, connected } = useWebSocket();
+    const userInfo = useAtomValue(userInfoAtom);
 
     // Memoiseret opslag af analysatornavn for hurtigere adgang
     const getAnalyzerName = useCallback((analyzerId: string) => {
@@ -134,28 +136,44 @@ export function DiagnosticsAdmin() {
             try {
                 if (diagnostics.length === 0) setLoading(true);
 
-                cleanup = client.on(Broadcasts.diagnosticsResponse, handleDiagnosticsData);
+                if (userInfo?.userId) {
+                    console.log('[DiagnosticsAdmin] Subscribing to diagnostics data for user:', userInfo.userId);
+                    await client.send.responseDiagnostics({ userId: userInfo.userId });
+                }
+
+                console.log('[DiagnosticsAdmin] Setting up broadcast listener for:', Broadcasts.diagnosticsResponse);
+                cleanup = client.on(Broadcasts.diagnosticsResponse, (data: any) => {
+                    console.log('[DiagnosticsAdmin] Received broadcast:', Broadcasts.diagnosticsResponse, data);
+                    handleDiagnosticsData(data);
+                });
 
                 await new Promise(resolve => setTimeout(resolve, 100));
 
+                console.log('[DiagnosticsAdmin] Analyzers to request diagnostics for:', analyzers.length);
                 if (analyzers.length > 0) {
                     for (const analyzer of analyzers) {
                         if (analyzer.isActivated) {
-                            await client.send.requestDiagnostics({ analyzerId: analyzer.id });
+                            console.log('[DiagnosticsAdmin] Requesting diagnostics for analyzer:', analyzer.id);
+                            try {
+                                await client.send.requestDiagnostics({ analyzerId: analyzer.id });
+                                console.log('[DiagnosticsAdmin] Request sent successfully for:', analyzer.id);
+                            } catch (error) {
+                                console.error('[DiagnosticsAdmin] Request failed for analyzer:', analyzer.id, error);
+                            }
                         }
                     }
                 }
 
                 setTimeout(() => setLoading(false), 5000);
             } catch (error) {
-                console.error('Failed to setup diagnostics:', error);
+                console.error('[DiagnosticsAdmin] Failed to setup diagnostics:', error);
                 setLoading(false);
             }
         };
 
         setupDiagnostics();
         return () => cleanup?.();
-    }, [connected, client, analyzers, handleDiagnosticsData]);
+    }, [connected, client, analyzers, handleDiagnosticsData, userInfo]);
 
     if (loading) {
         return (

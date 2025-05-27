@@ -90,9 +90,9 @@ public class SourdoughAnalyzerService : ISourdoughAnalyzerService
         {
             Analyzer = analyzer,
             HasUpdate = latestFirmware != null && 
-                       !string.IsNullOrEmpty(analyzer.FirmwareVersion) && 
                        !string.IsNullOrEmpty(latestFirmware.Version) &&
-                       analyzer.FirmwareVersion != latestFirmware.Version
+                       (string.IsNullOrEmpty(analyzer.FirmwareVersion) || 
+                        analyzer.FirmwareVersion != latestFirmware.Version)
         });
     }
 
