@@ -11,7 +11,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-type TimeRange = '1h' | '6h' | '12h';
+type TimeRange = '1h' | '6h' | '12h' | '24h';
 
 interface ProcessedReading {
     date: string;
@@ -137,53 +137,42 @@ export const SourdoughChart: React.FC<SourdoughChartProps> = ({
                     />
                     <ChartTooltip
                         content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                                return (
-                                    <div className="bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 p-3 shadow-lg rounded-lg">
-                                        <p className="font-medium mb-3 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 pb-1">
-                                            {new Date(label).toLocaleString("dk-DK", {
-                                                day: "numeric",
-                                                month: "numeric", 
-                                                hour: "2-digit",
-                                                minute: "2-digit"
-                                            })}
-                                        </p>
-                                        <div className="space-y-2">
-                                            {payload
-                                                .sort((a, b) => {
-                                                    const order = { rise: 0, humidity: 1, temperature: 2 };
-                                                    return order[a.dataKey] - order[b.dataKey];
-                                                })
-                                                .map((entry, index) => {
-                                                    const labels = {
-                                                        rise: 'Growth',
-                                                        humidity: 'Humidity', 
-                                                        temperature: 'Temperature'
-                                                    };
-                                                    const colors = {
-                                                        rise: 'hsl(142, 71%, 45%)',
-                                                        humidity: 'hsl(217, 91%, 60%)', 
-                                                        temperature: 'hsl(0, 72%, 51%)'
-                                                    };
-                                                    return (
-                                                        <div key={`item-${index}`} className="flex items-center justify-between gap-8">
-                                                            <span className="text-sm text-zinc-600 dark:text-zinc-300">
-                                                                {labels[entry.dataKey]}
-                                                            </span>
-                                                            <span className="font-medium">
-                                                                <span style={{ color: colors[entry.dataKey] }}>
-                                                                    {typeof entry.value === 'number' ? entry.value.toFixed(1) : entry.value}
-                                                                    {entry.dataKey === "temperature" ? "°C" : "%"}
-                                                                </span>
-                                                            </span>
-                                                        </div>
-                                                    );
-                                                })}
-                                        </div>
+                            if (!active || !payload?.length) return null;
+
+                            return (
+                                <div className="bg-card text-card-foreground border border-border p-3 shadow-lg rounded-lg">
+                                    <p className="font-medium mb-2 text-sm text-accent-foreground">
+                                        {new Date(label).toLocaleString("dk-DK", {
+                                            day: "numeric",
+                                            month: "numeric", 
+                                            hour: "2-digit",
+                                            minute: "2-digit"
+                                        })}
+                                    </p>
+                                    <div className="space-y-1">
+                                        {payload.map((entry, index) => {
+                                            const displayName = entry.dataKey === 'rise' ? 'Growth' :
+                                                entry.dataKey === 'temperature' ? 'Temperature' : 'Humidity';
+
+                                            return (
+                                                <div key={index} className="flex items-center justify-between gap-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div
+                                                            className="w-2 h-2 rounded-full"
+                                                            style={{ backgroundColor: entry.color }}
+                                                        />
+                                                        <span className="text-sm">{displayName}</span>
+                                                    </div>
+                                                    <span className="font-medium text-sm">
+                                                        {typeof entry.value === 'number' ? entry.value.toFixed(1) : entry.value}
+                                                        {entry.dataKey === "temperature" ? "°C" : "%"}
+                                                    </span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                );
-                            }
-                            return null;
+                                </div>
+                            );
                         }}
                     />
                     <Area 
@@ -225,18 +214,21 @@ export const SourdoughChart: React.FC<SourdoughChartProps> = ({
                     </div>
                 </div>
                 <Select onValueChange={onTimeRangeChange} defaultValue={timeRange} disabled={loading}>
-                    <SelectTrigger className="bg-secondary border-border-brown w-32">
+                    <SelectTrigger className="w-32 text-primary">
                         <SelectValue placeholder="Select time range" />
                     </SelectTrigger>
-                    <SelectContent className="bg-accent-foreground border-border-brown">
-                        <SelectItem value="1h" className="text-primary hover:bg-bg-cream hover:text-accent-foreground">
+                    <SelectContent className="bg-white dark:bg-white text-black">
+                        <SelectItem value="1h">
                             1 hour
                         </SelectItem>
-                        <SelectItem value="6h" className="text-primary hover:bg-bg-cream hover:text-accent-foreground">
+                        <SelectItem value="6h">
                             6 hours
                         </SelectItem>
-                        <SelectItem value="12h" className="text-primary hover:bg-bg-cream hover:text-accent-foreground">
+                        <SelectItem value="12h">
                             12 hours
+                        </SelectItem>
+                        <SelectItem value="24h">
+                            24 hours
                         </SelectItem>
                     </SelectContent>
                 </Select>

@@ -114,10 +114,10 @@ export function LoggingAdmin() {
                                         value={selectedLevel || ''} 
                                         onValueChange={(value) => setSelectedLevel(value as LoggingLevel)}
                                     >
-                                        <SelectTrigger className="w-full border-border-brown focus:ring-accent-foreground">
+                                        <SelectTrigger className="w-full text-primary">
                                             <SelectValue placeholder="Choose log level" />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="bg-white dark:bg-white text-black">
                                             {Object.values(LoggingLevel).map((level) => (
                                                 <SelectItem key={level} value={level}>
                                                     <div className="flex items-center gap-2">

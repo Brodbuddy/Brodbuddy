@@ -86,6 +86,7 @@ public partial class PgDbContext : DbContext
                 .HasColumnName("temperature");
             entity.Property(e => e.Timestamp).HasColumnName("timestamp");
             entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.FeedingNumber).HasColumnName("feeding_number");
 
             entity.HasOne(d => d.Analyzer).WithMany(p => p.AnalyzerReadings)
                 .HasForeignKey(d => d.AnalyzerId)

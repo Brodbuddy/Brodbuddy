@@ -10,14 +10,11 @@ namespace Api.Websocket.EventHandlers;
 public record SubscribeToFirmwareNotifications([property: JsonPropertyName("clientType")] string ClientType = "WebClient");
 public record FirmwareNotificationsSubscribed([property: JsonPropertyName("topic")] string Topic);
 
-public class FirmwareNotificationSubscriptionHandler(ISocketManager manager) : ISubscriptionHandler<SubscribeToFirmwareNotifications, FirmwareNotificationsSubscribed>
+public class FirmwareNotificationSubscriptionHandler(ISocketManager manager) : IWebSocketHandler<SubscribeToFirmwareNotifications, FirmwareNotificationsSubscribed>
 {
-    public string GetTopicKey(SubscribeToFirmwareNotifications request, string clientId) => WebSocketTopics.Everyone.FirmwareAvailable;
-    
     public async Task<FirmwareNotificationsSubscribed> HandleAsync(SubscribeToFirmwareNotifications incoming, string clientId, IWebSocketConnection socket)
     {
-        var topic = GetTopicKey(incoming, clientId);
-        await manager.SubscribeAsync(clientId, topic);
-        return new FirmwareNotificationsSubscribed(topic);
+        await manager.SubscribeAsync(clientId, WebSocketTopics.Everyone.FirmwareAvailable);
+        return new FirmwareNotificationsSubscribed(WebSocketTopics.Everyone.FirmwareAvailable);
     }
 }

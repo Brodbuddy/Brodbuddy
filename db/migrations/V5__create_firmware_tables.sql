@@ -20,7 +20,7 @@ CREATE TABLE firmware_updates (
     error_message TEXT,
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
-    CONSTRAINT status_check CHECK (status IN ('started', 'downloading', 'applying', 'complete', 'failed'))
+    CONSTRAINT status_check CHECK (status IN ('started', 'downloading', 'applying', 'complete', 'failed', 'error'))
 );
 
 CREATE INDEX idx_firmware_versions_version ON firmware_versions(version);
@@ -39,6 +39,7 @@ CREATE TABLE analyzer_readings (
     temperature DECIMAL(10,2),
     humidity DECIMAL(5,2),
     rise DECIMAL(10,2),
+    feeding_number INTEGER NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -23,6 +23,8 @@ public partial class AnalyzerReading
 
     public decimal? Rise { get; set; }
 
+    public int FeedingNumber { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public virtual SourdoughAnalyzer Analyzer { get; set; } = null!;

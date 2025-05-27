@@ -39,7 +39,8 @@ public class AnalyzerReadingRepositoryTests : RepositoryTestBase, IClassFixture<
                 Humidity: 65.7,
                 EpochTime: 1640995200,
                 Timestamp: new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                LocalTime: new DateTime(2022, 1, 1, 1, 0, 0, DateTimeKind.Unspecified)
+                LocalTime: new DateTime(2022, 1, 1, 1, 0, 0, DateTimeKind.Unspecified),
+                FeedingNumber: 1
             );
 
             // Act
@@ -85,7 +86,8 @@ public class AnalyzerReadingRepositoryTests : RepositoryTestBase, IClassFixture<
                 Humidity: 65.7,
                 EpochTime: 1640995200,
                 Timestamp: new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                LocalTime: new DateTime(2022, 1, 1, 1, 0, 0, DateTimeKind.Unspecified)
+                LocalTime: new DateTime(2022, 1, 1, 1, 0, 0, DateTimeKind.Unspecified),
+                FeedingNumber: 1
             );
 
             // Act
@@ -112,7 +114,8 @@ public class AnalyzerReadingRepositoryTests : RepositoryTestBase, IClassFixture<
                 Humidity: 65.7,
                 EpochTime: 1640995200,
                 Timestamp: new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                LocalTime: new DateTime(2022, 1, 1, 1, 0, 0, DateTimeKind.Unspecified)
+                LocalTime: new DateTime(2022, 1, 1, 1, 0, 0, DateTimeKind.Unspecified),
+                FeedingNumber: 1
             );
 
             // Act
@@ -137,7 +140,8 @@ public class AnalyzerReadingRepositoryTests : RepositoryTestBase, IClassFixture<
                 Humidity: 0.0,
                 EpochTime: 1640995200,
                 Timestamp: new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc),
-                LocalTime: new DateTime(2022, 1, 1, 1, 0, 0, DateTimeKind.Unspecified)
+                LocalTime: new DateTime(2022, 1, 1, 1, 0, 0, DateTimeKind.Unspecified),
+                FeedingNumber: 1
             );
 
             // Act

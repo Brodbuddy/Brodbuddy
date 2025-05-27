@@ -22,17 +22,11 @@ public class SubscribeToOtaProgressValidator : AbstractValidator<SubscribeToOtaP
     }
 }
 
-public class OtaProgressSubscriptionHandler(ISocketManager manager) : ISubscriptionHandler<SubscribeToOtaProgress, OtaProgressSubscribed>
+public class OtaProgressSubscriptionHandler(ISocketManager manager) : IWebSocketHandler<SubscribeToOtaProgress, OtaProgressSubscribed>
 {
-    public string GetTopicKey(SubscribeToOtaProgress request, string clientId) 
-    {
-        var analyzerId = Guid.Parse(request.AnalyzerId);
-        return WebSocketTopics.User.OtaProgress(analyzerId);
-    }
-    
     public async Task<OtaProgressSubscribed> HandleAsync(SubscribeToOtaProgress incoming, string clientId, IWebSocketConnection socket)
     {
-        var topic = GetTopicKey(incoming, clientId);
+        var topic = WebSocketTopics.User.OtaProgress(Guid.Parse(incoming.AnalyzerId));
         await manager.SubscribeAsync(clientId, topic);
         return new OtaProgressSubscribed(topic);
     }

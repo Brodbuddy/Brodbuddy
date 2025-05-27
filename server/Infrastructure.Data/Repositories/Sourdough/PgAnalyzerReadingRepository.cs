@@ -32,7 +32,8 @@ public class PgAnalyzerReadingRepository : IAnalyzerReadingRepository
                 EpochTime = reading.EpochTime,
                 Timestamp = reading.Timestamp,
                 LocalTime = reading.LocalTime,
-                UserId = userId
+                UserId = userId,
+                FeedingNumber = reading.FeedingNumber
             };
         
             _context.AnalyzerReadings.Add(analyzerReading);

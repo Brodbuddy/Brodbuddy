@@ -18,14 +18,11 @@ public record DiagnosticsDataSubscribed(
 );
 
 [Authorize(Roles = Role.Admin)]
-public class ResponseDiagnosticsHandler(ISocketManager manager) : ISubscriptionHandler<SubscribeToDiagnosticsData, DiagnosticsDataSubscribed>
+public class ResponseDiagnosticsHandler(ISocketManager manager) : IWebSocketHandler<SubscribeToDiagnosticsData, DiagnosticsDataSubscribed>
 {
-    public string GetTopicKey(SubscribeToDiagnosticsData request, string clientId) => WebSocketTopics.Admin.AllDiagnostics;
-    
     public async Task<DiagnosticsDataSubscribed> HandleAsync(SubscribeToDiagnosticsData incoming, string clientId, IWebSocketConnection socket)
     {
-        var topic = GetTopicKey(incoming, clientId);
-        await manager.SubscribeAsync(clientId, topic);
+        await manager.SubscribeAsync(clientId, WebSocketTopics.Admin.AllDiagnostics);
         return new DiagnosticsDataSubscribed(incoming.UserId, socket.ConnectionInfo.Id);
     }
 }

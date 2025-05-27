@@ -6,16 +6,11 @@ import { toast } from 'sonner';
 export const useOtaSubscription = (analyzerIds: string[], onComplete?: () => void) => {
     const [otaProgress, setOtaProgress] = useState<Record<string, number>>({});
     const [updatingAnalyzers, setUpdatingAnalyzers] = useState<Set<string>>(new Set());
+    const [subscribedAnalyzers, setSubscribedAnalyzers] = useState<Set<string>>(new Set());
     const { client, connected } = useWebSocket();
 
     useEffect(() => {
-        if (!client || !connected || analyzerIds.length === 0) return;
-
-        analyzerIds.forEach(analyzerId => {
-            client.send.otaProgressSubscription({ analyzerId }).catch(err => {
-                console.error(`Failed to subscribe to OTA progress for ${analyzerId}:`, err);
-            });
-        });
+        if (!client || !connected) return;
 
         const unsubscribe = client.on(Broadcasts.otaProgressUpdate, (progress: OtaProgressUpdate) => {
             setOtaProgress(prev => ({
@@ -34,6 +29,18 @@ export const useOtaSubscription = (analyzerIds: string[], onComplete?: () => voi
                     delete newProgress[progress.analyzerId];
                     return newProgress;
                 });
+                
+                if (subscribedAnalyzers.has(progress.analyzerId)) {
+                    client.send.otaProgressUnsubscription({ analyzerId: progress.analyzerId }).catch(err => {
+                        console.error(`Failed to unsubscribe from OTA progress for ${progress.analyzerId}:`, err);
+                    });
+                    setSubscribedAnalyzers(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(progress.analyzerId);
+                        return newSet;
+                    });
+                }
+                
                 toast.success('Firmware update completed successfully!');
                 onComplete?.();
             } else if (progress.status === 'failed') {
@@ -42,12 +49,31 @@ export const useOtaSubscription = (analyzerIds: string[], onComplete?: () => voi
                     newSet.delete(progress.analyzerId);
                     return newSet;
                 });
+                
+                if (subscribedAnalyzers.has(progress.analyzerId)) {
+                    client.send.otaProgressUnsubscription({ analyzerId: progress.analyzerId }).catch(err => {
+                        console.error(`Failed to unsubscribe from OTA progress for ${progress.analyzerId}:`, err);
+                    });
+                    setSubscribedAnalyzers(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(progress.analyzerId);
+                        return newSet;
+                    });
+                }
+                
                 toast.error(`Firmware update failed: ${progress.message}`);
             }
         });
 
-        return unsubscribe;
-    }, [client, connected, analyzerIds, onComplete]);
+        return () => {
+            unsubscribe();
+            subscribedAnalyzers.forEach(analyzerId => {
+                client.send.otaProgressUnsubscription({ analyzerId }).catch(err => {
+                    console.error(`Failed to unsubscribe from OTA progress for ${analyzerId}:`, err);
+                });
+            });
+        };
+    }, [client, connected, onComplete, subscribedAnalyzers]);
 
     const startOtaUpdate = async (userId: string, analyzerId: string, firmwareVersionId: string) => {
         if (!client || !connected) {
@@ -58,6 +84,13 @@ export const useOtaSubscription = (analyzerIds: string[], onComplete?: () => voi
         setUpdatingAnalyzers(prev => new Set(prev).add(analyzerId));
         
         try {
+            if (!subscribedAnalyzers.has(analyzerId)) {
+                await client.send.otaProgressSubscription({ analyzerId });
+                setSubscribedAnalyzers(prev => new Set(prev).add(analyzerId));
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
             await client.send.startOtaUpdate({
                 userId,
                 analyzerId,

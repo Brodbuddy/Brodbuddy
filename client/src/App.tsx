@@ -13,14 +13,15 @@ import {
     useAuth,
     AuthContext,
     RequireAuth,
-    WebSocketTest,
     useSidebar,
     AppSidebar,
     ThemeToggle
 } from "./import";
 import { useWebSocket } from "./hooks/useWebsocket";
 import { Broadcasts } from "./api/websocket-client";
-import OtaTestPage from "./pages/OtaTestPage";
+import { getDefaultStore } from 'jotai';
+import { analyzersAtom } from './atoms';
+import { api } from './hooks/useHttp';
 
 export default function App() {
     const auth = useAuth();
@@ -35,11 +36,19 @@ export default function App() {
         const setupFirmwareNotifications = async () => {
             await client.send.firmwareNotificationSubscription({ clientType: 'web' });
             
-            unsubscribe = client.on(Broadcasts.firmwareAvailable, (firmware: any) => {
+            unsubscribe = client.on(Broadcasts.firmwareAvailable, async (firmware: any) => {
                 toast.info('New firmware available!', {
                     description: `Version ${firmware.version}: ${firmware.description}`,
                     duration: 8000
                 });
+                
+                try {
+                    const response = await api.analyzer.getUserAnalyzers();
+                    const store = getDefaultStore();
+                    store.set(analyzersAtom, response.data);
+                } catch (error) {
+                    console.error('Failed to refresh analyzers after firmware notification:', error);
+                }
             });
         };
 
@@ -75,9 +84,9 @@ export default function App() {
                                 <Route path={AppRoutes.home} element={
                                     <RequireAuth accessLevel={AccessLevel.Protected} element={<HomeDashboard />}/>
                                 }/>
-                                <Route path={AppRoutes.admin} element={<AdminPage />} />
-                                <Route path="/ws-test" element={<WebSocketTest />} />
-                                <Route path="/ota-test" element={<OtaTestPage />} />
+                                <Route path={AppRoutes.admin} element={
+                                    <RequireAuth accessLevel={AccessLevel.Admin} element={<AdminPage />} />
+                                }/>
                                 <Route path={AppRoutes.login} element={<InitiateLoginPage />} />
                                 <Route path={AppRoutes.verifyLogin} element={<CompleteLoginPage />} />
                                 <Route path={AppRoutes.notFound} element={<NotFound />} />

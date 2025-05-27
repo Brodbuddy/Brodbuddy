@@ -51,7 +51,8 @@ public class SourdoughTelemetryServiceTests
                 Humidity: 65.3,
                 EpochTime: 1234567890,
                 Timestamp: DateTime.UtcNow,
-                LocalTime: DateTime.UtcNow
+                LocalTime: DateTime.UtcNow,
+                FeedingNumber: 1
             );
             
             _analyzerRepositoryMock.Setup(x => x.GetOwnersUserIdAsync(analyzerId)).ReturnsAsync(ownerId);
@@ -74,7 +75,8 @@ public class SourdoughTelemetryServiceTests
                 Humidity: 65.3,
                 EpochTime: 1234567890,
                 Timestamp: DateTime.UtcNow,
-                LocalTime: DateTime.UtcNow
+                LocalTime: DateTime.UtcNow,
+                FeedingNumber: 1
             );
             
             _analyzerRepositoryMock.Setup(x => x.GetOwnersUserIdAsync(analyzerId)).ReturnsAsync((Guid?)null);
@@ -101,7 +103,8 @@ public class SourdoughTelemetryServiceTests
                 Humidity: 60.0,
                 EpochTime: 1234567890,
                 Timestamp: DateTime.UtcNow,
-                LocalTime: DateTime.UtcNow
+                LocalTime: DateTime.UtcNow,
+                FeedingNumber: 1
             );
             
             var reading2 = new SourdoughReading(
@@ -110,7 +113,8 @@ public class SourdoughTelemetryServiceTests
                 Humidity: 65.0,
                 EpochTime: 1234567900,
                 Timestamp: DateTime.UtcNow.AddMinutes(1),
-                LocalTime: DateTime.UtcNow.AddMinutes(1)
+                LocalTime: DateTime.UtcNow.AddMinutes(1),
+                FeedingNumber: 1
             );
             
             _analyzerRepositoryMock.Setup(x => x.GetOwnersUserIdAsync(analyzerId1)).ReturnsAsync(ownerId1);
@@ -138,7 +142,8 @@ public class SourdoughTelemetryServiceTests
                 Humidity: 60.0,
                 EpochTime: 1234567890,
                 Timestamp: DateTime.UtcNow,
-                LocalTime: DateTime.UtcNow
+                LocalTime: DateTime.UtcNow,
+                FeedingNumber: 1
             );
             
             var reading2 = new SourdoughReading(
@@ -147,7 +152,8 @@ public class SourdoughTelemetryServiceTests
                 Humidity: 70.0,
                 EpochTime: 1234567950,
                 Timestamp: DateTime.UtcNow.AddMinutes(5),
-                LocalTime: DateTime.UtcNow.AddMinutes(5)
+                LocalTime: DateTime.UtcNow.AddMinutes(5),
+                FeedingNumber: 1
             );
             
             _analyzerRepositoryMock.Setup(x => x.GetOwnersUserIdAsync(analyzerId)).ReturnsAsync(ownerId);
@@ -178,7 +184,8 @@ public class SourdoughTelemetryServiceTests
                 Humidity: humidity,
                 EpochTime: 1234567890,
                 Timestamp: timestamp,
-                LocalTime: timestamp
+                LocalTime: timestamp,
+                FeedingNumber: 1
             );
             
             _analyzerRepositoryMock.Setup(x => x.GetOwnersUserIdAsync(analyzerId)).ReturnsAsync(ownerId);
@@ -210,7 +217,8 @@ public class SourdoughTelemetryServiceTests
                     Humidity: 60.0 + i,
                     EpochTime: 1234567890 + i,
                     Timestamp: DateTime.UtcNow.AddSeconds(i),
-                    LocalTime: DateTime.UtcNow.AddSeconds(i)
+                    LocalTime: DateTime.UtcNow.AddSeconds(i),
+                    FeedingNumber: 1
                 ));
             }
             
@@ -238,7 +246,8 @@ public class SourdoughTelemetryServiceTests
                 Humidity: 65.3,
                 EpochTime: 1234567890,
                 Timestamp: DateTime.UtcNow,
-                LocalTime: DateTime.UtcNow
+                LocalTime: DateTime.UtcNow,
+                FeedingNumber: 1
             );
             
             _analyzerRepositoryMock.Setup(x => x.GetOwnersUserIdAsync(analyzerId)).ReturnsAsync((Guid?)null);
@@ -338,7 +347,8 @@ public class SourdoughTelemetryServiceTests
                 Humidity: 65.3,
                 EpochTime: 1234567890,
                 Timestamp: DateTime.UtcNow,
-                LocalTime: DateTime.UtcNow
+                LocalTime: DateTime.UtcNow,
+                FeedingNumber: 1
             );
             
             _analyzerRepositoryMock.Setup(x => x.GetOwnersUserIdAsync(analyzerId)).ReturnsAsync(ownerId);
@@ -361,7 +371,8 @@ public class SourdoughTelemetryServiceTests
                 Humidity: 65.3,
                 EpochTime: 1234567890,
                 Timestamp: DateTime.UtcNow,
-                LocalTime: DateTime.UtcNow
+                LocalTime: DateTime.UtcNow,
+                FeedingNumber: 1
             );
             
             _analyzerRepositoryMock.Setup(x => x.GetOwnersUserIdAsync(analyzerId)).ReturnsAsync((Guid?)null);

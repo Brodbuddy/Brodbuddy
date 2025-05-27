@@ -16,14 +16,11 @@ public record SourdoughDataSubscribed(
     [property: JsonPropertyName("connectionId")] Guid ConnectionId
 );
 
-public class SourdoughDataHandler(ISocketManager manager) : ISubscriptionHandler<SubscribeToSourdoughData, SourdoughDataSubscribed>
+public class SourdoughDataHandler(ISocketManager manager) : IWebSocketHandler<SubscribeToSourdoughData, SourdoughDataSubscribed>
 {
-    public string GetTopicKey(SubscribeToSourdoughData request, string clientId) => WebSocketTopics.User.SourdoughData(request.UserId);
-    
     public async Task<SourdoughDataSubscribed> HandleAsync(SubscribeToSourdoughData incoming, string clientId, IWebSocketConnection socket)
     {
-        var topic = GetTopicKey(incoming, clientId);
-        await manager.SubscribeAsync(clientId, topic);
+        await manager.SubscribeAsync(clientId, WebSocketTopics.User.SourdoughData(incoming.UserId));
         return new SourdoughDataSubscribed(incoming.UserId, socket.ConnectionInfo.Id);
     }
 }

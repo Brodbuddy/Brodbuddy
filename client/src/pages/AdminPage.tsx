@@ -16,7 +16,7 @@ export function AdminPage() {
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
-            <div className="mb-6">
+            <div className="mb-6 mt-16">
                 <h1 className="text-3xl font-bold">Admin Dashboard</h1>
                 <p className="text-muted-foreground">Manage system configuration and monitoring</p>
             </div>

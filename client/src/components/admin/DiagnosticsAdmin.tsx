@@ -7,6 +7,7 @@ import { Broadcasts, DiagnosticsResponse } from '@/api/websocket-client.ts';
 import { diagnosticsAtom } from '@/atoms/diagnosticsAtom.ts';
 import { userInfoAtom } from '@/atoms/auth';
 import { api } from '@/hooks';
+import { formatBytes } from '../../lib/utils';
 import { AdminAnalyzerListResponse } from '@/api/Api.ts';
 
 const formatUptime = (uptimeMs: number) => {
@@ -15,18 +16,6 @@ const formatUptime = (uptimeMs: number) => {
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     return `${hours}h ${minutes}m ${secs}s`;
-};
-
-const formatBytes = (bytes: number) => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
-
-const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString();
 };
 
 const getStateColor = (state: string) => {
@@ -67,18 +56,12 @@ const DiagnosticGrid = ({ diagnostic }: { diagnostic: DiagnosticsResponse }) => 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <DiagnosticField label="Uptime" value={formatUptime(diagnostic.uptime)} />
             <DiagnosticField label="Free Heap" value={formatBytes(diagnostic.freeHeap)} />
-            <DiagnosticField
-                label="WiFi Status"
-                value={diagnostic.wifi?.connected ? `Connected (${diagnostic.wifi.rssi} dBm)` : 'Disconnected'}
-            />
-            <DiagnosticField label="Last Updated" value={formatTimestamp(diagnostic.timestamp)} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <DiagnosticField label="Temperature" value={`${diagnostic.sensors?.temperature?.toFixed(1) || 'N/A'}°C`} />
             <DiagnosticField label="Humidity (Sensor)" value={`${diagnostic.sensors?.humidity?.toFixed(1) || 'N/A'}%`} />
             <DiagnosticField label="Rise" value={`${diagnostic.sensors?.rise?.toFixed(1) || 'N/A'}%`} />
-            <DiagnosticField label="Humidity (Main)" value={`${diagnostic.humidity?.toFixed(1) || 'N/A'}%`} />
         </div>
     </>
 );
@@ -172,7 +155,15 @@ export function DiagnosticsAdmin() {
         };
 
         setupDiagnostics();
-        return () => cleanup?.();
+        return () => {
+            cleanup?.();
+            
+            if (client && connected && userInfo?.userId) {
+                client.send.diagnosticsUnsubscription({ userId: userInfo.userId }).catch(err => {
+                    console.error('[DiagnosticsAdmin] Failed to unsubscribe from diagnostics:', err);
+                });
+            }
+        };
     }, [connected, client, analyzers, handleDiagnosticsData, userInfo]);
 
     if (loading) {

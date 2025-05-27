@@ -113,9 +113,6 @@ const HomeDashboard: React.FC = () => {
             console.error('Failed to subscribe to sourdough data:', err);
         });
 
-        client.send.firmwareNotificationSubscription({ clientType: 'web' }).catch(err => {
-            console.error('Failed to subscribe to firmware notifications:', err);
-        });
 
         const unsubscribeSourdough = client.on(Broadcasts.sourdoughReading, (reading: SourdoughReading) => {
             console.log('[WebSocket] Received sourdough reading:', {
@@ -129,6 +126,11 @@ const HomeDashboard: React.FC = () => {
             if (reading.rise < -100 || reading.rise > 500) {
                 console.warn('[WebSocket] Suspicious rise value:', reading.rise);
             }
+            
+            toast.success('New data received', {
+                description: `Temperature: ${reading.temperature.toFixed(1)}°C, Humidity: ${reading.humidity.toFixed(1)}%, Growth: ${reading.rise.toFixed(1)}%`,
+                duration: 2000,
+            });
             
             setLatestReading(reading);
             
@@ -150,29 +152,23 @@ const HomeDashboard: React.FC = () => {
             });
         });
 
-        const unsubscribeFirmware = client.on(Broadcasts.firmwareAvailable, async (firmware: any) => {
-            console.log('[WebSocket] New firmware available:', firmware);
-            toast.info(`New firmware v${firmware.version} is available!`);
-            refetch();
-            
-            try {
-                const response = await api.analyzer.getUserAnalyzers();
-                console.log('[Dashboard] Refreshed analyzers after firmware notification:', response.data);
-                const store = getDefaultStore();
-                store.set(analyzersAtom, response.data);
-            } catch (error) {
-                console.error('Failed to refresh analyzers:', error);
-            }
-        });
-
         return () => {
             unsubscribeSourdough();
-            unsubscribeFirmware();
         };
     }, [client, connected, user?.userId, refetch]);
 
     const handleTimeRangeChange = useCallback((newTimeRange: string) => {
         setTimeRange(newTimeRange as TimeRange);
+        const rangeLabels: Record<TimeRange, string> = {
+            '1h': '1 hour',
+            '6h': '6 hours',
+            '12h': '12 hours',
+            '24h': '24 hours'
+        };
+        toast.info('Time range changed', {
+            description: `Now showing data for the last ${rangeLabels[newTimeRange as TimeRange]}`,
+            duration: 2000,
+        });
     }, []);
 
     const handleAnalyzerChange = useCallback((analyzerId: string) => {

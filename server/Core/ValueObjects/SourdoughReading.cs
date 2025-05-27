@@ -9,5 +9,6 @@ public record SourdoughReading(
     [property: JsonPropertyName("humidity")] double Humidity,
     [property: JsonPropertyName("epochTime")] long EpochTime,
     [property: JsonPropertyName("timestamp")] DateTime Timestamp,
-    [property: JsonPropertyName("localTime")] DateTime LocalTime
+    [property: JsonPropertyName("localTime")] DateTime LocalTime,
+    [property: JsonPropertyName("feedingNumber")] int FeedingNumber
     ) : IBroadcastMessage;

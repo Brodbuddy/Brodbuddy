@@ -9,8 +9,9 @@ public partial class FirmwareUpdate
         public const string Applying = "applying";
         public const string Complete = "complete";
         public const string Failed = "failed";
+        public const string Error = "error";
     }
     
     public bool IsActive => Status is OtaStatus.Started or OtaStatus.Downloading or OtaStatus.Applying;
-    public bool IsFinished => Status is OtaStatus.Complete or OtaStatus.Failed;
+    public bool IsFinished => Status is OtaStatus.Complete or OtaStatus.Failed or OtaStatus.Error;
 }

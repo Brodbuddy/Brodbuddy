@@ -25,7 +25,8 @@ public class MqttMessageHandlerTests(StartupTestFixture fixture, ITestOutputHelp
             Humidity: 65.0,
             EpochTime: DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             Timestamp: DateTime.UtcNow,
-            LocalTime: DateTime.UtcNow
+            LocalTime: DateTime.UtcNow,
+            FeedingNumber: 1
         );
         
         // Act
