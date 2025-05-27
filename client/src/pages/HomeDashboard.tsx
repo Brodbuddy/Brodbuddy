@@ -18,7 +18,7 @@ import { useFirmwareVersions, useOtaSubscription } from '@/hooks';
 import { toast } from 'sonner';
 
 const HomeDashboard: React.FC = () => {
-    const [timeRange, setTimeRange] = useState<TimeRange>("12h");
+    const [timeRange, setTimeRange] = useState<TimeRange>("1h");
     const [selectedAnalyzerId, setSelectedAnalyzerId] = useState<string>('');
     const [chartData, setChartData] = useState<Array<{
         date: string;

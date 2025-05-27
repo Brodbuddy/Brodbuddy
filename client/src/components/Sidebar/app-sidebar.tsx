@@ -1,10 +1,9 @@
-import { Menu, Settings, X, LogOut, Home, Shield } from "lucide-react"
+import { Menu, X, LogOut, Home, Shield } from "lucide-react"
 import { Sidebar, SidebarContent, SidebarFooter, useSidebar } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 import { Link, useLocation } from "react-router-dom"
 import { AppRoutes } from "@/helpers"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useAtomValue } from "jotai"
@@ -12,7 +11,6 @@ import { userInfoAtom } from "@/atoms/auth"
 
 export function AppSidebar() {
     const { open, setOpen } = useSidebar()
-    const [showSettings, setShowSettings] = useState(false)
     const auth = useAuth()
     const location = useLocation()
     const userInfo = useAtomValue(userInfoAtom)
@@ -109,78 +107,18 @@ export function AppSidebar() {
                                 <p className="text-xs text-accent-foreground/70">{auth.user?.email}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full hover:bg-accent-foreground/10"
-                                onClick={() => setShowSettings(true)}
-                            >
-                                <Settings className="h-4 w-4" />
-                                <span className="sr-only">Settings</span>
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full text-red-500 hover:bg-red-100"
-                                onClick={() => auth.logout()}
-                            >
-                                <LogOut className="h-4 w-4" />
-                                <span className="sr-only">Log out</span>
-                            </Button>
-                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-red-500 hover:bg-red-100"
+                            onClick={() => auth.logout()}
+                        >
+                            <LogOut className="h-4 w-4" />
+                            <span className="sr-only">Log out</span>
+                        </Button>
                     </div>
                 </SidebarFooter>
             </Sidebar>
-
-            {/* Settings Sheet */}
-            {showSettings && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-end">
-                    <div className="bg-bg-cream w-full max-w-md h-full p-4 sm:p-6 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-xl font-bold text-accent-foreground">Settings</h2>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-10 w-10"
-                                onClick={() => setShowSettings(false)}
-                            >
-                                <X className="h-5 w-5" />
-                                <span className="sr-only">Close</span>
-                            </Button>
-                        </div>
-
-                        <div className="space-y-6">
-                            {/* Settings content goes here */}
-                            <div className="space-y-2">
-                                <h3 className="text-lg font-medium text-accent-foreground">Account</h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Username</label>
-                                        <input type="text" className="w-full p-3 border border-border-brown rounded text-base bg-card text-card-foreground" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1">Email</label>
-                                        <input type="email" className="w-full p-3 border border-border-brown rounded text-base bg-card text-card-foreground" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <h3 className="text-lg font-medium text-accent-foreground">Preferences</h3>
-                                <div className="space-y-3">
-                                    <div className="flex items-center">
-                                        <input type="checkbox" id="notifications" className="mr-3 h-4 w-4" />
-                                        <label htmlFor="notifications" className="text-base">Enable notifications</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Button className="w-full bg-accent-foreground text-primary-foreground p-3 text-base mt-4">Save Changes</Button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </>
     )
 }
