@@ -49,7 +49,9 @@ public class LoginTests : PageTest
             throw new Exception($"Login failed with error: {errorMessage}");
         
         Page.Url.ShouldBe($"{TestConfiguration.BaseUrl}/");
-        var dashboardTitle = await Page.TextContentAsync("h1");
-        dashboardTitle.ShouldBe("My Sourdough");
+        
+        await Page.WaitForSelectorAsync("[data-slot='card-title']", new() { Timeout = 5000 });
+        var dashboardTitle = await Page.TextContentAsync("[data-slot='card-title']");
+        dashboardTitle.ShouldBe("Sourdough Analyzer Dashboard");
     }
 }
