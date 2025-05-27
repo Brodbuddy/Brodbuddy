@@ -33,8 +33,7 @@ Vores backend er opbygget med onion arkitektur, se ovenstående figur for illust
 
 **Infrastructure**, vores infrastructure er opdelt efter formål frem for teknologi.
 Vi har Infrastructure.Data som håndterer opbevaring af data via Entity Framework Core og PostgreSQL caching via IDistributedCache med Redis (Dragondfly).
-Communication implementerer alt udgående kommunikation, som mail, publishers der anvender VerneMQ for at sende data til ESP32 over MQTT  
-og notifiers for at sende data til frontend over Websocket med Redis som pub/sub. 
+Communication implementerer alt udgående kommunikation, som mail, publishers der anvender VerneMQ for at sende data til ESP32 over MQTT og notifiers for at sende data til frontend over Websocket med Redis som pub/sub. 
 
 Infrastructure.Monitoring håndterer opsætning af logging og tracing her henholdsvis Serilog og Zipkin via Opentelemetry.  
 
