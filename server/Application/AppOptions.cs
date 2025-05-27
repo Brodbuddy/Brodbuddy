@@ -2,6 +2,8 @@
 
 public class AppOptions
 {
+    public string Environment { get; set; } = "Development";
+    
     public int PublicPort { get; set; } = 9999;
     public HttpOptions Http { get; init; } = new();
     public WebsocketOptions Websocket { get; init; } = new();
@@ -14,6 +16,13 @@ public class AppOptions
     public SeqOptions Seq { get; init; } = new();
     public ZipkinOptions Zipkin { get; init; } = new();
     public TokenOptions Token { get; init; } = new();
+}
+
+public static class Environments
+{
+    public const string Development = "Development";
+    public const string Staging = "Staging"; 
+    public const string Production = "Production";
 }
 
 public class HttpOptions
@@ -63,7 +72,7 @@ public class DragonflyOptions
 
 public class MqttOptions
 {
-    public string Host { get; set; } = "localhost";
+    public string Host { get; set; } = "mqtt.staging.brodbuddy.com";
     public int MqttPort { get; set; } = 1883;
     public int WebSocketPort { get; set; } = 8080;
     public string Username { get; set; } = "user";

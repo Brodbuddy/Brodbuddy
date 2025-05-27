@@ -1,6 +1,7 @@
 #include "app/epaper_monitor.h"
 
 #include "config/constants.h"
+#include "config/time_utils.h"
 #include "logging/logger.h"
 
 static const char* TAG = "EpaperMonitor";
@@ -26,9 +27,9 @@ SourdoughData EpaperMonitor::generateMockData() {
     data.inHumidity = 100;
     data.batteryLevel = 20;
 
-    // Beregn start-tidsstempel (12 timer før nu)
     unsigned long now = millis() / 1000;
-    unsigned long startTime = now - (12 * 60 * 60);
+    unsigned long windowSeconds = TimeUtils::to_seconds(TimeConstants::GRAPH_WINDOW);
+    unsigned long startTime = now - windowSeconds;
 
     // Tilføj mockdata med 10-minutters intervaller
     unsigned long interval = 10 * 60;
@@ -82,10 +83,21 @@ void EpaperMonitor::updatePeakInfo(SourdoughData& data) {
     }
 
     // Beregn timer siden peak
-    if (peakIndex >= 0) {
-        unsigned long now = millis() / 1000;
+    if (peakIndex >= 0 && data.dataCount > 0) {
+        unsigned long now = 0;
+        for (int i = 0; i < data.dataCount; i++) {
+            int idx = (data.oldestIndex + i) % MonitoringConstants::MAX_DATA_POINTS;
+            if (data.timestamps[idx] > now) {
+                now = data.timestamps[idx];
+            }
+        }
+        
         unsigned long peakTime = data.timestamps[peakIndex];
-        data.peakHoursAgo = (now - peakTime) / 3600.0; // Konverter sekunder til timer
+        if (now >= peakTime) {
+            data.peakHoursAgo = (now - peakTime) / 3600.0;
+        } else {
+            data.peakHoursAgo = 0;
+        }
 
         if (data.peakGrowth != previousPeak) {
             LOG_D(TAG, "New peak detected: %d%% (was %d%%)", data.peakGrowth, previousPeak);
@@ -162,10 +174,9 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
 
     // Definer etiketbredde for Y-aksen
     int yLabelWidth = 30;
+    int actualGraphWidth = graphWidth - yLabelWidth;
 
     // Tegn X-aksens etiketter (tid) og lodrette gitterlinjer
-    char timeLabels[7][5] = {"12h", "10h", "8h", "6h", "4h", "2h", "now"};
-
     // Start X-etiketter fra en position, der ikke overlapper med Y-etiketter
     int xLabelStartX = graphX + yLabelWidth;
 
@@ -174,38 +185,83 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
     _display.drawLine(xLabelStartX, graphY + graphHeight, graphX + graphWidth, graphY + graphHeight,
                       DisplayConstants::COLOR_BLACK);
 
-    // Tilføj lodrette gitterlinjer for hver time (12 timer i alt)
-    int hourWidth = (graphWidth - yLabelWidth) / 12;
-
-    for (int hour = 0; hour <= 12; hour++) {
-        int x = xLabelStartX + (hour * hourWidth);
-
-        // Tegn gitterlinje for hver time
-        _display.drawLine(x, graphY, x, graphY + graphHeight, DisplayConstants::COLOR_BLACK);
-
-        // Tilføj etiketter kun for lige timer
-        if (hour % 2 == 0) {
-            int labelIndex = hour / 2;
-            if (labelIndex < sizeof(timeLabels) / sizeof(timeLabels[0])) {
-                _display.setCursor(x - 8, graphY + graphHeight + 2);
-                _display.setTextColor(DisplayConstants::COLOR_BLACK);
-                _display.print(timeLabels[labelIndex]);
+    unsigned long windowMinutes = TimeUtils::to_minutes(TimeConstants::GRAPH_WINDOW);
+    
+    int gridInterval;
+    if (windowMinutes <= 10) {
+        gridInterval = 1;  // Every minute
+    } else if (windowMinutes <= 60) {
+        gridInterval = 5;  // Every 5 minutes
+    } else if (windowMinutes <= 360) {
+        gridInterval = 30; // Every 30 minutes
+    } else {
+        gridInterval = 60; // Every hour
+    }
+    
+    int numGridLines = windowMinutes / gridInterval;
+    int gridWidth = actualGraphWidth / numGridLines;
+    
+    for (int i = 0; i <= numGridLines; i++) {
+        int x = xLabelStartX + (i * gridWidth);
+        
+        // Tegn gitterlinje
+        if (i == 0) {
+            _display.drawLine(x, graphY - 3, x, graphY + graphHeight, DisplayConstants::COLOR_BLACK);
+        } else {
+            _display.drawLine(x, graphY, x, graphY + graphHeight, DisplayConstants::COLOR_BLACK);
+        }
+        
+        int minutesFromStart = i * gridInterval;
+        int minutesAgo = windowMinutes - minutesFromStart;
+        
+        bool showLabel = false;
+        if (i == numGridLines) {
+            showLabel = true; // Always show "now"
+        } else if (windowMinutes <= 10 && minutesAgo % 2 == 0) {
+            showLabel = true; // For 10m window: 10, 8, 6, 4, 2
+        } else if (windowMinutes <= 60 && minutesAgo % 10 == 0) {
+            showLabel = true; // For 1h window: 60, 50, 40, 30, 20, 10
+        } else if (windowMinutes <= 360 && minutesAgo % 60 == 0) {
+            showLabel = true; // For 6h window: 6h, 5h, 4h, 3h, 2h, 1h
+        } else if (minutesAgo % 120 == 0) {
+            showLabel = true; // For 12h window: 12h, 10h, 8h, 6h, 4h, 2h
+        }
+        
+        if (showLabel) {
+            _display.setTextColor(DisplayConstants::COLOR_BLACK);
+            
+            if (i == numGridLines) {
+                _display.setCursor(x - 12, graphY + graphHeight + 2);
+                _display.print("now");
+            } else if (minutesAgo >= 60) {
+                _display.setCursor(x - 6, graphY + graphHeight + 2);
+                _display.print(minutesAgo / 60);
+                _display.print("h");
+            } else {
+                if (minutesAgo >= 10) {
+                    _display.setCursor(x - 10, graphY + graphHeight + 2);
+                } else {
+                    _display.setCursor(x - 6, graphY + graphHeight + 2);
+                }
+                _display.print(minutesAgo);
+                _display.print("m");
             }
         }
     }
 
     // Tegn Y-aksens etiketter (vækstprocent)
-    int yLabelValues[] = {150, 200, 250, 300, 350, 400};
+    int yLabelValues[] = {100, 150, 200, 250, 300, 350, 400};
 
     int numYLabels = sizeof(yLabelValues) / sizeof(yLabelValues[0]);
     for (int i = 0; i < numYLabels; i++) {
-        int y = graphY + graphHeight - (i + 1) * graphHeight / numYLabels;
+        int y = graphY + graphHeight - (i * graphHeight / (numYLabels - 1));
 
-        // Tegn vandret gitterlinje
-        _display.drawLine(xLabelStartX, y, graphX + graphWidth, y, DisplayConstants::COLOR_BLACK);
+        // Tegn vandret gitterlinje - find the rightmost grid line position
+        int rightmostX = xLabelStartX + (numGridLines * gridWidth);
+        _display.drawLine(xLabelStartX, y, rightmostX, y, DisplayConstants::COLOR_BLACK);
 
         // Tegn etiket
-        _display.setCursor(graphX + 2, y - 3);
+        _display.setCursor(graphX, y - 3);
         _display.print(yLabelValues[i]);
         _display.print("%");
     }
@@ -220,10 +276,30 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
         return;
     }
 
-    // Beregn tidsramme (12 timer total)
-    unsigned long now = millis() / 1000;
-    unsigned long twelveHoursAgo = now - (12 * 60 * 60);
-    float timeRange = 12.0 * 60 * 60; // 12 timer i sekunder
+    // Beregn tidsramme (12 timer total) - find newest timestamp as "now"
+    unsigned long now = 0;
+    if (data.dataCount > 0) {
+        // Find den nyeste timestamp
+        for (int i = 0; i < data.dataCount; i++) {
+            int idx = (data.oldestIndex + i) % MonitoringConstants::MAX_DATA_POINTS;
+            if (data.timestamps[idx] > now) {
+                now = data.timestamps[idx];
+            }
+        }
+    } else {
+        now = millis() / 1000;
+    }
+    
+    unsigned long windowSeconds = TimeUtils::to_seconds(TimeConstants::GRAPH_WINDOW);
+    unsigned long windowStartTime = now - windowSeconds;
+    
+    LOG_D(TAG, "Graph time window: now=%lu, start=%lu, window=%lus", now, windowStartTime, windowSeconds);
+    if (data.dataCount > 0) {
+        int firstIdx = data.oldestIndex;
+        int lastIdx = (data.oldestIndex + data.dataCount - 1) % MonitoringConstants::MAX_DATA_POINTS;
+        LOG_D(TAG, "Data timestamps: first=%lu, last=%lu, count=%d", data.timestamps[firstIdx], data.timestamps[lastIdx], data.dataCount);
+    }
+    float timeRange = (float)windowSeconds;
 
     // Kun tegn punkter, hvis vi har mindst 2
     if (data.dataCount >= 2) {
@@ -234,28 +310,34 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
             int idx2 = (data.oldestIndex + i + 1) % MonitoringConstants::MAX_DATA_POINTS;
 
             // Beregn relative positioner på tidsaksen
-            float timePct1 = (data.timestamps[idx1] - twelveHoursAgo) / timeRange;
-            float timePct2 = (data.timestamps[idx2] - twelveHoursAgo) / timeRange;
+            float timePct1 = (data.timestamps[idx1] - windowStartTime) / timeRange;
+            float timePct2 = (data.timestamps[idx2] - windowStartTime) / timeRange;
 
             // Begræns til gyldig tidsskala (0.0 til 1.0)
             timePct1 = max(0.0f, min(1.0f, timePct1));
             timePct2 = max(0.0f, min(1.0f, timePct2));
+            
+            if (timePct1 > 1.0f || timePct2 > 1.0f) {
+                LOG_D(TAG, "Time percentage out of range: pct1=%.2f, pct2=%.2f", timePct1, timePct2);
+            }
 
             // Beregn x-koordinater baseret på disse tidspositioner
-            int x1 = xLabelStartX + (timePct1 * (graphWidth - yLabelWidth));
-            int x2 = xLabelStartX + (timePct2 * (graphWidth - yLabelWidth));
+            int rightmostGridX = xLabelStartX + (numGridLines * gridWidth);
+            int x1 = xLabelStartX + (int)(timePct1 * (rightmostGridX - xLabelStartX));
+            int x2 = xLabelStartX + (int)(timePct2 * (rightmostGridX - xLabelStartX));
 
             // Beregn y-koordinater baseret på vækstværdier
             int y1 = graphY + graphHeight - ((data.growthValues[idx1] - minValue) * graphHeight / valueRange);
             int y2 = graphY + graphHeight - ((data.growthValues[idx2] - minValue) * graphHeight / valueRange);
 
+            if (i == 0) {
+                LOG_D(TAG, "First line: ts1=%lu, ts2=%lu, pct1=%.2f, pct2=%.2f, x1=%d, x2=%d, y1=%d, y2=%d, val1=%d, val2=%d",
+                      data.timestamps[idx1], data.timestamps[idx2], timePct1, timePct2, x1, x2, y1, y2,
+                      data.growthValues[idx1], data.growthValues[idx2]);
+            }
+
             // Tegn linje mellem punkter
             _display.drawLine(x1, y1, x2, y2, DisplayConstants::COLOR_BLACK);
-
-            // Marker hver 3. datapunkt
-            if (i % 3 == 0) {
-                _display.fillRect(x1 - 2, y1 - 2, 4, 4, DisplayConstants::COLOR_BLACK);
-            }
         }
     }
 
@@ -273,10 +355,11 @@ void EpaperMonitor::drawGraph(const SourdoughData& data) {
 
     // Hvis vi fandt en peak, marker den
     if (peakIndex >= 0) {
-        float peakTimePct = (data.timestamps[peakIndex] - twelveHoursAgo) / timeRange;
+        float peakTimePct = (data.timestamps[peakIndex] - windowStartTime) / timeRange;
         peakTimePct = max(0.0f, min(1.0f, peakTimePct));
 
-        int peakX = xLabelStartX + (peakTimePct * (graphWidth - yLabelWidth));
+        int rightmostGridX = xLabelStartX + (numGridLines * gridWidth);
+        int peakX = xLabelStartX + (int)(peakTimePct * (rightmostGridX - xLabelStartX));
         int peakY = graphY + graphHeight - ((peakValue - minValue) * graphHeight / valueRange);
 
         _display.fillRect(peakX - 3, peakY - 3, 6, 6, DisplayConstants::COLOR_RED);

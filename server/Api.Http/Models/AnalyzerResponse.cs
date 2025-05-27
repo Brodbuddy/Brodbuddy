@@ -13,7 +13,9 @@ public record AnalyzerListResponse(
     string Name,
     string? Nickname,
     DateTime? LastSeen,
-    bool IsOwner
+    bool IsOwner,
+    string? FirmwareVersion,
+    bool HasUpdate
 );
 
 public record CreateAnalyzerResponse(
@@ -31,5 +33,6 @@ public record AdminAnalyzerListResponse(
     bool IsActivated,
     DateTime? ActivatedAt,
     DateTime? LastSeen,
-    DateTime CreatedAt
+    DateTime CreatedAt,
+    string ActivationCode
 );

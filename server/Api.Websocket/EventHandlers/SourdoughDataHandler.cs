@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Brodbuddy.WebSocket.Auth;
 using Brodbuddy.WebSocket.Core;
 using Brodbuddy.WebSocket.State;
@@ -6,18 +7,20 @@ using Fleck;
 
 namespace Api.Websocket.EventHandlers;
 
-public record SubscribeToSourdoughData(Guid UserId);
-public record SourdoughDataSubscribed(Guid UserId, Guid ConnectionId);
+public record SubscribeToSourdoughData(
+    [property: JsonPropertyName("userId")] Guid UserId
+);
 
-[AllowAnonymous]
-public class SourdoughDataHandler(ISocketManager manager) : ISubscriptionHandler<SubscribeToSourdoughData, SourdoughDataSubscribed>
+public record SourdoughDataSubscribed(
+    [property: JsonPropertyName("userId")] Guid UserId,
+    [property: JsonPropertyName("connectionId")] Guid ConnectionId
+);
+
+public class SourdoughDataHandler(ISocketManager manager) : IWebSocketHandler<SubscribeToSourdoughData, SourdoughDataSubscribed>
 {
-    public string GetTopicKey(SubscribeToSourdoughData request, string clientId) => WebSocketTopics.User.SourdoughData(request.UserId);
-    
     public async Task<SourdoughDataSubscribed> HandleAsync(SubscribeToSourdoughData incoming, string clientId, IWebSocketConnection socket)
     {
-        var topic = GetTopicKey(incoming, clientId);
-        await manager.SubscribeAsync(clientId, topic);
+        await manager.SubscribeAsync(clientId, WebSocketTopics.User.SourdoughData(incoming.UserId));
         return new SourdoughDataSubscribed(incoming.UserId, socket.ConnectionInfo.Id);
     }
 }

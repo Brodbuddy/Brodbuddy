@@ -25,5 +25,9 @@ public partial class SourdoughAnalyzer
 
     public DateTime UpdatedAt { get; set; }
 
+    public virtual ICollection<AnalyzerReading> AnalyzerReadings { get; set; } = new List<AnalyzerReading>();
+
+    public virtual ICollection<FirmwareUpdate> FirmwareUpdates { get; set; } = new List<FirmwareUpdate>();
+
     public virtual ICollection<UserAnalyzer> UserAnalyzers { get; set; } = new List<UserAnalyzer>();
 }

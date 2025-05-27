@@ -4,12 +4,16 @@ public static class MqttTopics
 {
     public static class Analyzer 
     {
-        public static string Telemetry(Guid deviceId) => $"analyzer/{deviceId}/telemetry";
+        public static string Telemetry(Guid analyzerId) => $"analyzer/{analyzerId}/telemetry";
+        public static string OtaStatus(Guid analyzerId) => $"analyzer/{analyzerId}/ota/status";
+        public static string OtaStart(Guid analyzerId) => $"analyzer/{analyzerId}/ota/start";
+        public static string OtaChunk(Guid analyzerId) => $"analyzer/{analyzerId}/ota/chunk";
     }
     
     public static class Patterns
     {
         public const string AllAnalyzersTelemetry = "analyzer/+/telemetry";
+        public const string AllAnalyzersOtaStatus = "analyzer/+/ota/status";
     }
 
     public static Guid ExtractAnalyzerId(string? topic, string template = "analyzer/{analyzerId}/telemetry")

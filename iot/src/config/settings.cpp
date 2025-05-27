@@ -36,12 +36,12 @@ void Settings::setDefaults() {
     _doc["mqtt"]["port"] = 1883;
     _doc["mqtt"]["user"] = "";
     _doc["mqtt"]["password"] = "";
-    _doc["sensor"]["interval"] = 900;
-    _doc["display"]["interval"] = 300;
+    _doc["sensor"]["intervalSeconds"] = 900;
+    _doc["display"]["intervalSeconds"] = 300;
     _doc["lowPowerMode"] = true;
-    _doc["calibration"]["tempOffset"] = -1.7;
+    _doc["calibration"]["tempOffsetCelsius"] = -1.7;
     _doc["calibration"]["humOffset"] = 7.3;
-    _doc["calibration"]["containerHeight"] = 200;
+    _doc["sourdough"]["feedingNumber"] = 1;
     _loaded = true;
 }
 
@@ -135,19 +135,19 @@ void Settings::setMqttPassword(const String& password) {
 }
 
 int Settings::getSensorInterval() const {
-    return _doc["sensor"]["interval"].as<int>();
+    return _doc["sensor"]["intervalSeconds"].as<int>();
 }
 
 void Settings::setSensorInterval(int seconds) {
-    _doc["sensor"]["interval"] = seconds;
+    _doc["sensor"]["intervalSeconds"] = seconds;
 }
 
 int Settings::getDisplayInterval() const {
-    return _doc["display"]["interval"].as<int>();
+    return _doc["display"]["intervalSeconds"].as<int>();
 }
 
 void Settings::setDisplayInterval(int seconds) {
-    _doc["display"]["interval"] = seconds;
+    _doc["display"]["intervalSeconds"] = seconds;
 }
 
 bool Settings::getLowPowerMode() const {
@@ -159,11 +159,11 @@ void Settings::setLowPowerMode(bool enabled) {
 }
 
 float Settings::getTempOffset() const {
-    return _doc["calibration"]["tempOffset"].as<float>();
+    return _doc["calibration"]["tempOffsetCelsius"].as<float>();
 }
 
 void Settings::setTempOffset(float offset) {
-    _doc["calibration"]["tempOffset"] = offset;
+    _doc["calibration"]["tempOffsetCelsius"] = offset;
 }
 
 float Settings::getHumOffset() const {
@@ -174,12 +174,17 @@ void Settings::setHumOffset(float offset) {
     _doc["calibration"]["humOffset"] = offset;
 }
 
-int Settings::getContainerHeight() const {
-    return _doc["calibration"]["containerHeight"].as<int>();
+int Settings::getFeedingNumber() const {
+    return _doc["sourdough"]["feedingNumber"] | 1;
 }
 
-void Settings::setContainerHeight(int height) {
-    _doc["calibration"]["containerHeight"] = height;
+void Settings::setFeedingNumber(int number) {
+    _doc["sourdough"]["feedingNumber"] = number;
+}
+
+void Settings::incrementFeedingNumber() {
+    int current = getFeedingNumber();
+    setFeedingNumber(current + 1);
 }
 
 void Settings::printSettings() const {

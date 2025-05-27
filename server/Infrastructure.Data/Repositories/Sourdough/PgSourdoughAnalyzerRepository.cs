@@ -45,6 +45,18 @@ public class PgSourdoughAnalyzerRepository : ISourdoughAnalyzerRepository
                                                 .ToListAsync();
     }
 
+    public async Task<SourdoughAnalyzer?> GetByIdAsync(Guid id)
+    {
+        return await _context.SourdoughAnalyzers.Include(a => a.UserAnalyzers)
+                                                .FirstOrDefaultAsync(a => a.Id == id);
+    }
+
+    public async Task UpdateAsync(SourdoughAnalyzer analyzer)
+    {
+        _context.SourdoughAnalyzers.Update(analyzer);
+        await _context.SaveChangesAsync();
+    }
+
     public async Task<Guid?> GetOwnersUserIdAsync(Guid analyzerId)
     {
         var userAnalyzer = await _context.UserAnalyzers
@@ -52,5 +64,4 @@ public class PgSourdoughAnalyzerRepository : ISourdoughAnalyzerRepository
     
         return userAnalyzer?.UserId;
     }
-    
 }

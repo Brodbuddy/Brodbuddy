@@ -47,16 +47,6 @@
         "resolved": "2.4.0",
         "contentHash": "SwXsAV3sMvAU/Nn31pbjhWurYSjJ+/giI/0n6tCrYoupEK34iIHCuk3STAd9fx8yudM85KkLSVdn951vTng/vQ=="
       },
-      "Brodbuddy.WebSocket": {
-        "type": "Transitive",
-        "resolved": "0.0.17",
-        "contentHash": "QT4N+rrV/ZS+5j25uFLHPS+bDf/GbL/lMQmziCXTip7zL+lGD28emNlpF4aXzqvsdDfiOFa2dk4QUhSp3jlZsw==",
-        "dependencies": {
-          "Fleck": "1.2.0",
-          "FluentValidation": "11.11.0",
-          "Microsoft.Extensions.Logging.Abstractions": "9.0.2"
-        }
-      },
       "Castle.Core": {
         "type": "Transitive",
         "resolved": "5.1.1",
@@ -1122,9 +1112,9 @@
         "type": "Project",
         "dependencies": {
           "Application": "[1.0.0, )",
+          "Brodbuddy.WebSocket": "[1.0.0, )",
           "Microsoft.Extensions.Hosting": "[9.0.3, )",
-          "NSwag.AspNetCore": "[14.3.0, )",
-          "brodbuddy.websocket": "[0.0.17, )"
+          "NSwag.AspNetCore": "[14.3.0, )"
         }
       },
       "application": {
@@ -1135,6 +1125,14 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[9.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[9.0.3, )",
           "Microsoft.Extensions.Options": "[9.0.3, )"
+        }
+      },
+      "brodbuddy.websocket": {
+        "type": "Project",
+        "dependencies": {
+          "Fleck": "[1.2.0, )",
+          "FluentValidation": "[11.11.0, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[9.0.2, )"
         }
       },
       "core": {

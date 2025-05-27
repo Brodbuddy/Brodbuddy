@@ -2,7 +2,7 @@ import path from "node:path";
 import { generateApi } from "swagger-typescript-api";
 
 generateApi({
-    name: "http-client.ts",
+    name: "Api.ts",
     output: path.resolve(process.cwd(), "./src/api"),
     url: "http://localhost:5001/swagger/v1/swagger.json",
     httpClientType: "axios",

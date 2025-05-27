@@ -1,4 +1,4 @@
-import { Menu, Settings, X, LogOut, Home, Layers, Users, AlertCircle } from "lucide-react"
+import { Menu, Settings, X, LogOut, Home, Shield } from "lucide-react"
 import { Sidebar, SidebarContent, SidebarFooter, useSidebar } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 import { Link, useLocation } from "react-router-dom"
@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { useAtomValue } from "jotai"
+import { userInfoAtom } from "@/atoms/auth"
 
 export function AppSidebar() {
     const { open, setOpen } = useSidebar()
     const [showSettings, setShowSettings] = useState(false)
     const auth = useAuth()
     const location = useLocation()
+    const userInfo = useAtomValue(userInfoAtom)
 
     // Get user initials for avatar
     const getUserInitials = () => {
@@ -62,10 +65,10 @@ export function AppSidebar() {
                         <ul className="space-y-1">
                             <li>
                                 <Link
-                                    to={AppRoutes.homeDashboard}
+                                    to={AppRoutes.home}
                                     className={cn(
                                         "flex items-center py-2.5 px-4 rounded-md transition-colors",
-                                        location.pathname === AppRoutes.homeDashboard
+                                            location.pathname === AppRoutes.home
                                             ? "bg-accent-foreground text-primary font-medium"
                                             : "hover:bg-accent hover:text-accent-foreground"
                                     )}
@@ -75,51 +78,23 @@ export function AppSidebar() {
                                     <span>Dashboard</span>
                                 </Link>
                             </li>
-                            <li>
-                                <Link
-                                    to="/recipes"
-                                    className={cn(
-                                        "flex items-center py-2.5 px-4 rounded-md transition-colors",
-                                        location.pathname.includes('/recipes')
-                                            ? "bg-accent-foreground text-primary font-medium"
-                                            : "hover:bg-accent hover:text-accent-foreground"
-                                    )}
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Layers className="h-5 w-5 mr-3" />
-                                    <span>Recipes</span>
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    to="/community"
-                                    className={cn(
-                                        "flex items-center py-2.5 px-4 rounded-md transition-colors",
-                                        location.pathname.includes('/community')
-                                            ? "bg-accent-foreground text-primary font-medium"
-                                            : "hover:bg-accent hover:text-accent-foreground"
-                                    )}
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <Users className="h-5 w-5 mr-3" />
-                                    <span>Community</span>
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    to="/help"
-                                    className={cn(
-                                        "flex items-center py-2.5 px-4 rounded-md transition-colors",
-                                        location.pathname.includes('/help')
-                                            ? "bg-accent-foreground text-primary font-medium"
-                                            : "hover:bg-accent hover:text-accent-foreground"
-                                    )}
-                                    onClick={() => setOpen(false)}
-                                >
-                                    <AlertCircle className="h-5 w-5 mr-3" />
-                                    <span>Help</span>
-                                </Link>
-                            </li>
+                            {userInfo?.isAdmin && (
+                                <li>
+                                    <Link
+                                        to={AppRoutes.admin}
+                                        className={cn(
+                                            "flex items-center py-2.5 px-4 rounded-md transition-colors",
+                                            location.pathname === AppRoutes.admin
+                                                ? "bg-accent-foreground text-primary font-medium"
+                                                : "hover:bg-accent hover:text-accent-foreground"
+                                        )}
+                                        onClick={() => setOpen(false)}
+                                    >
+                                        <Shield className="h-5 w-5 mr-3" />
+                                        <span>Admin</span>
+                                    </Link>
+                                </li>
+                            )}
                         </ul>
                     </nav>
                 </SidebarContent>

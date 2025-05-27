@@ -29,6 +29,10 @@ namespace TimeUtils {
     template <typename Rep, typename Period> inline int to_seconds(const duration<Rep, Period>& d) {
         return duration_cast<seconds>(d).count();
     }
+
+    template <typename Rep, typename Period> inline int to_minutes(const duration<Rep, Period>& d) {
+        return duration_cast<minutes>(d).count();
+    }
 }
 
 namespace TimeConstants {
@@ -56,6 +60,8 @@ namespace TimeConstants {
     constexpr auto LED_BLINK_NORMAL = 500ms;
     constexpr auto LED_BLINK_SLOW = 1s;
 
+    constexpr auto GRAPH_WINDOW = 10min;
+    
     // MQTT
     constexpr auto MQTT_KEEP_ALIVE = 60s;
     constexpr auto MQTT_SOCKET_TIMEOUT_DURATION = 30s;
@@ -81,6 +87,19 @@ namespace TimeConstants {
     constexpr auto LONG_SLEEP_THRESHOLD = 1h;
     constexpr time_t MIN_VALID_EPOCH = 1609459200;   // 1 januar 2021
     constexpr time_t FALLBACK_EPOCH = 1704067200UL;  // 1 januar 2024
+    constexpr auto TIME_SYNC_RETRY_INTERVAL = 30s;
+    
+    // OTA
+    constexpr auto OTA_CHUNK_TIMEOUT = 30s;
+    constexpr auto OTA_PROGRESS_STALL_WARNING = 10s;
+    constexpr auto OTA_PROGRESS_STALL_TIMEOUT = 60s;
+    constexpr auto OTA_INITIAL_TIMEOUT = 30s;
+    constexpr auto OTA_RESUME_REQUEST_INTERVAL = 15s;
+    constexpr auto OTA_MQTT_LOOP_INTERVAL = 10ms;
+    constexpr auto OTA_REBOOT_DELAY = 3s;
+
+    // Notifikation over Nfty
+    constexpr auto NOTIFICATION_COOLDOWN = 1h;
 }
 
 #endif

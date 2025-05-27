@@ -46,6 +46,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure.Monitoring.T
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlaywrightTests", "PlaywrightTests\PlaywrightTests.csproj", "{BE12F7B1-82F9-4CD4-8590-04CE789DC10C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brodbuddy.WebSocket", "server\Brodbuddy.WebSocket\Brodbuddy.WebSocket.csproj", "{6CFD98B8-267E-4C59-B5C9-B6F210EA2E41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Brodbuddy.TcpProxy", "server\Brodbuddy.TcpProxy\Brodbuddy.TcpProxy.csproj", "{7D70F2F9-4F7B-4667-BAE5-EF5A4775F30C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +143,14 @@ Global
 		{BE12F7B1-82F9-4CD4-8590-04CE789DC10C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE12F7B1-82F9-4CD4-8590-04CE789DC10C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE12F7B1-82F9-4CD4-8590-04CE789DC10C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CFD98B8-267E-4C59-B5C9-B6F210EA2E41}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CFD98B8-267E-4C59-B5C9-B6F210EA2E41}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CFD98B8-267E-4C59-B5C9-B6F210EA2E41}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CFD98B8-267E-4C59-B5C9-B6F210EA2E41}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D70F2F9-4F7B-4667-BAE5-EF5A4775F30C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D70F2F9-4F7B-4667-BAE5-EF5A4775F30C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D70F2F9-4F7B-4667-BAE5-EF5A4775F30C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D70F2F9-4F7B-4667-BAE5-EF5A4775F30C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{00DCAEB2-0510-411B-AACA-4CA09FFEF990} = {0011B983-CB61-450A-A1CC-38612B08B540}

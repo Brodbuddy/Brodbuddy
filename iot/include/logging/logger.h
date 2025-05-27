@@ -9,6 +9,7 @@ enum LogLevel { LOG_ERROR = 0, LOG_WARNING = 1, LOG_INFO = 2, LOG_DEBUG = 3 };
 #define ANSI_COLOR_YELLOW "\x1b[33m"
 #define ANSI_COLOR_GREEN "\x1b[32m"
 #define ANSI_COLOR_CYAN "\x1b[36m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
 #define ANSI_COLOR_RESET "\x1b[0m"
 #define ANSI_COLOR_BOLD "\x1b[1m"
 
@@ -21,18 +22,21 @@ class Logger {
     static LogLevel _level;
     static bool _serialEnabled;
     static bool _colorsEnabled;
+    static bool _otaEnabled;
     static void log(LogLevel level, const char* levelStr, const char* color, const char* tag, const char* format,
                     va_list args);
 
   public:
-    static void begin(LogLevel level = LOG_INFO, bool enableColors = true);
+    static void begin(LogLevel level = LOG_INFO, bool enableColors = true, bool enableOta = false);
     static void setLevel(LogLevel level) { _level = level; }
     static void enableColors(bool enable) { _colorsEnabled = enable; }
+    static void enableOta(bool enable) { _otaEnabled = enable; }
 
     static void error(const char* tag, const char* format, ...);
     static void warning(const char* tag, const char* format, ...);
     static void info(const char* tag, const char* format, ...);
     static void debug(const char* tag, const char* format, ...);
+    static void ota(const char* tag, const char* format, ...);
 };
 
 #if LOG_LEVEL >= LOG_ERROR
@@ -58,5 +62,7 @@ class Logger {
 #else
     #define LOG_D(tag, ...) do {} while (0)
 #endif
+
+#define LOG_O(tag, ...) Logger::ota(tag, __VA_ARGS__)
 
 #endif

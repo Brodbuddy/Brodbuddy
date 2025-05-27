@@ -8,6 +8,7 @@ on:
       - 'PlaywrightTests/**'
       - 'Directory.Build.props'
       - '.github/**'
+      - 'deploy/**'
     branches:
       - '**'
 
@@ -255,7 +256,7 @@ jobs:
           else
             echo "Overall Mutation score ($FINAL_MUTATION_SCORE%) meets or exceeds threshold requirement (80%)"
           fi
-  
+          
   build-iot-firmware:
     name: Build IoT firmware
     runs-on: ubuntu-latest
@@ -383,7 +384,7 @@ jobs:
     if: success() && (github.ref == 'refs/heads/master')
     environment:
       name: staging
-      url: http://${{ vars.DOMAIN_NAME }} 
+      url: http://${{ vars.DOMAIN_NAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -397,6 +398,7 @@ jobs:
           VITE_HTTP_URL=${{ vars.VITE_HTTP_URL }}
           VITE_WS_URL=${{ vars.VITE_WS_URL }}
           # --- General App Settings ---
+          APPOPTIONS__ENVIRONMENT=${{ vars.APPOPTIONS__ENVIRONMENT }}
           APPOPTIONS__PUBLICPORT=${{ vars.APPOPTIONS__PUBLICPORT }}
           # --- HTTP ---
           APPOPTIONS__HTTP__PORT=${{ vars.APPOPTIONS__HTTP__PORT }}
@@ -481,8 +483,8 @@ jobs:
             cp ./nginx.staging.conf $NGINX_CONFIG_VOL_PATH/default.conf
             
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ vars.GHCR_USERNAME }} --password-stdin
-            docker compose --env-file .env --profile deploy pull
-            docker compose --profile deploy up -d --remove-orphans
+            docker compose --env-file .env --profile staging pull
+            docker compose --profile staging up -d --remove-orphans
             
             echo "Waiting briefly before reloading Nginx..."
             sleep 5
@@ -553,99 +555,115 @@ jobs:
           path: ${{ env.E2E_TEST_DIR }}/TestResults
           retention-days: 30
 
-  semantic-release:
-    name: Semantic Versioning & Release
+  deploy-production:
+    name: Deploy to Production 
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
     needs: [ e2e-tests, build-iot-firmware, build-backend-image, build-frontend-image ]
     if: success() && (github.ref == 'refs/heads/master')
-    outputs:
-      version: ${{ steps.semantic.outputs.version }}
-      version_tag: ${{ steps.semantic.outputs.version_tag }}
+    environment:
+      name: production 
+      url: http://${{ vars.DOMAIN_NAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Generate semantic version
-        id: semantic
-        uses: paulhatch/semantic-version@v5.4.0
-        with:
-          tag_prefix: "v"
-          major_pattern: "(MAJOR)"
-          minor_pattern: "(MINOR)"
-          version_format: "${major}.${minor}.${patch}"
-          bump_each_commit: false
-          search_commit_body: false
-
-      - name: Create and push git tag
+      - name: Create .env file
+        id: create-dotenv
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git tag ${{ steps.semantic.outputs.version_tag }}
-          git push origin ${{ steps.semantic.outputs.version_tag }}
+          echo "Creating .env file..."
+          cat > .env << EOL
+          # --- Frontend environment variables ---
+          VITE_HTTP_URL=${{ vars.VITE_HTTP_URL }}
+          VITE_WS_URL=${{ vars.VITE_WS_URL }}
+          # --- General App Settings ---
+          APPOPTIONS__ENVIRONMENT=${{ vars.APPOPTIONS__ENVIRONMENT }}
+          APPOPTIONS__PUBLICPORT=${{ vars.APPOPTIONS__PUBLICPORT }}
+          # --- HTTP ---
+          APPOPTIONS__HTTP__PORT=${{ vars.APPOPTIONS__HTTP__PORT }}
+          # --- Websocket ---
+          APPOPTIONS__WEBSOCKET__PORT=${{ vars.APPOPTIONS__WEBSOCKET__PORT }}
+          # --- CORS ---
+          APPOPTIONS__CORS__ALLOWEDORIGINS__0=${{ vars.APPOPTIONS__CORS__ALLOWEDORIGINS__0 }}
+          APPOPTIONS__CORS__ALLOWEDORIGINS__1=${{ vars.APPOPTIONS__CORS__ALLOWEDORIGINS__1 }}
+          # --- Email ---
+          APPOPTIONS__EMAIL__HOST=${{ vars.APPOPTIONS__EMAIL__HOST }}
+          APPOPTIONS__EMAIL__PORT=${{ vars.APPOPTIONS__EMAIL__PORT }}
+          APPOPTIONS__EMAIL__SENDER=${{ vars.APPOPTIONS__EMAIL__SENDER }}
+          APPOPTIONS__EMAIL__FROMEMAIL=${{ vars.APPOPTIONS__EMAIL__FROMEMAIL }}
+          APPOPTIONS__EMAIL__SENDGRIDAPIKEY=${{ secrets.SENDGRID_API_KEY }}
+          # --- Postgres ---
+          APPOPTIONS__POSTGRES__HOST=${{ vars.APPOPTIONS__POSTGRES__HOST }}
+          APPOPTIONS__POSTGRES__PORT=${{ vars.APPOPTIONS__POSTGRES__PORT }}
+          APPOPTIONS__POSTGRES__DATABASE=${{ vars.APPOPTIONS__POSTGRES__DATABASE }}
+          APPOPTIONS__POSTGRES__USERNAME=${{ secrets.APPOPTIONS__POSTGRES__USERNAME }}
+          APPOPTIONS__POSTGRES__PASSWORD=${{ secrets.APPOPTIONS__POSTGRES__PASSWORD }}
+          # --- Dragonfly ---
+          APPOPTIONS__DRAGONFLY__HOST=${{ vars.APPOPTIONS__DRAGONFLY__HOST }}
+          APPOPTIONS__DRAGONFLY__PORT=${{ vars.APPOPTIONS__DRAGONFLY__PORT }}
+          APPOPTIONS__DRAGONFLY__ALLOWADMIN=${{ vars.APPOPTIONS__DRAGONFLY__ALLOWADMIN }}
+          APPOPTIONS__DRAGONFLY__ABORTONCONNECTFAIL=${{ vars.APPOPTIONS__DRAGONFLY__ABORTONCONNECTFAIL }}
+          # --- MQTT ---
+          APPOPTIONS__MQTT__HOST=${{ vars.APPOPTIONS__MQTT__HOST }}
+          APPOPTIONS__MQTT__MQTTPORT=${{ vars.APPOPTIONS__MQTT__MQTTPORT }}
+          APPOPTIONS__MQTT__WEBSOCKETPORT=${{ vars.APPOPTIONS__MQTT__WEBSOCKETPORT }}
+          APPOPTIONS__MQTT__USERNAME=${{ secrets.APPOPTIONS__MQTT__USERNAME }}
+          APPOPTIONS__MQTT__PASSWORD=${{ secrets.APPOPTIONS__MQTT__PASSWORD }}
+          # --- JWT ---
+          APPOPTIONS__JWT__SECRET=${{ secrets.APPOPTIONS__JWT__SECRET }}
+          APPOPTIONS__JWT__EXPIRATIONMINUTES=${{ vars.APPOPTIONS__JWT__EXPIRATIONMINUTES }}
+          APPOPTIONS__JWT__ISSUER=${{ vars.APPOPTIONS__JWT__ISSUER }}
+          APPOPTIONS__JWT__AUDIENCE=${{ vars.APPOPTIONS__JWT__AUDIENCE }}
+          # --- Seq ---
+          APPOPTIONS__SEQ__SERVERURL=${{ vars.APPOPTIONS__SEQ__SERVERURL }}
+          APPOPTIONS__SEQ__APIKEY=${{ secrets.APPOPTIONS__SEQ__APIKEY }}
+          # --- Zipkin --
+          APPOPTIONS__ZIPKIN__ENDPOINT=${{ vars.APPOPTIONS__ZIPKIN__ENDPOINT }}
+          EOL
+          # --- Image Tags ---
+          echo "SERVER_IMAGE_TAG=\"${{ needs.build-backend-image.outputs.server_image_ci_tag }}\"" >> .env
+          echo "CLIENT_IMAGE_TAG=\"${{ needs.build-frontend-image.outputs.client_image_ci_tag }}\"" >> .env
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Set lowercase repository name
-        id: repo-name
-        run: echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
-
-      - name: Tag Docker images with release version
+      - name: Create Nginx .env file
+        id: create-dotenv-nginx
         run: |
-          docker pull ${{ needs.build-backend-image.outputs.server_image_ci_tag }}
-          docker tag ${{ needs.build-backend-image.outputs.server_image_ci_tag }} ghcr.io/${REPO_NAME}-backend:${{ steps.semantic.outputs.version }}
-          docker tag ${{ needs.build-backend-image.outputs.server_image_ci_tag }} ghcr.io/${REPO_NAME}-backend:latest
-          docker push ghcr.io/${REPO_NAME}-backend:${{ steps.semantic.outputs.version }}
-          docker push ghcr.io/${REPO_NAME}-backend:latest
+          cat > .env_nginx << EOL
+          SERVER_NAME=${{ vars.DOMAIN_NAME }}
+          API_SERVER_NAME=${{ vars.API_SERVER_NAME }} 
+          SSL_CERT_PATH=/etc/ssl/certs/nginx-selfsigned.crt
+          SSL_KEY_PATH=/etc/ssl/private/nginx-selfsigned.key 
+          EOL
 
-          docker pull ${{ needs.build-frontend-image.outputs.client_image_ci_tag }}
-          docker tag ${{ needs.build-frontend-image.outputs.client_image_ci_tag }} ghcr.io/${REPO_NAME}-frontend:${{ steps.semantic.outputs.version }}
-          docker tag ${{ needs.build-frontend-image.outputs.client_image_ci_tag }} ghcr.io/${REPO_NAME}-frontend:latest
-          docker push ghcr.io/${REPO_NAME}-frontend:${{ steps.semantic.outputs.version }}
-          docker push ghcr.io/${REPO_NAME}-frontend:latest
-
-      - name: Get short SHA for artifact download
-        run: |
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          echo "SHORT_SHA=$SHORT_SHA" >> $GITHUB_ENV
-
-      - name: Download SHA-tagged firmware artifact
-        uses: actions/download-artifact@v4
+      - name: Copy files to server
+        uses: appleboy/scp-action@v0.1.7
         with:
-          name: iot-firmware-${{ env.SHORT_SHA }}
-          path: firmware-download
+          host: ${{ vars.SERVER_IP }}
+          username: ${{ vars.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "docker-compose.yml,.env,.env_nginx,deploy/nginx/nginx.production.template.conf,db/migrations/**"
+          target: ${{ vars.APP_DIR }}
 
-      - name: Upload firmware with semantic version
-        uses: actions/upload-artifact@v4
+      - name: Prepare server
+        uses: appleboy/ssh-action@v1.2.1
         with:
-          name: iot-firmware-${{ steps.semantic.outputs.version }}
-          path: firmware-download/
-          retention-days: 90
+          host: ${{ vars.SERVER_IP }}
+          username: ${{ vars.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            APP_DIR="${{ vars.APP_DIR }}"
+            NGINX_CONFIG_VOL_PATH="${{ vars.NGINX_CONFIG_VOL_PATH }}"
+            NGINX_CONTAINER_NAME="${{ vars.NGINX_CONTAINER_NAME }}"
 
-      - name: Create simple GitHub release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.semantic.outputs.version_tag }}
-          release_name: ${{ steps.semantic.outputs.version }}
-          body: |
-            **Release ${{ steps.semantic.outputs.version }}**
+            cd $APP_DIR
+            set -a; source .env_nginx; set +a
+            envsubst '${SERVER_NAME} ${API_SERVER_NAME}' < ./deploy/nginx/nginx.production.template.conf > ./nginx.production.conf
+            mkdir -p $NGINX_CONFIG_VOL_PATH
+            cp ./nginx.production.conf $NGINX_CONFIG_VOL_PATH/default.conf
 
-            🐳 Docker Images:
-            - Backend: `ghcr.io/${{ env.REPO_NAME }}-backend:${{ steps.semantic.outputs.version }}`
-            - Frontend: `ghcr.io/${{ env.REPO_NAME }}-frontend:${{ steps.semantic.outputs.version }}`
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ vars.GHCR_USERNAME }} --password-stdin
+            docker compose --env-file .env --profile production pull
+            docker compose --profile production up -d --remove-orphans
 
-            📱 IoT Firmware: `iot-firmware-${{ steps.semantic.outputs.version }}` (see artifacts)
-
-          draft: false
-          prerelease: false
+            echo "Waiting briefly before reloading Nginx..."
+            sleep 5
+            docker compose exec $NGINX_CONTAINER_NAME nginx -s reload

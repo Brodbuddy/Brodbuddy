@@ -42,17 +42,19 @@ public class AnalyzerController : ControllerBase
     public async Task<ActionResult<IEnumerable<AnalyzerListResponse>>> GetUserAnalyzers()
     {
         var userId = HttpContext.User.GetUserId();
-        var analyzers = await _analyzerService.GetUserAnalyzersAsync(userId);
+        var analyzersWithStatus = await _analyzerService.GetUserAnalyzersAsync(userId);
         
-        var response = analyzers.Select(a => 
+        var response = analyzersWithStatus.Select(aws => 
         {
-            var userAnalyzer = a.UserAnalyzers.FirstOrDefault(ua => ua.UserId == userId);
+            var userAnalyzer = aws.Analyzer.UserAnalyzers.FirstOrDefault(ua => ua.UserId == userId);
             return new AnalyzerListResponse(
-                a.Id,
-                a.Name ?? string.Empty,
+                aws.Analyzer.Id,
+                aws.Analyzer.Name ?? string.Empty,
                 userAnalyzer?.Nickname,
-                a.LastSeen,
-                userAnalyzer?.IsOwner ?? false
+                aws.Analyzer.LastSeen,
+                userAnalyzer?.IsOwner ?? false,
+                aws.Analyzer.FirmwareVersion,
+                aws.HasUpdate
             );
         });
         
@@ -73,7 +75,8 @@ public class AnalyzerController : ControllerBase
             a.IsActivated,
             a.ActivatedAt,
             a.LastSeen,
-            a.CreatedAt
+            a.CreatedAt,
+            a.ActivationCode!
         ));
         
         return Ok(response);

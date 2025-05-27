@@ -10,11 +10,20 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${APPOPTIONS__POSTGRES__USERNAME:-user} -d ${APPOPTIONS__POSTGRES__DATABASE:-db}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 1g
+    mem_reservation: 512m
   
   flyway:
     image: flyway/flyway:latest
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    restart: "no"
     environment:
       FLYWAY_URL: jdbc:postgresql://postgres:5432/${APPOPTIONS__POSTGRES__DATABASE:-db}
       FLYWAY_USER: ${APPOPTIONS__POSTGRES__USERNAME:-user}
@@ -33,14 +42,28 @@ services:
       - '${APPOPTIONS__DRAGONFLY__PORT:-6379}:6379'
     volumes:
       - dragonflydata:/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: [
+      "dragonfly",
+      "--logtostderr",
+      "--maxmemory=512mb",     
+      "--proactor_threads=2"
+    ]
+    mem_limit: 512m
+    mem_reservation: 384m
   
   mailhog:
     image: mailhog/mailhog
     ports:
       - '1025:1025'
       - '8025:8025'
-    restart: always
-    profiles: ["dev"]
+    restart: unless-stopped
+    profiles: ["dev", "staging"]
   
   seq:
     image: datalust/seq
@@ -51,6 +74,8 @@ services:
     volumes:
       - seq_data:/data
     restart: unless-stopped
+    mem_limit: 256m        
+    mem_reservation: 128m 
   
   zipkin:
     image: openzipkin/zipkin:latest
@@ -59,19 +84,32 @@ services:
     ports:
       - '9411:9411'
     restart: unless-stopped
+    mem_limit: 256m        
+    mem_reservation: 128m  
   
   vernemq:
     image: vernemq/vernemq
     ports:
-      - "${APPOPTIONS__MQTT__MQTTPORT:-1883}:1883"      # Standard MQTT port for ESP32
-      - "${APPOPTIONS__MQTT__WEBSOCKETPORT:-8080}:8080" # MQTT over WebSockets for browser klienter, f.eks. HiveMQTT .NET client
+      - "${APPOPTIONS__MQTT__MQTTPORT:-1883}:1883"     
+      - "${APPOPTIONS__MQTT__WEBSOCKETPORT:-8080}:8080" 
     environment:
-      - DOCKER_VERNEMQ_ACCEPT_EULA=yes        # Accepterer 'End User License Agreement' (EULA) ligesom for Seq
-      - DOCKER_VERNEMQ_ALLOW_ANONYMOUS=off    # Gør sådan at man skal autentificere sig
+      - DOCKER_VERNEMQ_ACCEPT_EULA=yes      
+      - DOCKER_VERNEMQ_ALLOW_ANONYMOUS=off  
       - DOCKER_VERNEMQ_USER_${APPOPTIONS__MQTT__USERNAME:-user}=${APPOPTIONS__MQTT__PASSWORD:-pass}
+      - DOCKER_VERNEMQ_LOG__CONSOLE__LEVEL=warning
+      - DOCKER_VERNEMQ_LISTENER__TCP__DEFAULT__MAX_CONNECTIONS=1000
     volumes:
-      - vernemq-data:/var/lib/vernemq # Behøves ikke, men gør sådan at vi kan opbevare data
-    restart: unless-stopped # Gør sådan at broker genstarter på system reboot
+      - vernemq-data:/vernemq/data
+      - vernemq-log:/vernemq/log
+      - vernemq-etc:/vernemq/etc
+    restart: unless-stopped 
+    healthcheck:
+      test: [ "CMD-SHELL", "vernemq ping | grep -q pong" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+    mem_reservation: 128m
   
   backend:
     image: ${SERVER_IMAGE_TAG:-ghcr.io/brodbuddy/brodbuddy-backend:latest}
@@ -79,10 +117,17 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
-      - dragonfly
-      - vernemq
-    profiles: ["deploy"]
+      postgres:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+      vernemq:
+        condition: service_healthy
+    volumes:
+      - ./firmware:/app/firmware
+    profiles: ["staging", "production"]
+    mem_limit: 768m
+    mem_reservation: 384m
 
   frontend:
     image: ${CLIENT_IMAGE_TAG:-ghcr.io/brodbuddy/brodbuddy-frontend:latest}
@@ -90,8 +135,10 @@ services:
       - VITE_HTTP_URL=${VITE_HTTP_URL}
       - VITE_WS_URL=${VITE_WS_URL}
     restart: unless-stopped
-    profiles: ["deploy"]
-
+    profiles: ["staging", "production"]
+    mem_limit: 128m
+    mem_reservation: 64m
+  
   nginx:
     image: nginx:stable-alpine
     restart: unless-stopped
@@ -114,13 +161,19 @@ services:
         target: /etc/letsencrypt
         read_only: true
     depends_on:
-      - backend
-      - frontend
-    profiles: ["deploy"]
+      backend:
+        condition: service_started 
+      frontend:
+        condition: service_started
+    profiles: ["staging", "production"]
+    mem_limit: 64m    
+    mem_reservation: 32m
 
 volumes:
   postgres_data:
   dragonflydata:
   vernemq-data:
+  vernemq-log:  
+  vernemq-etc:
   seq_data:
   nginx_logs:

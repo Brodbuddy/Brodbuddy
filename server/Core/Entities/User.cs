@@ -11,9 +11,13 @@ public partial class User
 
     public DateTime CreatedAt { get; set; }
 
+    public virtual ICollection<AnalyzerReading> AnalyzerReadings { get; set; } = new List<AnalyzerReading>();
+
     public virtual ICollection<DeviceRegistry> DeviceRegistries { get; set; } = new List<DeviceRegistry>();
 
     public virtual ICollection<FeatureUser> FeatureUsers { get; set; } = new List<FeatureUser>();
+
+    public virtual ICollection<FirmwareVersion> FirmwareVersions { get; set; } = new List<FirmwareVersion>();
 
     public virtual ICollection<TokenContext> TokenContexts { get; set; } = new List<TokenContext>();
 

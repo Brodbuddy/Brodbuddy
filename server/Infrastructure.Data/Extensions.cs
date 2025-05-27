@@ -43,6 +43,7 @@ public static class Extensions
         services.AddScoped<IIdentityVerificationRepository, PgIdentityVerificationRepository>();
         services.AddScoped<IRoleRepository, PgRoleRepository>();
         services.AddScoped<IUserRoleRepository, PgUserRoleRepository>();
+        services.AddScoped<IAnalyzerReadingRepository, PgAnalyzerReadingRepository>();
         
         // Surdej
         services.AddScoped<ISourdoughAnalyzerRepository, PgSourdoughAnalyzerRepository>();
@@ -50,6 +51,7 @@ public static class Extensions
         
         // Andet
         services.AddScoped<IFeatureToggleRepository, PgFeatureToggleRepository>();
+        services.AddScoped<IFirmwareRepository, PgFirmwareRepository>();
         
         return services;
     }

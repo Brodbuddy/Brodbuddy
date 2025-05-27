@@ -18,4 +18,9 @@ public class WsUserNotifier : IUserNotifier
     {
         await _socketManager.BroadcastAsync(WebSocketTopics.User.SourdoughData(userId), reading);
     }
+
+    public async Task NotifyOtaProgressAsync(Guid analyzerId, OtaProgressUpdate progress)
+    {
+        await _socketManager.BroadcastAsync(WebSocketTopics.User.OtaProgress(analyzerId), progress);
+    }
 }

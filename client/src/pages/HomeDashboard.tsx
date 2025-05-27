@@ -1,360 +1,259 @@
-import React, {useState, useEffect} from 'react';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle
-} from '@/components/ui/card';
-import {Area, AreaChart, CartesianGrid, XAxis} from "recharts";
-import {
-    ChartContainer,
-    ChartTooltip,
-} from "@/components/ui/chart";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {Droplet, Thermometer, TrendingUp} from 'lucide-react';
-import {sourdoughHistoricalData} from '@/data/sourdoughData';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {Card, CardContent,} from '@/components/ui/card';
+import {AlertCircle, PlusCircle, Download} from 'lucide-react';
 import SourdoughManager from '@/components/analyzer/SourdoughManager';
 import {useWebSocket} from '@/hooks/useWebsocket';
-import {Broadcasts, SourdoughReading} from '@/api/websocket-client';
+import {useOptimizedAnalyzerData} from '@/hooks/useOptimizedAnalyzerData';
+import {useAtomValue} from 'jotai';
+import {getDefaultStore} from 'jotai';
+import {analyzersAtom, userInfoAtom} from '@/atoms';
+import {api} from '@/hooks/useHttp';
+import {Broadcasts, SourdoughReading, OtaProgressUpdate} from '@/api/websocket-client';
+import {DashboardHeader, MetricsGrid, SourdoughChart,} from '@/components/dashboard';
+import {getTimeRangeInMs, TimeRange,} from '@/helpers/dashboardUtils';
+import {Button} from "@/components";
+import ActivationForm from '@/components/analyzer/ActivationForm';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useFirmwareVersions, useOtaSubscription } from '@/hooks';
+import { toast } from 'sonner';
 
 const HomeDashboard: React.FC = () => {
-    const [timeRange, setTimeRange] = useState("12h");
-    const [latestReading, setLatestReading] = useState<SourdoughReading | null>(null);
-    const [realTimeData, setRealTimeData] = useState<Array<{
+    const [timeRange, setTimeRange] = useState<TimeRange>("12h");
+    const [selectedAnalyzerId, setSelectedAnalyzerId] = useState<string>('');
+    const [chartData, setChartData] = useState<Array<{
         date: string;
         temperature: number;
         humidity: number;
-        growth: number;
+        rise: number;
+        timestamp: string;
+        localTime: string;
     }>>([]);
-    const {client, connected} = useWebSocket();
+    const [latestReading, setLatestReading] = useState<SourdoughReading | null>(null);
 
-    const getDataFreshnessColor = (reading: SourdoughReading | null): string => {
-        if (!reading) return "text-gray-400";
+    const analyzers = useAtomValue(analyzersAtom);
+    const user = useAtomValue(userInfoAtom);
+    const { client, connected } = useWebSocket();
+    const { firmwareVersions } = useFirmwareVersions();
+    const [activationDialogOpen, setActivationDialogOpen] = useState(false);
 
-        const now = Date.now();
-        const readingTime = new Date(reading.timestamp).getTime();
-        const ageMinutes = (now - readingTime) / (1000 * 60);
+    const {
+        readings: historicalReadings,
+        latestReading: cachedLatestReading,
+        loading,
+        error,
+        refetch,
+    } = useOptimizedAnalyzerData(selectedAnalyzerId);
 
-        if (ageMinutes < 5) return "text-green-500";
-        if (ageMinutes < 30) return "text-yellow-500";
-        return "text-red-500";
-    };
+    const analyzerIds = useMemo(() => analyzers.map(a => a.id), [analyzers]);
+    
+    const handleOtaComplete = useCallback(async () => {
+        refetch();
+        
+        try {
+            const response = await api.analyzer.getUserAnalyzers();
+            console.log('[Dashboard] Refreshed analyzers after OTA complete:', response.data);
+            const store = getDefaultStore();
+            store.set(analyzersAtom, response.data);
+        } catch (error) {
+            console.error('Failed to refresh analyzers after OTA:', error);
+        }
+    }, [refetch]);
+    
+    const { otaProgress, updatingAnalyzers, startOtaUpdate } = useOtaSubscription(analyzerIds, handleOtaComplete);
 
     useEffect(() => {
-        if (!client || !connected) return;
+        if (historicalReadings && historicalReadings.length > 0 && chartData.length === 0) {
+            console.log('[Dashboard] Initializing chart with historical data:', historicalReadings.length, 'readings');
+            setChartData(historicalReadings);
+        }
+    }, [historicalReadings, chartData.length]);
 
-        const subscribeToData = async () => {
-            try {
-                await client.send.sourdoughData({
-                    userId: '38915d56-2322-4a6b-8506-a1831535e62b'
-                });
-            } catch (err) {
-                console.error('Failed to subscribe to sourdough data:', err);
+    useEffect(() => {
+        if (cachedLatestReading && !latestReading) {
+            setLatestReading({
+                rise: cachedLatestReading.rise,
+                temperature: cachedLatestReading.temperature,
+                humidity: cachedLatestReading.humidity,
+                epochTime: 0,
+                timestamp: cachedLatestReading.timestamp,
+                localTime: cachedLatestReading.localTime
+            } as SourdoughReading);
+        }
+    }, [cachedLatestReading, latestReading]);
+
+    const readings = useMemo(() => {
+        if (!chartData?.length) return [];
+
+        const now = new Date();
+        const timeRangeMs = getTimeRangeInMs(timeRange);
+        const cutoff = new Date(now.getTime() - timeRangeMs);
+
+        const filtered = chartData.filter(reading =>
+            new Date(reading.timestamp) >= cutoff
+        );
+        
+        console.log('[Dashboard] Filtering readings for time range:', timeRange, 
+            'Total:', chartData.length, 
+            'Filtered:', filtered.length,
+            'Latest rise in filtered:', filtered[filtered.length - 1]?.rise);
+            
+        return filtered;
+    }, [chartData, timeRange]);
+
+    useEffect(() => {
+        if (analyzers.length > 0 && !selectedAnalyzerId) {
+            setSelectedAnalyzerId(analyzers[0].id);
+        }
+    }, [analyzers, selectedAnalyzerId]);
+
+    useEffect(() => {
+        if (!client || !connected || !user?.userId) return;
+
+        client.send.sourdoughData({ userId: user.userId }).catch(err => {
+            console.error('Failed to subscribe to sourdough data:', err);
+        });
+
+
+        const unsubscribeSourdough = client.on(Broadcasts.sourdoughReading, (reading: SourdoughReading) => {
+            console.log('[WebSocket] Received sourdough reading:', {
+                rise: reading.rise,
+                temperature: reading.temperature,
+                humidity: reading.humidity,
+                timestamp: reading.timestamp,
+                localTime: reading.localTime
+            });
+            
+            if (reading.rise < -100 || reading.rise > 500) {
+                console.warn('[WebSocket] Suspicious rise value:', reading.rise);
             }
-        };
-
-        subscribeToData();
-
-        const unsubscribe = client.on(Broadcasts.sourdoughReading, (payload: SourdoughReading) => {
-            console.log('Received sourdough reading:', payload);
-            setLatestReading(payload);
-
-            const newDataPoint = {
-                date: payload.localTime,
-                temperature: payload.temperature,
-                humidity: payload.humidity,
-                growth: payload.rise
-            };
-
-            setRealTimeData(prevData => {
-                const updatedData = [...prevData, newDataPoint];
-                return updatedData.slice(-100);
+            
+            toast.success('New data received', {
+                description: `Temperature: ${reading.temperature.toFixed(1)}°C, Humidity: ${reading.humidity.toFixed(1)}%, Growth: ${reading.rise.toFixed(1)}%`,
+                duration: 2000,
+            });
+            
+            setLatestReading(reading);
+            
+            setChartData(prev => {
+                const newDataPoint = {
+                    date: reading.localTime,
+                    temperature: reading.temperature,
+                    humidity: reading.humidity,
+                    rise: reading.rise,
+                    timestamp: reading.timestamp,
+                    localTime: reading.localTime
+                };
+                
+                console.log('[WebSocket] Adding to chart data. Previous length:', prev.length);
+                const updated = [...prev, newDataPoint];
+                const result = updated.slice(-1000);
+                console.log('[WebSocket] New chart data length:', result.length, 'Latest rise:', newDataPoint.rise);
+                return result;
             });
         });
 
-        return () => unsubscribe();
-    }, [client, connected]);
+        return () => {
+            unsubscribeSourdough();
+        };
+    }, [client, connected, user?.userId, refetch]);
 
-    const getFilteredData = () => {
-        if (realTimeData.length === 0) return [];
-
-        const now = new Date();
-        let cutoffTime: Date;
-
-        if (timeRange === "1h") {
-            cutoffTime = new Date(now.getTime() - 60 * 60 * 1000);
-        } else if (timeRange === "6h") {
-            cutoffTime = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-        } else {
-            cutoffTime = new Date(now.getTime() - 12 * 60 * 60 * 1000);
-        }
-
-        return realTimeData.filter(item => {
-            const itemDate = new Date(item.date);
-            return itemDate >= cutoffTime;
+    const handleTimeRangeChange = useCallback((newTimeRange: string) => {
+        setTimeRange(newTimeRange as TimeRange);
+        const rangeLabels: Record<TimeRange, string> = {
+            '1h': '1 hour',
+            '6h': '6 hours',
+            '12h': '12 hours',
+            '24h': '24 hours'
+        };
+        toast.info('Time range changed', {
+            description: `Now showing data for the last ${rangeLabels[newTimeRange as TimeRange]}`,
+            duration: 2000,
         });
-    };
+    }, []);
 
-    const chartData = getFilteredData();
+    const handleAnalyzerChange = useCallback((analyzerId: string) => {
+        setSelectedAnalyzerId(analyzerId);
+    }, []);
 
+    const selectedAnalyzer = useMemo(() => {
+        const analyzer = analyzers.find(a => a.id === selectedAnalyzerId);
+        console.log('[Dashboard] Selected analyzer:', analyzer);
+        console.log('[Dashboard] Has update?', analyzer?.hasUpdate);
+        console.log('[Dashboard] Firmware version:', analyzer?.firmwareVersion);
+        return analyzer;
+    }, [analyzers, selectedAnalyzerId]);
 
-    const latestData = sourdoughHistoricalData[sourdoughHistoricalData.length - 1];
+    // Hvis der ikke er nogen analyzers, vis kun SourdoughManager
+    if (!analyzers || analyzers.length === 0) {
+        return <SourdoughManager />;
+    }
 
     return (
         <>
-            <SourdoughManager/>
-
-            <Card className="border-border-brown bg-bg-cream shadow-md mt-6">
-
-                <CardContent className="p-4 ">
-
+            <Card className="border-border-brown bg-bg-cream shadow-md mt-16">
+                <div className="flex justify-end ">
+                    <Button
+                        className="bg-orange-500 text-black hover:bg-orange-600 dark:bg-orange-600 dark:text-white text-xs mr-6 px-2 py-0.5 h-7"
+                        size="sm"
+                        onClick={() => setActivationDialogOpen(true)}
+                    >
+                        <PlusCircle className="mr-1 h-3 w-3"/>
+                        Add Device
+                    </Button>
+                </div>
+                <CardContent className="p-4">
                     <div className="bg-bg-cream">
-                        {/* Header */}
-                        <div className="flex justify-between items-center mb-6">
-                            <h1 className="text-3xl font-bold text-accent-foreground p-2 rounded-md">My Sourdough</h1>
-                            {latestReading && (
-                                <div className="text-right">
-                                    <div className="text-sm text-accent-foreground/60">Last updated</div>
-                                    <div className="text-sm font-medium text-accent-foreground">
-                                        {new Date(latestReading.localTime).toLocaleString()}
-                                    </div>
-                                    <div className="text-xs text-accent-foreground/40">
-                                        {new Date(latestReading.timestamp).toLocaleString("en-US", {
-                                            timeZone: "UTC",
-                                            timeZoneName: "short"
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                        <DashboardHeader
+                            selectedAnalyzerId={selectedAnalyzerId}
+                            onAnalyzerChange={handleAnalyzerChange}
+                            loading={loading}
+                            currentReading={latestReading}
+                            selectedAnalyzer={selectedAnalyzer}
+                            firmwareVersions={firmwareVersions}
+                            onStartOtaUpdate={startOtaUpdate}
+                            otaProgress={otaProgress}
+                            isUpdating={updatingAnalyzers.has(selectedAnalyzerId)}
+                            userId={user?.userId}
+                        />
 
-                        {/* Main Content - Top Row */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                        {!connected && (
+                            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg text-orange-700 text-center">
+                                🔌 WebSocket disconnected - using cached data
+                            </div>
+                        )}
 
-                            {/* Temperature Card */}
-                            <Card className="border-border-brown bg-bg-white overflow-hidden">
-                                <CardHeader className="bg-accent-foreground py-4">
-                                    <CardTitle className="text-primary flex items-center justify-between">
-                                        <div className="flex items-center">
-                                            <Thermometer className="mr-2 h-5 w-5"/>
-                                            Temperature
-                                        </div>
-                                        {latestReading && (
-                                            <div
-                                                className={`w-2 h-2 rounded-full ${getDataFreshnessColor(latestReading).replace('text-', 'bg-')}`}></div>
-                                        )}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-6 text-center">
-                                    <div
-                                        className="text-6xl font-bold text-accent-foreground mb-2">
-                                        {latestReading ? `${latestReading.temperature.toFixed(1)}°C` : `${latestData.temperature}°C`}
-                                    </div>
-                                    <div className="text-accent-foreground/80">Latest water temperature</div>
-                                </CardContent>
-                            </Card>
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700">
+                                <AlertCircle className="h-5 w-5 shrink-0" />
+                                <span>{error}</span>
+                            </div>
+                        )}
 
-                            {/* Humidity Card */}
-                            <Card className="border-border-brown bg-bg-white overflow-hidden">
-                                <CardHeader className="bg-accent-foreground py-4">
-                                    <CardTitle className="text-primary flex items-center justify-between">
-                                        <div className="flex items-center">
-                                            <Droplet className="mr-2 h-5 w-5"/>
-                                            Humidity
-                                        </div>
-                                        {latestReading && (
-                                            <div
-                                                className={`w-2 h-2 rounded-full ${getDataFreshnessColor(latestReading).replace('text-', 'bg-')}`}></div>
-                                        )}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-6 text-center">
-                                    <div
-                                        className="text-6xl font-bold text-accent-foreground mb-2">
-                                        {latestReading ? `${latestReading.humidity.toFixed(1)}%` : `${latestData.humidity}%`}
-                                    </div>
-                                    <div className="text-accent-foreground/80">Latest humidity</div>
-                                </CardContent>
-                            </Card>
+                        <MetricsGrid currentReading={latestReading} />
 
-                            {/* Growth Card */}
-                            <Card className="border-border-brown bg-bg-white overflow-hidden">
-                                <CardHeader className="bg-accent-foreground py-4">
-                                    <CardTitle className="text-primary flex items-center justify-between">
-                                        <div className="flex items-center">
-                                            <TrendingUp className="mr-2 h-5 w-5"/>
-                                            Growth
-                                        </div>
-                                        {latestReading && (
-                                            <div
-                                                className={`w-2 h-2 rounded-full ${getDataFreshnessColor(latestReading).replace('text-', 'bg-')}`}></div>
-                                        )}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-6 text-center">
-                                    <div
-                                        className="text-6xl font-bold text-accent-foreground mb-2">
-                                        {latestReading ? `${latestReading.rise.toFixed(1)}%` : `${latestData.growth}%`}
-                                    </div>
-                                    <div className="text-accent-foreground/80">Latest growth</div>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Area Charts Section */}
                         <div className="grid grid-cols-1 gap-6">
-
-                            <Card className="border-border-brown bg-bg-white overflow-hidden">
-                                <CardHeader className="bg-accent-foreground py-4 flex items-center justify-between">
-                                    <div>
-                                        <CardTitle className="text-primary">Sourdough Development</CardTitle>
-                                        <div className="text-primary/80 text-sm">Temperature, humidity and growth over
-                                            time
-                                        </div>
-                                    </div>
-                                    <Select onValueChange={(value: any) => setTimeRange(value)}
-                                            defaultValue={timeRange}>
-                                        <SelectTrigger className="bg-secondary border-border-brown">
-                                            <SelectValue placeholder="Select time range"/>
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-accent-foreground border-border-brown">
-                                            <SelectItem value="1h"
-                                                        className="text-primary hover:bg-bg-cream hover:text-accent-foreground">1
-                                                hour</SelectItem>
-                                            <SelectItem value="6h"
-                                                        className="text-primary hover:bg-bg-cream hover:text-accent-foreground">6
-                                                hours</SelectItem>
-                                            <SelectItem value="12h"
-                                                        className="text-primary hover:bg-bg-cream hover:text-accent-foreground">12
-                                                hours</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </CardHeader>
-                                <CardContent className="p-0">
-                                    <ChartContainer
-                                        config={{
-                                            temperature: {
-                                                label: "Temperature",
-                                                color: "hsl(var(--chart-temperature))"
-                                            },
-                                            humidity: {
-                                                label: "Humidity",
-                                                color: "hsl(var(--chart-humidity))"
-                                            },
-                                            growth: {
-                                                label: "Growth",
-                                                color: "hsl(var(--chart-growth))"
-                                            }
-                                        }}
-                                        className="h-96 w-full"
-                                    >
-                                        {/* Chart */}
-                                        <AreaChart
-                                            data={chartData}
-                                            margin={{top: 20, right: 10, left: 10, bottom: 5}}
-                                        >
-                                            <defs>
-                                                <linearGradient id="fillTemperature" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="hsl(var(--chart-temperature))"
-                                                          stopOpacity={0.8}/>
-                                                    <stop offset="95%" stopColor="hsl(var(--chart-temperature))"
-                                                          stopOpacity={0.1}/>
-                                                </linearGradient>
-                                                <linearGradient id="fillHumidity" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="hsl(var(--chart-humidity))"
-                                                          stopOpacity={0.8}/>
-                                                    <stop offset="95%" stopColor="hsl(var(--chart-humidity))"
-                                                          stopOpacity={0.1}/>
-                                                </linearGradient>
-                                                <linearGradient id="fillGrowth" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="hsl(var(--chart-growth))"
-                                                          stopOpacity={0.8}/>
-                                                    <stop offset="95%" stopColor="hsl(var(--chart-growth))"
-                                                          stopOpacity={0.1}/>
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid vertical={false} stroke="hsl(var(--border))"/>
-                                            <XAxis
-                                                dataKey="date"
-                                                tickLine={false}
-                                                axisLine={false}
-                                                stroke="hsl(var(--foreground))"
-                                                tickFormatter={(value) => {
-                                                    const date = new Date(value);
-                                                    return date.toLocaleDateString("dk-DK", {
-                                                        month: "short",
-                                                        day: "numeric",
-                                                    });
-                                                }}
-                                            />
-                                            <ChartTooltip
-                                                content={({active, payload, label}) => {
-                                                    if (active && payload && payload.length) {
-                                                        return (
-                                                            <div
-                                                                className="bg-card text-card-foreground border border-border p-3 shadow-md rounded">
-                                                                <p className="font-medium mb-3 text-primary border-b border-border pb-1">
-                                                                    {new Date(label).toLocaleDateString("dk-DK", {
-                                                                        month: "short",
-                                                                        day: "numeric",
-                                                                    })}
-                                                                </p>
-                                                                <div className="space-y-2">
-                                                                    {payload.map((entry, index) => (
-                                                                        <div key={`item-${index}`}
-                                                                             className="flex items-center justify-between gap-8">
-                                                                            <span className="text-sm"
-                                                                                  style={{color: entry.color}}>{entry.name}:
-                                                                            </span>
-                                                                            <span className="font-medium"
-                                                                                  style={{color: entry.color}}>
-                                                                                    {entry.value}{entry.dataKey === "temperature" ? "°C" : "%"}
-                                                                            </span>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    return null;
-                                                }}
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="growth"
-                                                stroke="hsl(var(--chart-growth))"
-                                                fill="url(#fillGrowth)"
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="humidity"
-                                                stroke="hsl(var(--chart-humidity))"
-                                                fill="url(#fillHumidity)"
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="temperature"
-                                                stroke="hsl(var(--chart-temperature))"
-                                                fill="url(#fillTemperature)"
-                                            />
-
-
-                                        </AreaChart>
-                                    </ChartContainer>
-                                </CardContent>
-                            </Card>
+                            <SourdoughChart
+                                readings={readings}
+                                loading={loading}
+                                timeRange={timeRange}
+                                onTimeRangeChange={handleTimeRangeChange}
+                                selectedAnalyzerId={selectedAnalyzerId}
+                            />
                         </div>
                     </div>
                 </CardContent>
             </Card>
-
-
+            <Dialog open={activationDialogOpen} onOpenChange={setActivationDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogTitle>Add New Device</DialogTitle>
+                    <DialogDescription>
+                        Enter the activation code for your new device below.
+                    </DialogDescription>
+                    <ActivationForm
+                        onSuccess={() => setActivationDialogOpen(false)}
+                    />
+                </DialogContent>
+            </Dialog>
         </>
     );
 };

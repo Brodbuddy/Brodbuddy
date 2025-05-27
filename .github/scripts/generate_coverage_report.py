@@ -62,7 +62,7 @@ def run_report_generator() -> bool:
         f"-targetdir:{report_path}",
         f"-reporttypes:{TARGET_REPORT_TYPES}",
         "-excludebyattribute:*ExcludeFromCodeCoverage*",
-        "-assemblyfilters:-SharedTestDependencies"
+        "-assemblyfilters:-Startup;-SharedTestDependencies;-Brodbuddy.WebSocket;-Brodbuddy.TcpProxy"
     ]
 
     try:

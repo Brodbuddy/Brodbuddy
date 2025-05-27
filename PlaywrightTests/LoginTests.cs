@@ -1,49 +1,55 @@
-using System.ComponentModel;
 using Xunit;
 using Microsoft.Playwright.Xunit;
 using Shouldly;
+using PlaywrightTests.Helpers;
 
 namespace PlaywrightTests;
 
 public class LoginTests : PageTest
 {
-    private static string GetBaseUrl()
-    {
-        return Environment.GetEnvironmentVariable("PLAYWRIGHT_TEST_BASE_URL") 
-               ?? throw new InvalidOperationException("PLAYWRIGHT_TEST_BASE_URL environment variable is not set");
-    }
-    
     [Fact]
     public async Task LoginPage_ShouldDisplayEmailVerificationText()
     {
-        var baseUrl = GetBaseUrl();
-        await Page.GotoAsync($"{baseUrl}/login");
+        await Page.GotoAsync($"{TestConfiguration.BaseUrl}/login");
 
-        // En simpel test til at se om, der vises "Email Verification" på login siden
         var content = await Page.TextContentAsync("body");
         content.ShouldNotBeNull();
         content!.ShouldContain("Email Verification");
     }
 
     [Fact]
-    public async Task SendVerificationCode_ShouldRedirectToVerify()
+    public async Task SendVerificationCode_ShouldRedirectToVerifyPage()
     {
-        var baseUrl = GetBaseUrl();
-        await Page.GotoAsync($"{baseUrl}/login");
+        await Page.GotoAsync($"{TestConfiguration.BaseUrl}/login");
+        await Page.LoginWithEmailAsync(TestConfiguration.GenerateTestEmail());
+        
+        await Page.WaitForURLAsync($"{TestConfiguration.BaseUrl}/login/verify");
+        Page.Url.ShouldBe($"{TestConfiguration.BaseUrl}/login/verify");
+    }
 
-        // Tjekker om knappen eksistere
-        var button = await Page.QuerySelectorAsync("button[type=submit]");
-        button.ShouldNotBeNull();
-
-        // Indtaster en valid test email
-        var emailInput = await Page.QuerySelectorAsync("input[type=email]");
-        emailInput.ShouldNotBeNull();
-        await emailInput!.FillAsync("test@example.com");
-
-        await button!.ClickAsync();
-
-        // Venter på URL skifter til /login/verify
-        await Page.WaitForURLAsync($"{baseUrl}/login/verify");
-        Page.Url.ShouldBe($"{baseUrl}/login/verify");
+    [Fact]
+    public async Task FullLoginFlow_ShouldAuthenticateUserSuccessfully()
+    {
+        var testEmail = TestConfiguration.GenerateTestEmail();
+        using var mailhogClient = new MailHogClient(TestConfiguration.BaseUrl);
+        
+        await Page.GotoAsync($"{TestConfiguration.BaseUrl}/login");
+        await Page.LoginWithEmailAsync(testEmail);
+        await Page.WaitForURLAsync($"{TestConfiguration.BaseUrl}/login/verify");
+        
+        var verificationCode = await mailhogClient.GetLatestVerificationCodeAsync(testEmail);
+        verificationCode.ShouldNotBeNull();
+        
+        await Page.EnterVerificationCodeAsync(verificationCode!);
+        await Page.WaitForLoadStateAsync();
+        await Task.Delay(2000);
+        
+        var errorMessage = await Page.GetErrorMessageAsync();
+        if (errorMessage != null)
+            throw new Exception($"Login failed with error: {errorMessage}");
+        
+        Page.Url.ShouldBe($"{TestConfiguration.BaseUrl}/");
+        var dashboardTitle = await Page.TextContentAsync("h1");
+        dashboardTitle.ShouldBe("My Sourdough");
     }
 }

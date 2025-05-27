@@ -9,6 +9,7 @@ using FluentEmail.MailKitSmtp;
 using Infrastructure.Communication.Mail;
 using Infrastructure.Communication.Websocket;
 using Application.Interfaces.Communication.Publishers;
+using Application.Interfaces.Data.Repositories.Sourdough;
 using Infrastructure.Communication.Mqtt;
 using Infrastructure.Communication.Notifiers;
 using Infrastructure.Communication.Publishers;
@@ -16,30 +17,31 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
+using Environments = Application.Environments;
 
 namespace Infrastructure.Communication;
 
 public static class Extensions
 {
-    public static IServiceCollection AddCommunicationInfrastructure(this IServiceCollection services, IHostEnvironment environment)
+    public static IServiceCollection AddCommunicationInfrastructure(this IServiceCollection services)
     {
-        services.AddMail(environment);
+        services.AddMail();
         services.AddSocketManager();
         services.AddMqttPublisher();
         services.AddNotifiers();
         return services;
     }
 
-    private static IServiceCollection AddMail(this IServiceCollection services, IHostEnvironment environment)
+    private static IServiceCollection AddMail(this IServiceCollection services)
     {
         var serviceProvider = services.BuildServiceProvider();
         var appOptions = serviceProvider.GetRequiredService<IOptions<AppOptions>>().Value;
         
-        if (environment.IsProduction() && !string.IsNullOrEmpty(appOptions.Email.SendGridApiKey))
+        if (appOptions.Environment == Environments.Production && !string.IsNullOrEmpty(appOptions.Email.SendGridApiKey))
         {
             services.AddFluentEmail(appOptions.Email.FromEmail, appOptions.Email.Sender)
-                    .AddRazorRenderer()
-                    .AddSendGridSender(apiKey: appOptions.Email.SendGridApiKey);
+                .AddRazorRenderer()
+                .AddSendGridSender(apiKey: appOptions.Email.SendGridApiKey);
         }
         else
         {
@@ -53,6 +55,7 @@ public static class Extensions
         }
 
         services.AddScoped<IEmailSender, FluentEmailSender>();
+       
    
         return services;
     }
@@ -79,13 +82,15 @@ public static class Extensions
     private static IServiceCollection AddMqttPublisher(this IServiceCollection services)
     {
         services.AddScoped<IMqttPublisher, HiveMqttPublisher>();
-        services.AddScoped<IDevicePublisher, TestMqttDevicePublisher>();
+        services.AddScoped<IAnalyzerPublisher, AnalyzerPublisher>();
+        services.AddScoped<IOtaPublisher, OtaPublisher>();
         return services;
     }
 
     private static IServiceCollection AddNotifiers(this IServiceCollection services)
     {
         services.AddScoped<IUserNotifier, WsUserNotifier>();
+        services.AddScoped<IAdminNotifier, WsAdminNotifier>();
         return services;
     }
 }

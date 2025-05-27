@@ -91,10 +91,25 @@ void MqttManager::mqttCallback(char* topic, byte* payload, unsigned int length) 
 }
 
 bool MqttManager::reconnect() {
-    LOG_I(TAG, "Attempting MQTT connection...");
+    LOG_I(TAG, "Attempting MQTT connection to %s:%d", _server.c_str(), _port);
+    
+    // Ensure server is still configured (in case of memory corruption)
+    if (_server.length() == 0) {
+        LOG_E(TAG, "Server hostname is empty, cannot reconnect!");
+        return false;
+    }
+    
+    // Re-set server in case connection was corrupted
+    _mqttClient.setServer(_server.c_str(), _port);
 
     if (_mqttClient.connect(_clientId.c_str(), _user.c_str(), _password.c_str())) {
         LOG_I(TAG, "Connected to MQTT broker");
+        
+        // IMPORTANT: Need to re-subscribe after reconnection
+        // This is handled by the main code that calls reconnect
+        // But we should notify that subscriptions are lost
+        LOG_W(TAG, "MQTT reconnected - subscriptions need to be restored!");
+        
         return true;
     } else {
         LOG_E(TAG, "Failed to connect, rc=%d", _mqttClient.state());

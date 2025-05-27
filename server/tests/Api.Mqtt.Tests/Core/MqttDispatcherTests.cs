@@ -23,7 +23,7 @@ public class MqttDispatcherTests
     {
         _output = output;
         _mqttTestServiceMock = new Mock<IMqttTestService>();
-        Mock<IDevicePublisher> devicePublisherMock = new();
+        Mock<IAnalyzerPublisher> devicePublisherMock = new();
         var loggerMock = new Mock<ILogger<MqttDispatcher>>();
 
         var services = new ServiceCollection();

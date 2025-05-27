@@ -18,6 +18,9 @@ struct SensorHealth {
 };
 
 class SensorManager {
+  public:
+    typedef void (*LoopCallback)();
+    
   private:
     Adafruit_BME280 _bme;
     VL53L0X _tof;
@@ -34,6 +37,8 @@ class SensorManager {
     float _filteredTemp;
     float _filteredHum;
     int _baselineDistance;
+    
+    LoopCallback _loopCallback;
 
 #ifdef SIMULATE_SENSORS
     float _simTemp;
@@ -69,6 +74,13 @@ class SensorManager {
         _readInterval = interval;
     }
     bool shouldRead() const;
+    void resetBaseline();
+    
+    void setLoopCallback(LoopCallback callback) {
+        _loopCallback = callback;
+    }
+    
+    void scanI2C();
 };
 
 #endif

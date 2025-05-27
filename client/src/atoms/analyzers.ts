@@ -1,4 +1,4 @@
 import { atom } from "jotai";
-import { Analyzer } from "../models/analyzer";
+import { AnalyzerListResponse } from "../api/Api";
 
-export const analyzersAtom = atom<Analyzer[]>([]);
+export const analyzersAtom = atom<AnalyzerListResponse[]>([]);

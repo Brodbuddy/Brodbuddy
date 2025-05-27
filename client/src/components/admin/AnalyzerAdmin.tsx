@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Plus, Loader2, Check } from 'lucide-react';
+import { Plus, Loader2, Check, Copy, Activity } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { toast } from 'sonner';
+import { useAtom } from 'jotai';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../ui/dialog';
@@ -11,6 +12,8 @@ import { Input } from '../ui/input';
 import { api } from '../../hooks/useHttp';
 import { AdminAnalyzerListResponse } from '../../api/Api';
 import { format } from 'date-fns';
+import { useWebSocket } from '../../hooks/useWebsocket';
+import { adminTabAtom } from '../../atoms/adminTab';
 
 const createAnalyzerSchema = yup.object({
     macAddress: yup
@@ -34,6 +37,9 @@ export function AnalyzerAdmin() {
     const [loading, setLoading] = useState(true);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [createSuccess, setCreateSuccess] = useState(false);
+    const [requestingDiagnostics, setRequestingDiagnostics] = useState<string | null>(null);
+    const [, setAdminTab] = useAtom(adminTabAtom);
+    const { client, connected } = useWebSocket();
 
     const form = useForm<CreateAnalyzerFormValues>({
         resolver: yupResolver(createAnalyzerSchema) as any,
@@ -49,6 +55,15 @@ export function AnalyzerAdmin() {
         return chunks.slice(0, 6).join(':');
     };
 
+    const copyToClipboard = async (text: string, label: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.success(`${label} copied to clipboard!`);
+        } catch {
+            toast.error('Failed to copy to clipboard');
+        }
+    };
+
     const fetchAnalyzers = async () => {
         try {
             setLoading(true);
@@ -61,6 +76,38 @@ export function AnalyzerAdmin() {
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const requestDiagnostics = async (analyzerId: string, analyzerName: string) => {
+        if (!connected || !client) {
+            toast.error('Not connected', {
+                description: 'Please check your connection and try again'
+            });
+            return;
+        }
+
+        try {
+            setRequestingDiagnostics(analyzerId);
+
+            // Anmod om diagnostikdata via WebSocket
+            await client.send.requestDiagnostics({ analyzerId });
+
+            toast.success(`Diagnostics requested for ${analyzerName}`, {
+                description: 'Check the Diagnostics tab to view the results'
+            });
+
+            setTimeout(() => {
+                setAdminTab('diagnostics');
+            }, 1000);
+
+        } catch (error) {
+            console.error('Failed to request diagnostics:', error);
+            toast.error('Failed to request diagnostics', {
+                description: 'Please try again later'
+            });
+        } finally {
+            setRequestingDiagnostics(null);
         }
     };
 
@@ -101,8 +148,8 @@ export function AnalyzerAdmin() {
                 </div>
                 <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="bg-orange-500 text-black hover:bg-orange-600 dark:bg-orange-600 dark:text-white dark:hover:bg-orange-700 dark:hover:text-white">
-                            <Plus className="w-4 h-4 mr-2 dark:text-white" />
+                        <Button className="bg-accent-foreground text-primary-foreground hover:bg-accent-foreground/90">
+                            <Plus className="w-4 h-4 mr-2" />
                             Add Analyzer
                         </Button>
                     </DialogTrigger>
@@ -123,7 +170,7 @@ export function AnalyzerAdmin() {
                                     <Input
                                         id="macAddress"
                                         placeholder="XX:XX:XX:XX:XX:XX"
-                                        className="font-mono tracking-wider border border-gray-300 dark:border-gray-800"
+                                        className="font-mono tracking-wider border-border-brown focus:ring-accent-foreground"
                                         disabled={form.formState.isSubmitting || createSuccess}
                                         {...form.register('macAddress')}
                                         onChange={(e) => {
@@ -148,7 +195,7 @@ export function AnalyzerAdmin() {
                                     <Input
                                         id="name"
                                         placeholder="Kitchen Analyzer"
-                                        className="border border-gray-300 dark:border-gray-800"
+                                        className="border-border-brown focus:ring-accent-foreground"
                                         disabled={form.formState.isSubmitting || createSuccess}
                                         {...form.register('name')}
                                         maxLength={50}
@@ -164,7 +211,7 @@ export function AnalyzerAdmin() {
                                 <Button
                                     type="submit"
                                     disabled={form.formState.isSubmitting || createSuccess}
-                                    className="w-full bg-orange-500 text-black hover:bg-orange-600 dark:bg-orange-600 dark:text-white mt-4"
+                                    className="w-full bg-accent-foreground text-primary-foreground hover:bg-accent-foreground/90 mt-4"
                                 >
                                     {form.formState.isSubmitting ? (
                                         <>
@@ -200,17 +247,53 @@ export function AnalyzerAdmin() {
                                 <div className="space-y-4">
                                     <div className="flex items-start justify-between">
                                         <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
+                                            <div className="flex items-center gap-3 mb-2 flex-wrap">
                                                 <h3 className="text-lg font-semibold">{analyzer.name}</h3>
-                                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                                    analyzer.isActivated 
-                                                        ? 'bg-green-100 text-green-800 dark:bg-slate-800 dark:text-green-400' 
-                                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400'
-                                                }`}>
-                                                    {analyzer.isActivated ? 'Activated' : 'Not Activated'}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                        analyzer.isActivated
+                                                            ? 'bg-green-100 text-green-800 dark:bg-slate-800 dark:text-green-400'
+                                                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-400'
+                                                    }`}>
+                                                        {analyzer.isActivated ? 'Activated' : 'Not Activated'}
+                                                    </span>
+                                                    {analyzer.activationCode && !analyzer.isActivated && (
+                                                        <div className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded border">
+                                                            <span className="text-xs font-mono text-blue-700 dark:text-blue-300">
+                                                                {analyzer.activationCode}
+                                                            </span>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="h-4 w-4 p-0 hover:bg-blue-100 dark:hover:bg-blue-800/30"
+                                                                onClick={() => copyToClipboard(analyzer.activationCode!, 'Activation code')}
+                                                            >
+                                                                <Copy className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                                            </Button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
+                                        <Button
+                                            onClick={() => requestDiagnostics(analyzer.id, analyzer.name)}
+                                            disabled={!analyzer.isActivated || !connected || requestingDiagnostics === analyzer.id}
+                                            variant="outline"
+                                            size="sm"
+                                            className="ml-4"
+                                        >
+                                            {requestingDiagnostics === analyzer.id ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Requesting...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Activity className="w-4 h-4 mr-2" />
+                                                    Request Diagnostics
+                                                </>
+                                            )}
+                                        </Button>
                                     </div>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">

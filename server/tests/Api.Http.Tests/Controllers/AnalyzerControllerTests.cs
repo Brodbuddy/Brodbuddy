@@ -129,27 +129,35 @@ public class AnalyzerControllerTests
         public async Task GetUserAnalyzers_ReturnsOkWithResponse()
         {
             // Arrange
-            var analyzers = new List<SourdoughAnalyzer>
+            var analyzers = new List<AnalyzerWithUpdateStatus>
             {
                 new()
                 {
-                    Id = Guid.NewGuid(),
-                    Name = "Test Analyzer 1",
-                    LastSeen = DateTime.UtcNow,
-                    UserAnalyzers = new List<UserAnalyzer>
+                    Analyzer = new SourdoughAnalyzer
                     {
-                        new() { UserId = _testUserId, Nickname = "My Analyzer", IsOwner = true }
-                    }
+                        Id = Guid.NewGuid(),
+                        Name = "Test Analyzer 1",
+                        LastSeen = DateTime.UtcNow,
+                        UserAnalyzers = new List<UserAnalyzer>
+                        {
+                            new() { UserId = _testUserId, Nickname = "My Analyzer", IsOwner = true }
+                        }
+                    },
+                    HasUpdate = false
                 },
                 new()
                 {
-                    Id = Guid.NewGuid(),
-                    Name = "Test Analyzer 2",
-                    LastSeen = DateTime.UtcNow.AddHours(-1),
-                    UserAnalyzers = new List<UserAnalyzer>
+                    Analyzer = new SourdoughAnalyzer
                     {
-                        new() { UserId = _testUserId, Nickname = "Second Analyzer", IsOwner = false }
-                    }
+                        Id = Guid.NewGuid(),
+                        Name = "Test Analyzer 2",
+                        LastSeen = DateTime.UtcNow.AddHours(-1),
+                        UserAnalyzers = new List<UserAnalyzer>
+                        {
+                            new() { UserId = _testUserId, Nickname = "Second Analyzer", IsOwner = false }
+                        }
+                    },
+                    HasUpdate = true
                 }
             };
 
@@ -170,18 +178,20 @@ public class AnalyzerControllerTests
             responseList.Count.ShouldBe(2);
 
             // Verificer første analyzer
-            responseList[0].Id.ShouldBe(analyzers[0].Id);
+            responseList[0].Id.ShouldBe(analyzers[0].Analyzer.Id);
             responseList[0].Name.ShouldBe("Test Analyzer 1");
             responseList[0].Nickname.ShouldBe("My Analyzer");
-            responseList[0].LastSeen.ShouldBe(analyzers[0].LastSeen);
+            responseList[0].LastSeen.ShouldBe(analyzers[0].Analyzer.LastSeen);
             responseList[0].IsOwner.ShouldBeTrue();
+            responseList[0].HasUpdate.ShouldBe(analyzers[0].HasUpdate);
 
             // Verificer anden analyzer
-            responseList[1].Id.ShouldBe(analyzers[1].Id);
+            responseList[1].Id.ShouldBe(analyzers[1].Analyzer.Id);
             responseList[1].Name.ShouldBe("Test Analyzer 2");
             responseList[1].Nickname.ShouldBe("Second Analyzer");
-            responseList[1].LastSeen.ShouldBe(analyzers[1].LastSeen);
+            responseList[1].LastSeen.ShouldBe(analyzers[1].Analyzer.LastSeen);
             responseList[1].IsOwner.ShouldBeFalse();
+            responseList[1].HasUpdate.ShouldBe(analyzers[1].HasUpdate);
         }
 
         [Fact]
@@ -190,7 +200,7 @@ public class AnalyzerControllerTests
             // Arrange
             _mockAnalyzerService
                 .Setup(x => x.GetUserAnalyzersAsync(It.IsAny<Guid>()))
-                .ReturnsAsync(new List<SourdoughAnalyzer>());
+                .ReturnsAsync(new List<AnalyzerWithUpdateStatus>());
 
             // Act
             await _controller.GetUserAnalyzers();
@@ -263,6 +273,7 @@ public class AnalyzerControllerTests
             firstResponse.ActivatedAt.ShouldBe(analyzers[0].ActivatedAt);
             firstResponse.LastSeen.ShouldBe(analyzers[0].LastSeen);
             firstResponse.CreatedAt.ShouldBe(analyzers[0].CreatedAt);
+            firstResponse.ActivationCode.ShouldBe(analyzers[0].ActivationCode);
 
             // Verificer anden analyzer
             var secondResponse = responseList[1];
@@ -274,6 +285,7 @@ public class AnalyzerControllerTests
             secondResponse.ActivatedAt.ShouldBeNull(); 
             secondResponse.LastSeen.ShouldBeNull();  
             secondResponse.CreatedAt.ShouldBe(analyzers[1].CreatedAt);
+            secondResponse.ActivationCode.ShouldBe(analyzers[1].ActivationCode);
         }
     }
 

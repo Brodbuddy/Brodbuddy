@@ -24,24 +24,42 @@ export const ErrorCodes = {
 
 // Request type constants
 export const Requests = {
+    diagnosticsUnsubscription: "DiagnosticsUnsubscription",
+    firmwareNotificationSubscription: "FirmwareNotificationSubscription",
+    makeFirmwareAvailable: "MakeFirmwareAvailable",
+    otaProgressSubscription: "OtaProgressSubscription",
+    otaProgressUnsubscription: "OtaProgressUnsubscription",
     ping: "Ping",
+    requestDiagnostics: "RequestDiagnostics",
+    responseDiagnostics: "ResponseDiagnostics",
     sourdoughData: "SourdoughData",
+    startOtaUpdate: "StartOtaUpdate",
 } as const;
 
 // Response type constants
 export const Responses = {
+    diagnosticsDataUnsubscribed: "DiagnosticsDataUnsubscribed",
+    firmwareNotificationsSubscribed: "FirmwareNotificationsSubscribed",
+    makeFirmwareAvailableResponse: "MakeFirmwareAvailableResponse",
+    otaProgressSubscribed: "OtaProgressSubscribed",
+    otaProgressUnsubscribed: "OtaProgressUnsubscribed",
     pong: "Pong",
+    diagnosticsResponse: "DiagnosticsResponse",
+    diagnosticsDataSubscribed: "DiagnosticsDataSubscribed",
     sourdoughDataSubscribed: "SourdoughDataSubscribed",
+    startOtaUpdateResponse: "StartOtaUpdateResponse",
 } as const;
 
 // Broadcast type constants
 export const Broadcasts = {
+    diagnosticsResponse: "DiagnosticsResponse",
+    firmwareAvailable: "FirmwareAvailable",
+    otaProgressUpdate: "OtaProgressUpdate",
     sourdoughReading: "SourdoughReading",
 } as const;
 
 // Subscription methods
 export const SubscriptionMethods = {
-    sourdoughData: "SourdoughData",
 } as const;
 
 // Unsubscription methods
@@ -58,6 +76,47 @@ export interface BaseBroadcast {
 }
 
 // Message interfaces
+export interface UnsubscribeFromDiagnosticsData extends BaseMessage {
+    userId: string;
+}
+
+export interface DiagnosticsDataUnsubscribed extends BaseMessage {
+    userId: string;
+    topic: string;
+}
+
+export interface SubscribeToFirmwareNotifications extends BaseMessage {
+    clientType: string;
+}
+
+export interface FirmwareNotificationsSubscribed extends BaseMessage {
+    topic: string;
+}
+
+export interface MakeFirmwareAvailableRequest extends BaseMessage {
+    firmwareId: string;
+}
+
+export interface MakeFirmwareAvailableResponse extends BaseMessage {
+    firmwareId: string;
+}
+
+export interface SubscribeToOtaProgress extends BaseMessage {
+    analyzerId: string;
+}
+
+export interface OtaProgressSubscribed extends BaseMessage {
+    topic: string;
+}
+
+export interface UnsubscribeFromOtaProgress extends BaseMessage {
+    analyzerId: string;
+}
+
+export interface OtaProgressUnsubscribed extends BaseMessage {
+    topic: string;
+}
+
 export interface Ping extends BaseMessage {
     timestamp: number;
 }
@@ -65,6 +124,32 @@ export interface Ping extends BaseMessage {
 export interface Pong extends BaseMessage {
     timestamp: number;
     serverTimestamp: number;
+}
+
+export interface DiagnosticsRequest extends BaseMessage {
+    analyzerId: string;
+}
+
+export interface DiagnosticsResponse extends BaseMessage {
+    analyzerId: string;
+    epochTime: number;
+    timestamp: string;
+    localTime: string;
+    uptime: number;
+    freeHeap: number;
+    state: string;
+    wifi: any;
+    sensors: any;
+    humidity: number;
+}
+
+export interface SubscribeToDiagnosticsData extends BaseMessage {
+    userId: string;
+}
+
+export interface DiagnosticsDataSubscribed extends BaseMessage {
+    userId: string;
+    connectionId: string;
 }
 
 export interface SubscribeToSourdoughData extends BaseMessage {
@@ -76,6 +161,34 @@ export interface SourdoughDataSubscribed extends BaseMessage {
     connectionId: string;
 }
 
+export interface StartOtaUpdateRequest extends BaseMessage {
+    userId: string;
+    analyzerId: string;
+    firmwareVersionId: string;
+}
+
+export interface StartOtaUpdateResponse extends BaseMessage {
+    updateId: string;
+    status: string;
+}
+
+export interface FirmwareAvailable extends BaseBroadcast {
+    firmwareId: string;
+    version: string;
+    description: string;
+    releaseNotes: string;
+    isStable: boolean;
+    fileSize: number;
+}
+
+export interface OtaProgressUpdate extends BaseBroadcast {
+    analyzerId: string;
+    updateId: string;
+    status: string;
+    progress: number;
+    message: string;
+}
+
 export interface SourdoughReading extends BaseBroadcast {
     rise: number;
     temperature: number;
@@ -83,12 +196,21 @@ export interface SourdoughReading extends BaseBroadcast {
     epochTime: number;
     timestamp: string;
     localTime: string;
+    feedingNumber: number;
 }
 
 // Request-response type mapping
 export type RequestResponseMap = {
+    [Requests.diagnosticsUnsubscription]: [UnsubscribeFromDiagnosticsData, DiagnosticsDataUnsubscribed];
+    [Requests.firmwareNotificationSubscription]: [SubscribeToFirmwareNotifications, FirmwareNotificationsSubscribed];
+    [Requests.makeFirmwareAvailable]: [MakeFirmwareAvailableRequest, MakeFirmwareAvailableResponse];
+    [Requests.otaProgressSubscription]: [SubscribeToOtaProgress, OtaProgressSubscribed];
+    [Requests.otaProgressUnsubscription]: [UnsubscribeFromOtaProgress, OtaProgressUnsubscribed];
     [Requests.ping]: [Ping, Pong];
+    [Requests.requestDiagnostics]: [DiagnosticsRequest, DiagnosticsResponse];
+    [Requests.responseDiagnostics]: [SubscribeToDiagnosticsData, DiagnosticsDataSubscribed];
     [Requests.sourdoughData]: [SubscribeToSourdoughData, SourdoughDataSubscribed];
+    [Requests.startOtaUpdate]: [StartOtaUpdateRequest, StartOtaUpdateResponse];
 };
 
 
@@ -369,11 +491,35 @@ export class WebSocketClient {
 
 
     send = {
+    diagnosticsUnsubscription: (payload: Omit<UnsubscribeFromDiagnosticsData, 'requestId'>): Promise<DiagnosticsDataUnsubscribed> => {
+        return this.sendRequest<DiagnosticsDataUnsubscribed>('DiagnosticsUnsubscription', payload);
+    },
+    firmwareNotificationSubscription: (payload: Omit<SubscribeToFirmwareNotifications, 'requestId'>): Promise<FirmwareNotificationsSubscribed> => {
+        return this.sendRequest<FirmwareNotificationsSubscribed>('FirmwareNotificationSubscription', payload);
+    },
+    makeFirmwareAvailable: (payload: Omit<MakeFirmwareAvailableRequest, 'requestId'>): Promise<MakeFirmwareAvailableResponse> => {
+        return this.sendRequest<MakeFirmwareAvailableResponse>('MakeFirmwareAvailable', payload);
+    },
+    otaProgressSubscription: (payload: Omit<SubscribeToOtaProgress, 'requestId'>): Promise<OtaProgressSubscribed> => {
+        return this.sendRequest<OtaProgressSubscribed>('OtaProgressSubscription', payload);
+    },
+    otaProgressUnsubscription: (payload: Omit<UnsubscribeFromOtaProgress, 'requestId'>): Promise<OtaProgressUnsubscribed> => {
+        return this.sendRequest<OtaProgressUnsubscribed>('OtaProgressUnsubscription', payload);
+    },
     ping: (payload: Omit<Ping, 'requestId'>): Promise<Pong> => {
         return this.sendRequest<Pong>('Ping', payload);
     },
+    requestDiagnostics: (payload: Omit<DiagnosticsRequest, 'requestId'>): Promise<DiagnosticsResponse> => {
+        return this.sendRequest<DiagnosticsResponse>('RequestDiagnostics', payload);
+    },
+    responseDiagnostics: (payload: Omit<SubscribeToDiagnosticsData, 'requestId'>): Promise<DiagnosticsDataSubscribed> => {
+        return this.sendRequest<DiagnosticsDataSubscribed>('ResponseDiagnostics', payload);
+    },
     sourdoughData: (payload: Omit<SubscribeToSourdoughData, 'requestId'>): Promise<SourdoughDataSubscribed> => {
         return this.sendRequest<SourdoughDataSubscribed>('SourdoughData', payload);
+    },
+    startOtaUpdate: (payload: Omit<StartOtaUpdateRequest, 'requestId'>): Promise<StartOtaUpdateResponse> => {
+        return this.sendRequest<StartOtaUpdateResponse>('StartOtaUpdate', payload);
     },
 };
 

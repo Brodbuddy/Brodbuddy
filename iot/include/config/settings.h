@@ -52,8 +52,9 @@ class Settings {
     float getHumOffset() const;
     void setHumOffset(float offset);
 
-    int getContainerHeight() const;
-    void setContainerHeight(int height);
+    int getFeedingNumber() const;
+    void setFeedingNumber(int number);
+    void incrementFeedingNumber();
 
     void printSettings() const;
 };

@@ -11,7 +11,8 @@ const char* StateMachine::_stateNames[] = {
     "SENSING",
     "UPDATING_DISPLAY",
     "PUBLISHING_DATA",
-    "SLEEP", 
+    "SLEEP",
+    "OTA_UPDATE",
     "ERROR"
 };
 

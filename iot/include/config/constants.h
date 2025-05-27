@@ -27,16 +27,19 @@ namespace Pins {
     constexpr int RESET_BUTTON = 13;
 
     // Time of Flight
-    constexpr int XSHUT = 34;
+    constexpr int XSHUT = 14;
 
     // I2C (BME280 og Time of Flight)
     constexpr int I2C_SDA = 25;
     constexpr int I2C_SCL = 26;
+    
+    // Batteri
+    constexpr int BATTERY = A2;  // GPIO34 - ADC pin for batteri spænding
 }
 
 namespace Sensors {
     // I2C Konfiguration
-    constexpr int I2C_CLOCK_SPEED = 50000;
+    constexpr int I2C_CLOCK_SPEED = 10000;  // 10kHz for bedre pålidelighed med vores kabler
 
     // BME280 adresser
     constexpr uint8_t BME280_ADDR_PRIMARY = 0x76;   // SDO -> GND (eller uden SDO sluttet til)
@@ -93,8 +96,16 @@ namespace NetworkConstants {
     constexpr const char* HOSTNAME = "sourdough_monitor";
     constexpr int WIFI_CONNECT_ATTEMPTS = 30;
     
-    constexpr size_t MQTT_BUFFER_SIZE = 1024;
+    constexpr size_t MQTT_BUFFER_SIZE = 8192;
 } 
+
+namespace OtaConstants {
+    constexpr uint32_t PROGRESS_UPDATE_CHUNK_INTERVAL = 50;
+    constexpr uint32_t MQTT_MESSAGE_LOG_INTERVAL = 50;
+    constexpr uint32_t CHUNK_LOG_INTERVAL = 10;
+    constexpr uint32_t CHUNK_HEADER_SIZE = 8;
+    constexpr uint32_t ESTIMATED_TOTAL_CHUNKS = 272;
+}
 
 namespace UIConstants {
     constexpr int FACTORY_RESET_BLINK_COUNT = 40;
@@ -102,6 +113,27 @@ namespace UIConstants {
 
 namespace MonitoringConstants {
     constexpr int MAX_DATA_POINTS = 144; // Maks 12 timer ved 5-minutter intervaller
+}
+
+namespace Battery {
+    // ADC konfiguration
+    constexpr int ADC_RESOLUTION = 12;
+    constexpr int ADC_MAX_VALUE = 4095;
+    constexpr float ADC_REF_VOLTAGE = 3300.0f; // millivolts
+    
+    // Batteri karakteristika
+    constexpr int MIN_VOLTAGE = 3300;              // mV - Li-ion minimum sikker spænding
+    constexpr int MAX_VOLTAGE = 4200;              // mV - Li-ion fuldt opladet
+    constexpr float VOLTAGE_DIVIDER_RATIO = 2.0f;  // Spændingsdeler forhold
+    
+    // Sampling konfiguration
+    constexpr int SAMPLE_COUNT = 64;
+    constexpr int SAMPLE_DELAY_MS = 2;
+    
+    // Tærskelværdier
+    constexpr int LOW_BATTERY_THRESHOLD = 15;
+    constexpr int CRITICAL_BATTERY_THRESHOLD = 10;
+    constexpr int OTA_BATTERY_THRESHOLD = 20;
 }
 
 namespace DisplayConstants {

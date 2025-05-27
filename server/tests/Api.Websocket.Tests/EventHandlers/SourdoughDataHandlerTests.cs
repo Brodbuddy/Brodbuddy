@@ -61,21 +61,4 @@ public class SourdoughDataHandlerTests
             response.ConnectionId.ShouldBe(_connectionId);
         }
     }
-
-    public class GetTopicKey : SourdoughDataHandlerTests
-    {
-        [Fact]
-        public void GetTopicKey_ReturnsCorrectKey()
-        {
-            // Arrange
-            var request = new SubscribeToSourdoughData(_userId);
-            var expectedTopic = WebSocketTopics.User.SourdoughData(_userId);
-
-            // Act
-            var topic = _handler.GetTopicKey(request, _clientId);
-
-            // Assert
-            topic.ShouldBe(expectedTopic);
-        }
-    }
 } 

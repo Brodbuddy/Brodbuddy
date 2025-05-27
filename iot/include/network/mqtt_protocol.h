@@ -28,6 +28,23 @@ namespace MqttProtocol {
         constexpr const char* SENSOR_HUMIDITY = "humidity";
         constexpr const char* SENSOR_RISE = "rise";
     }
+    
+    namespace OtaFields {
+        constexpr const char* VERSION = "version";
+        constexpr const char* SIZE = "size";
+        constexpr const char* CRC32 = "crc32";
+        constexpr const char* STATUS = "status";
+        constexpr const char* PROGRESS = "progress";
+        constexpr const char* MESSAGE = "message";
+        
+        namespace StatusValues {
+            constexpr const char* STARTED = "started";
+            constexpr const char* DOWNLOADING = "downloading";
+            constexpr const char* APPLYING = "applying";
+            constexpr const char* COMPLETE = "complete";
+            constexpr const char* ERROR = "error";
+        }
+    }
 }
 
 #endif
