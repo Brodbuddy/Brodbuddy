@@ -79,10 +79,10 @@ public partial class PgDbContext : DbContext
                 .HasColumnType("timestamp without time zone")
                 .HasColumnName("local_time");
             entity.Property(e => e.Rise)
-                .HasPrecision(10, 8)
+                .HasPrecision(10, 2)
                 .HasColumnName("rise");
             entity.Property(e => e.Temperature)
-                .HasPrecision(10, 8)
+                .HasPrecision(10, 2)
                 .HasColumnName("temperature");
             entity.Property(e => e.Timestamp).HasColumnName("timestamp");
             entity.Property(e => e.UserId).HasColumnName("user_id");

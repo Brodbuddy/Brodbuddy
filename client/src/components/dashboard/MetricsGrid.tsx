@@ -3,18 +3,18 @@ import { Droplet, Thermometer, TrendingUp } from 'lucide-react';
 import { MetricCard } from './MetricCard';
 
 interface MetricsGridProps {
-    realTimeReading: any;
+    currentReading: any;
 }
 
 export const MetricsGrid: React.FC<MetricsGridProps> = ({
-                                                            realTimeReading
+                                                            currentReading
                                                         }) => {
 
-    const temperature = realTimeReading?.temperature || null;
-    const humidity = realTimeReading?.humidity || null;
-    const rise = realTimeReading?.rise || null;
+    const temperature = currentReading?.temperature ?? null;
+    const humidity = currentReading?.humidity ?? null;
+    const rise = currentReading?.rise ?? null;
 
-    const hasData = realTimeReading !== null;
+    const hasData = currentReading !== null;
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">

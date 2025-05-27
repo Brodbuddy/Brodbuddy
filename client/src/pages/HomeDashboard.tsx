@@ -1,105 +1,162 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Card, CardContent,} from '@/components/ui/card';
-import {AlertCircle, PlusCircle} from 'lucide-react';
+import {AlertCircle, PlusCircle, Download} from 'lucide-react';
 import SourdoughManager from '@/components/analyzer/SourdoughManager';
 import {useWebSocket} from '@/hooks/useWebsocket';
 import {useOptimizedAnalyzerData} from '@/hooks/useOptimizedAnalyzerData';
 import {useAtomValue} from 'jotai';
 import {analyzersAtom, userInfoAtom} from '@/atoms';
-import {Broadcasts, SourdoughReading} from '@/api/websocket-client';
+import {Broadcasts, SourdoughReading, OtaProgressUpdate} from '@/api/websocket-client';
 import {DashboardHeader, MetricsGrid, SourdoughChart,} from '@/components/dashboard';
 import {getTimeRangeInMs, TimeRange,} from '@/helpers/dashboardUtils';
 import {Button} from "@/components";
 import ActivationForm from '@/components/analyzer/ActivationForm';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { useFirmwareVersions, useOtaSubscription } from '@/hooks';
+import { toast } from 'sonner';
 
 const HomeDashboard: React.FC = () => {
     const [timeRange, setTimeRange] = useState<TimeRange>("12h");
     const [selectedAnalyzerId, setSelectedAnalyzerId] = useState<string>('');
-    const [realTimeReading, setRealTimeReading] = useState<SourdoughReading | null>(null);
+    const [chartData, setChartData] = useState<Array<{
+        date: string;
+        temperature: number;
+        humidity: number;
+        rise: number;
+        timestamp: string;
+        localTime: string;
+    }>>([]);
+    const [latestReading, setLatestReading] = useState<SourdoughReading | null>(null);
 
     const analyzers = useAtomValue(analyzersAtom);
     const user = useAtomValue(userInfoAtom);
     const { client, connected } = useWebSocket();
+    const { firmwareVersions } = useFirmwareVersions();
     const [activationDialogOpen, setActivationDialogOpen] = useState(false);
 
     const {
-        readings: allReadings,
-        latestReading,
+        readings: historicalReadings,
+        latestReading: cachedLatestReading,
         loading,
         error,
         refetch,
     } = useOptimizedAnalyzerData(selectedAnalyzerId);
 
-    // Filter readings based on time range
+    const analyzerIds = useMemo(() => analyzers.map(a => a.id), [analyzers]);
+    const { otaProgress, updatingAnalyzers, startOtaUpdate } = useOtaSubscription(analyzerIds, refetch);
+
+    useEffect(() => {
+        if (historicalReadings && historicalReadings.length > 0 && chartData.length === 0) {
+            console.log('[Dashboard] Initializing chart with historical data:', historicalReadings.length, 'readings');
+            setChartData(historicalReadings);
+        }
+    }, [historicalReadings, chartData.length]);
+
+    useEffect(() => {
+        if (cachedLatestReading && !latestReading) {
+            setLatestReading({
+                rise: cachedLatestReading.rise,
+                temperature: cachedLatestReading.temperature,
+                humidity: cachedLatestReading.humidity,
+                epochTime: 0,
+                timestamp: cachedLatestReading.timestamp,
+                localTime: cachedLatestReading.localTime
+            } as SourdoughReading);
+        }
+    }, [cachedLatestReading, latestReading]);
+
     const readings = useMemo(() => {
-        if (!allReadings?.length) return [];
+        if (!chartData?.length) return [];
 
         const now = new Date();
         const timeRangeMs = getTimeRangeInMs(timeRange);
         const cutoff = new Date(now.getTime() - timeRangeMs);
 
-        return allReadings.filter(reading =>
+        const filtered = chartData.filter(reading =>
             new Date(reading.timestamp) >= cutoff
         );
-    }, [allReadings, timeRange]);
+        
+        console.log('[Dashboard] Filtering readings for time range:', timeRange, 
+            'Total:', chartData.length, 
+            'Filtered:', filtered.length,
+            'Latest rise in filtered:', filtered[filtered.length - 1]?.rise);
+            
+        return filtered;
+    }, [chartData, timeRange]);
 
-    // Auto-select first analyzer
     useEffect(() => {
         if (analyzers.length > 0 && !selectedAnalyzerId) {
             setSelectedAnalyzerId(analyzers[0].id);
         }
     }, [analyzers, selectedAnalyzerId]);
 
-    // WebSocket subscription
     useEffect(() => {
         if (!client || !connected || !user?.userId) return;
 
-        const subscribeToData = async () => {
-            try {
-                await client.send.sourdoughData({ userId: user.userId });
-            } catch (err) {
-                console.error('Failed to subscribe to WebSocket:', err);
-            }
-        };
-
-        subscribeToData();
-
-        return client.on(Broadcasts.sourdoughReading, (payload: SourdoughReading) => {
-            setRealTimeReading(payload);
+        client.send.sourdoughData({ userId: user.userId }).catch(err => {
+            console.error('Failed to subscribe to sourdough data:', err);
         });
-    }, [client, connected, user?.userId]);
 
-    // Event handlers
+        client.send.firmwareNotificationSubscription({ clientType: 'web' }).catch(err => {
+            console.error('Failed to subscribe to firmware notifications:', err);
+        });
+
+        const unsubscribeSourdough = client.on(Broadcasts.sourdoughReading, (reading: SourdoughReading) => {
+            console.log('[WebSocket] Received sourdough reading:', {
+                rise: reading.rise,
+                temperature: reading.temperature,
+                humidity: reading.humidity,
+                timestamp: reading.timestamp,
+                localTime: reading.localTime
+            });
+            
+            if (reading.rise < -100 || reading.rise > 500) {
+                console.warn('[WebSocket] Suspicious rise value:', reading.rise);
+            }
+            
+            setLatestReading(reading);
+            
+            setChartData(prev => {
+                const newDataPoint = {
+                    date: reading.localTime,
+                    temperature: reading.temperature,
+                    humidity: reading.humidity,
+                    rise: reading.rise,
+                    timestamp: reading.timestamp,
+                    localTime: reading.localTime
+                };
+                
+                console.log('[WebSocket] Adding to chart data. Previous length:', prev.length);
+                const updated = [...prev, newDataPoint];
+                const result = updated.slice(-1000);
+                console.log('[WebSocket] New chart data length:', result.length, 'Latest rise:', newDataPoint.rise);
+                return result;
+            });
+        });
+
+        const unsubscribeFirmware = client.on(Broadcasts.firmwareAvailable, (firmware: any) => {
+            console.log('[WebSocket] New firmware available:', firmware);
+            toast.info(`New firmware v${firmware.version} is available!`);
+            refetch();
+        });
+
+        return () => {
+            unsubscribeSourdough();
+            unsubscribeFirmware();
+        };
+    }, [client, connected, user?.userId, refetch]);
+
     const handleTimeRangeChange = useCallback((newTimeRange: string) => {
         setTimeRange(newTimeRange as TimeRange);
     }, []);
 
-    const handleQuickRefresh = useCallback(async () => {
-        setRealTimeReading(null);
-
-        if (client && connected && user?.userId) {
-            try {
-                await client.send.sourdoughData({ userId: user.userId });
-            } catch (err) {
-                console.error('Quick refresh failed:', err);
-            }
-        }
-    }, [client, connected, user?.userId]);
-
-    const handleDeepRefresh = useCallback(() => {
-        setRealTimeReading(null);
-        refetch();
-    }, [refetch]);
-
     const handleAnalyzerChange = useCallback((analyzerId: string) => {
         setSelectedAnalyzerId(analyzerId);
-        setRealTimeReading(null);
     }, []);
 
-    const currentReading = useMemo(() =>
-            realTimeReading || latestReading,
-        [realTimeReading, latestReading]
+    const selectedAnalyzer = useMemo(() => 
+        analyzers.find(a => a.id === selectedAnalyzerId),
+        [analyzers, selectedAnalyzerId]
     );
 
     // Hvis der ikke er nogen analyzers, vis kun SourdoughManager
@@ -125,12 +182,14 @@ const HomeDashboard: React.FC = () => {
                         <DashboardHeader
                             selectedAnalyzerId={selectedAnalyzerId}
                             onAnalyzerChange={handleAnalyzerChange}
-                            onRefresh={handleDeepRefresh}
-                            onQuickRefresh={handleQuickRefresh}
                             loading={loading}
-                            currentReading={currentReading}
-                            realTimeReading={realTimeReading}
-                            isDataStale={false}
+                            currentReading={latestReading}
+                            selectedAnalyzer={selectedAnalyzer}
+                            firmwareVersions={firmwareVersions}
+                            onStartOtaUpdate={startOtaUpdate}
+                            otaProgress={otaProgress}
+                            isUpdating={updatingAnalyzers.has(selectedAnalyzerId)}
+                            userId={user?.userId}
                         />
 
                         {!connected && (
@@ -146,7 +205,7 @@ const HomeDashboard: React.FC = () => {
                             </div>
                         )}
 
-                        <MetricsGrid realTimeReading={realTimeReading} />
+                        <MetricsGrid currentReading={latestReading} />
 
                         <div className="grid grid-cols-1 gap-6">
                             <SourdoughChart

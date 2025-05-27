@@ -28,3 +28,22 @@ CREATE INDEX idx_firmware_versions_created_at ON firmware_versions(created_at DE
 CREATE INDEX idx_firmware_updates_analyzer_id ON firmware_updates(analyzer_id);
 CREATE INDEX idx_firmware_updates_status ON firmware_updates(status);
 CREATE INDEX idx_firmware_updates_started_at ON firmware_updates(started_at DESC);
+
+CREATE TABLE analyzer_readings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    analyzer_id UUID NOT NULL REFERENCES sourdough_analyzers(id) ON DELETE CASCADE,
+    epoch_time BIGINT NOT NULL,
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    timestamp TIMESTAMPTZ NOT NULL,
+    local_time TIMESTAMP NOT NULL,
+    temperature DECIMAL(10,2),
+    humidity DECIMAL(5,2),
+    rise DECIMAL(10,2),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_analyzer_readings_analyzer_id ON analyzer_readings(analyzer_id);
+CREATE INDEX idx_analyzer_readings_user_id ON analyzer_readings(user_id);
+CREATE INDEX idx_analyzer_readings_timestamp ON analyzer_readings(timestamp);
+CREATE INDEX idx_analyzer_readings_epoch_time ON analyzer_readings(epoch_time);
+CREATE INDEX idx_analyzer_readings_created_at ON analyzer_readings(created_at);

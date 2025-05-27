@@ -1,47 +1,50 @@
-import React, { useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import React from 'react';
+import { Download, Loader2, WifiOff, Wifi } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AnalyzerSelector } from '@/components/analyzer/AnalyzerSelector';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format } from 'date-fns';
+import { useWebSocket } from '@/hooks/useWebsocket';
 
 interface DashboardHeaderProps {
     selectedAnalyzerId: string;
     onAnalyzerChange: (id: string) => void;
-    onRefresh: () => void;
-    onQuickRefresh?: () => void;
     loading: boolean;
     currentReading?: any;
-    realTimeReading?: any;
-    isDataStale?: boolean;
+    selectedAnalyzer?: any;
+    firmwareVersions?: any[];
+    onStartOtaUpdate?: (userId: string, analyzerId: string, firmwareVersionId: string) => void;
+    otaProgress?: Record<string, number>;
+    isUpdating?: boolean;
+    userId?: string;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-                                                                    selectedAnalyzerId,
-                                                                    onAnalyzerChange,
-                                                                    onRefresh,
-                                                                    onQuickRefresh,
-                                                                    loading,
-                                                                    currentReading,
-                                                                    realTimeReading,
-                                                                    isDataStale
-                                                                }) => {
-    const [quickRefreshing, setQuickRefreshing] = useState(false);
+    selectedAnalyzerId,
+    onAnalyzerChange,
+    loading,
+    currentReading,
+    selectedAnalyzer,
+    firmwareVersions = [],
+    onStartOtaUpdate,
+    otaProgress = {},
+    isUpdating = false,
+    userId
+}) => {
+    const { connected } = useWebSocket();
+    const currentProgress = otaProgress[selectedAnalyzerId];
+    const hasUpdate = selectedAnalyzer?.hasUpdate;
+    const currentVersion = selectedAnalyzer?.firmwareVersion;
 
-    const handleQuickRefresh = async () => {
-        if (!onQuickRefresh) {
-            onRefresh();
-            return;
-        }
+    const availableUpdates = firmwareVersions.filter(v => 
+        v.version !== currentVersion
+    );
 
-        setQuickRefreshing(true);
-        try {
-            await onQuickRefresh();
-        } finally {
-            setTimeout(() => setQuickRefreshing(false), 300);
+    const handleFirmwareUpdate = (versionId: string) => {
+        if (onStartOtaUpdate && selectedAnalyzerId && userId) {
+            onStartOtaUpdate(userId, selectedAnalyzerId, versionId);
         }
     };
-
-    const hasLiveData = !!realTimeReading;
-    const isRefreshing = loading || quickRefreshing;
 
     return (
         <div className="flex justify-between items-center mb-6">
@@ -49,7 +52,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 My Sourdough
             </h1>
             <div className="flex items-center gap-4">
-                {/* Analyzer Selector */}
                 <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-accent-foreground">Analyzer:</span>
                     <AnalyzerSelector
@@ -59,51 +61,62 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     />
                 </div>
 
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleQuickRefresh}
-                    disabled={isRefreshing || !selectedAnalyzerId}
-                    className="border-border-brown"
-                    title={onQuickRefresh ? "Quick refresh (WebSocket only)" : "Refresh data"}
-                >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    {quickRefreshing ? 'Refreshing...' : 'Refresh'}
-                </Button>
+                {selectedAnalyzer?.firmwareVersion && (
+                    <span className="text-sm text-muted-foreground">
+                        Firmware: {selectedAnalyzer.firmwareVersion}
+                    </span>
+                )}
 
-                {onQuickRefresh && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onRefresh}
-                        disabled={loading || !selectedAnalyzerId}
-                        className="text-xs px-2"
-                        title="Full refresh (reload all data)"
+                {hasUpdate && !isUpdating && (
+                    <Button 
+                        size="sm" 
+                        onClick={() => {
+                            const latestStable = firmwareVersions.find(f => f.isStable);
+                            if (latestStable && onStartOtaUpdate && userId) {
+                                onStartOtaUpdate(userId, selectedAnalyzerId, latestStable.id);
+                            }
+                        }}
+                        className="bg-accent-foreground text-primary-foreground hover:bg-accent-foreground/90"
                     >
-                        <RefreshCw className={`h-3 w-3 mr-1 ${loading ? 'animate-spin' : ''}`} />
-                        Deep
+                        <Download className="mr-1.5 h-3 w-3" />
+                        Update Firmware
                     </Button>
                 )}
 
-                {currentReading && (
-                    <div className="text-right">
-                        <div className="text-sm text-accent-foreground/60 flex items-center gap-1">
-                            Last updated
-                            
-                        </div>
-                        <div className="text-sm font-medium text-accent-foreground">
-                            {new Date(currentReading.localTime || currentReading.timestamp).toLocaleString()}
-                        </div>
-                        {isDataStale && !hasLiveData && (
-                            <div className="text-xs text-yellow-600 font-medium">
-                                ⚠️ Data is stale
-                            </div>
-                        )}
-                        
+                {isUpdating && (
+                    <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">
+                            {currentProgress !== undefined 
+                                ? `Updating: ${currentProgress}%` 
+                                : 'Starting update...'}
+                        </span>
                     </div>
                 )}
 
-                {!currentReading && (
+                <div className="flex items-center gap-2">
+                    {connected ? (
+                        <Wifi className="h-4 w-4 text-green-600" />
+                    ) : (
+                        <WifiOff className="h-4 w-4 text-red-600" />
+                    )}
+                    <span className="text-sm text-accent-foreground/60">
+                        {connected ? 'Connected' : 'Disconnected'}
+                    </span>
+                </div>
+
+                {currentReading && (
+                    <div className="text-right">
+                        <div className="text-sm text-accent-foreground/60">
+                            Last updated
+                        </div>
+                        <div className="text-sm font-medium text-accent-foreground">
+                            {format(new Date(currentReading.localTime || currentReading.timestamp), 'dd/MM/yyyy, HH:mm:ss')}
+                        </div>
+                    </div>
+                )}
+
+                {!currentReading && !loading && (
                     <div className="text-right">
                         <div className="text-sm text-accent-foreground/60">Status</div>
                         <div className="text-sm text-orange-600">

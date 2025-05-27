@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { RefreshCw, TrendingUp } from 'lucide-react';
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -108,40 +108,77 @@ export const SourdoughChart: React.FC<SourdoughChartProps> = ({
                         tickLine={false}
                         axisLine={false}
                         stroke="hsl(var(--foreground))"
+                        interval="preserveStartEnd"
                         tickFormatter={(value) => {
                             const date = new Date(value);
-                            return date.toLocaleDateString("dk-DK", {
-                                month: "short",
-                                day: "numeric",
+                            return date.toLocaleTimeString("dk-DK", {
                                 hour: "2-digit",
                                 minute: "2-digit"
                             });
                         }}
                     />
+                    <YAxis 
+                        yAxisId="percentage"
+                        tickLine={false}
+                        axisLine={false}
+                        stroke="hsl(var(--foreground))"
+                        domain={['dataMin - 50', 'dataMax + 50']}
+                        tickFormatter={(value) => `${value.toFixed(0)}%`}
+                    />
+                    <YAxis 
+                        yAxisId="temperature"
+                        orientation="right"
+                        tickLine={false}
+                        axisLine={false}
+                        stroke="hsl(var(--foreground))"
+                        domain={[0, 50]}
+                        tickFormatter={(value) => `${value}°C`}
+                        hide
+                    />
                     <ChartTooltip
                         content={({ active, payload, label }) => {
                             if (active && payload && payload.length) {
                                 return (
-                                    <div className="bg-card text-card-foreground border border-border p-3 shadow-md rounded">
-                                        <p className="font-medium mb-3 text-primary border-b border-border pb-1">
-                                            {new Date(label).toLocaleDateString("dk-DK", {
-                                                month: "short",
+                                    <div className="bg-white dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-600 p-3 shadow-lg rounded-lg">
+                                        <p className="font-medium mb-3 text-zinc-700 dark:text-zinc-200 border-b border-zinc-200 dark:border-zinc-700 pb-1">
+                                            {new Date(label).toLocaleString("dk-DK", {
                                                 day: "numeric",
+                                                month: "numeric", 
                                                 hour: "2-digit",
                                                 minute: "2-digit"
                                             })}
                                         </p>
                                         <div className="space-y-2">
-                                            {payload.map((entry, index) => (
-                                                <div key={`item-${index}`} className="flex items-center justify-between gap-8">
-                                                    <span className="text-sm" style={{ color: entry.color }}>
-                                                        {entry.dataKey === 'rise' ? 'Growth' : entry.name}:
-                                                    </span>
-                                                    <span className="font-medium" style={{ color: entry.color }}>
-                                                        {entry.value}{entry.dataKey === "temperature" ? "°C" : "%"}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                            {payload
+                                                .sort((a, b) => {
+                                                    const order = { rise: 0, humidity: 1, temperature: 2 };
+                                                    return order[a.dataKey] - order[b.dataKey];
+                                                })
+                                                .map((entry, index) => {
+                                                    const labels = {
+                                                        rise: 'Growth',
+                                                        humidity: 'Humidity', 
+                                                        temperature: 'Temperature'
+                                                    };
+                                                    const colors = {
+                                                        rise: 'hsl(142, 71%, 45%)',
+                                                        humidity: 'hsl(217, 91%, 60%)', 
+                                                        temperature: 'hsl(0, 72%, 51%)'
+                                                    };
+                                                    return (
+                                                        <div key={`item-${index}`} className="flex items-center justify-between gap-8">
+                                                            <span className="text-sm text-zinc-600 dark:text-zinc-300">
+                                                                {labels[entry.dataKey]}
+                                                            </span>
+                                                            <span className="font-medium">
+                                                                <span style={{ color: colors[entry.dataKey] }}>
+                                                                    {typeof entry.value === 'number' ? entry.value.toFixed(1) : entry.value}
+                                                                    {entry.dataKey === "temperature" ? "°C" : "%"}
+                                                                </span>
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
                                         </div>
                                     </div>
                                 );
@@ -149,9 +186,30 @@ export const SourdoughChart: React.FC<SourdoughChartProps> = ({
                             return null;
                         }}
                     />
-                    <Area type="monotone" dataKey="rise" stroke="hsl(var(--chart-growth))" fill="url(#fillGrowth)" />
-                    <Area type="monotone" dataKey="humidity" stroke="hsl(var(--chart-humidity))" fill="url(#fillHumidity)" />
-                    <Area type="monotone" dataKey="temperature" stroke="hsl(var(--chart-temperature))" fill="url(#fillTemperature)" />
+                    <Area 
+                        yAxisId="temperature"
+                        type="monotone" 
+                        dataKey="temperature" 
+                        stroke="hsl(var(--chart-temperature))" 
+                        fill="url(#fillTemperature)" 
+                        strokeWidth={2}
+                    />
+                    <Area 
+                        yAxisId="percentage"
+                        type="monotone" 
+                        dataKey="humidity" 
+                        stroke="hsl(var(--chart-humidity))" 
+                        fill="url(#fillHumidity)" 
+                        strokeWidth={2}
+                    />
+                    <Area 
+                        yAxisId="percentage"
+                        type="monotone" 
+                        dataKey="rise" 
+                        stroke="hsl(var(--chart-growth))" 
+                        fill="url(#fillGrowth)" 
+                        strokeWidth={2}
+                    />
                 </AreaChart>
             </ChartContainer>
         );

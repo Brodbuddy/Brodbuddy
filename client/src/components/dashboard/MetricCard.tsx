@@ -43,20 +43,9 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     return (
         <Card className="border-border-brown bg-bg-white overflow-hidden">
             <CardHeader className="bg-accent-foreground py-4">
-                <CardTitle className="text-primary flex items-center justify-between">
-                    <div className="flex items-center">
-                        <Icon className="mr-2 h-5 w-5" />
-                        {title}
-                    </div>
-                    <div className="flex items-center">
-
-                        {value !== null && (
-                            <div
-                                className={`w-2 h-2 rounded-full ${freshnessColors[freshness]}`}
-                                title={freshnessTooltip[freshness]}
-                            />
-                        )}
-                    </div>
+                <CardTitle className="text-primary flex items-center">
+                    <Icon className="mr-2 h-5 w-5" />
+                    {title}
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-6 text-center">
