@@ -40,9 +40,6 @@ class Settings {
     int getSensorInterval() const;
     void setSensorInterval(int seconds);
 
-    int getDisplayInterval() const;
-    void setDisplayInterval(int seconds);
-
     bool getLowPowerMode() const;
     void setLowPowerMode(bool enabled);
 

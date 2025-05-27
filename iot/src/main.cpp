@@ -80,12 +80,13 @@ void setup() {
     }
 
     display.begin();
+    buttonManager.begin();
+    batteryManager.begin();
+    ledManager.begin();
     
     historicalData.dataCount = 0;
     historicalData.oldestIndex = 0;
     historicalData.bufferFull = false;
-    historicalData.outTemp = 21.0;
-    historicalData.outHumidity = 44;
     historicalData.batteryLevel = batteryManager.getPercentage();
 
     if (!sensorManager.begin()) {
@@ -96,10 +97,6 @@ void setup() {
     sensorManager.setReadInterval(TimeUtils::to_ms(std::chrono::seconds(settings.getSensorInterval())));
     sensorManager.setLoopCallback([]() { ledManager.loop(); });
     LOG_I(TAG, "Sensor interval configured: %d seconds", settings.getSensorInterval());
-
-    buttonManager.begin();
-    batteryManager.begin();
-    ledManager.begin();
     
     if (buttonManager.isStartupResetPressed()) {
         LOG_I(TAG, "Reset button pressed during startup - clearing WiFi settings");
@@ -332,7 +329,7 @@ void handleStatePublishingData() {
         doc[MqttProtocol::TelemetryFields::TEMPERATURE] = data.inTemp;
         doc[MqttProtocol::TelemetryFields::HUMIDITY] = data.inHumidity;
         doc[MqttProtocol::TelemetryFields::RISE] = data.currentRisePercent;
-        doc["feedingNumber"] = settings.getFeedingNumber();
+        doc[MqttProtocol::TelemetryFields::FEEDING_NUMBER] = settings.getFeedingNumber();
 
         if (mqttTopics && mqttManager.publish(mqttTopics->getTelemetryTopic().c_str(), doc)) {
             LOG_I(TAG, "Data published to %s", mqttTopics->getTelemetryTopic().c_str());
@@ -501,9 +498,9 @@ void handleDiagnosticsRequest(const String& topic, const uint8_t* payload, unsig
     responseDoc[MqttProtocol::DiagnosticsFields::SENSORS][MqttProtocol::DiagnosticsFields::SENSOR_HUMIDITY] = sensorData.inHumidity;
     responseDoc[MqttProtocol::DiagnosticsFields::SENSORS][MqttProtocol::DiagnosticsFields::SENSOR_RISE] = sensorData.currentRisePercent;
     
-    responseDoc["battery"]["voltage"] = batteryManager.getVoltage();
-    responseDoc["battery"]["percentage"] = batteryManager.getPercentage();
-    responseDoc["battery"]["charging"] = batteryManager.isCharging();
+    responseDoc[MqttProtocol::DiagnosticsFields::BATTERY][MqttProtocol::DiagnosticsFields::BATTERY_VOLTAGE] = batteryManager.getVoltage();
+    responseDoc[MqttProtocol::DiagnosticsFields::BATTERY][MqttProtocol::DiagnosticsFields::BATTERY_PERCENTAGE] = batteryManager.getPercentage();
+    responseDoc[MqttProtocol::DiagnosticsFields::BATTERY][MqttProtocol::DiagnosticsFields::BATTERY_CHARGING] = batteryManager.isCharging();
     
     if (mqttTopics && mqttManager.publish(mqttTopics->getDiagnosticsResponseTopic().c_str(), responseDoc)) {
         LOG_I(TAG, "Diagnostics response sent");

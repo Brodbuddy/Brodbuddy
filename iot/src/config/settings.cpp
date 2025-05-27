@@ -37,7 +37,6 @@ void Settings::setDefaults() {
     _doc["mqtt"]["user"] = "";
     _doc["mqtt"]["password"] = "";
     _doc["sensor"]["intervalSeconds"] = 900;
-    _doc["display"]["intervalSeconds"] = 300;
     _doc["lowPowerMode"] = true;
     _doc["calibration"]["tempOffsetCelsius"] = -1.7;
     _doc["calibration"]["humOffset"] = 7.3;
@@ -140,14 +139,6 @@ int Settings::getSensorInterval() const {
 
 void Settings::setSensorInterval(int seconds) {
     _doc["sensor"]["intervalSeconds"] = seconds;
-}
-
-int Settings::getDisplayInterval() const {
-    return _doc["display"]["intervalSeconds"].as<int>();
-}
-
-void Settings::setDisplayInterval(int seconds) {
-    _doc["display"]["intervalSeconds"] = seconds;
 }
 
 bool Settings::getLowPowerMode() const {

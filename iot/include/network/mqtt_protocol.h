@@ -10,6 +10,7 @@ namespace MqttProtocol {
         constexpr const char* TEMPERATURE = "temperature";
         constexpr const char* HUMIDITY = "humidity";
         constexpr const char* RISE = "rise";
+        constexpr const char* FEEDING_NUMBER = "feedingNumber";
     }
     
     namespace DiagnosticsFields {
@@ -27,6 +28,10 @@ namespace MqttProtocol {
         constexpr const char* SENSOR_TEMPERATURE = "temperature";
         constexpr const char* SENSOR_HUMIDITY = "humidity";
         constexpr const char* SENSOR_RISE = "rise";
+        constexpr const char* BATTERY = "battery";
+        constexpr const char* BATTERY_PERCENTAGE = "percentage";
+        constexpr const char* BATTERY_CHARGING = "charging";
+        constexpr const char* BATTERY_VOLTAGE = "voltage";
     }
     
     namespace OtaFields {
