@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Plus, Loader2, Check } from 'lucide-react';
+import { Plus, Loader2, Check, Activity } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { toast } from 'sonner';
+import { useAtom } from 'jotai';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '../ui/dialog';
@@ -11,6 +12,8 @@ import { Input } from '../ui/input';
 import { api } from '../../hooks/useHttp';
 import { AdminAnalyzerListResponse } from '../../api/Api';
 import { format } from 'date-fns';
+import { useWebSocket } from '../../hooks/useWebsocket';
+import { adminTabAtom } from '../../atoms/adminTab';
 
 const createAnalyzerSchema = yup.object({
     macAddress: yup
@@ -34,6 +37,9 @@ export function AnalyzerAdmin() {
     const [loading, setLoading] = useState(true);
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [createSuccess, setCreateSuccess] = useState(false);
+    const [requestingDiagnostics, setRequestingDiagnostics] = useState<string | null>(null);
+    const [, setAdminTab] = useAtom(adminTabAtom);
+    const { client, connected } = useWebSocket();
 
     const form = useForm<CreateAnalyzerFormValues>({
         resolver: yupResolver(createAnalyzerSchema) as any,
@@ -61,6 +67,38 @@ export function AnalyzerAdmin() {
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const requestDiagnostics = async (analyzerId: string, analyzerName: string) => {
+        if (!connected || !client) {
+            toast.error('Not connected', {
+                description: 'Please check your connection and try again'
+            });
+            return;
+        }
+
+        try {
+            setRequestingDiagnostics(analyzerId);
+
+            // Anmod om diagnostikdata via WebSocket
+            await client.send.requestDiagnostics({ analyzerId });
+
+            toast.success(`Diagnostics requested for ${analyzerName}`, {
+                description: 'Check the Diagnostics tab to view the results'
+            });
+
+            setTimeout(() => {
+                setAdminTab('diagnostics');
+            }, 1000);
+
+        } catch (error) {
+            console.error('Failed to request diagnostics:', error);
+            toast.error('Failed to request diagnostics', {
+                description: 'Please try again later'
+            });
+        } finally {
+            setRequestingDiagnostics(null);
         }
     };
 
@@ -211,6 +249,25 @@ export function AnalyzerAdmin() {
                                                 </span>
                                             </div>
                                         </div>
+                                        <Button
+                                            onClick={() => requestDiagnostics(analyzer.id, analyzer.name)}
+                                            disabled={!analyzer.isActivated || !connected || requestingDiagnostics === analyzer.id}
+                                            variant="outline"
+                                            size="sm"
+                                            className="ml-4"
+                                        >
+                                            {requestingDiagnostics === analyzer.id ? (
+                                                <>
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    Requesting...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Activity className="w-4 h-4 mr-2" />
+                                                    Request Diagnostics
+                                                </>
+                                            )}
+                                        </Button>
                                     </div>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">

@@ -24,15 +24,17 @@ export const ErrorCodes = {
 
 // Request type constants
 export const Requests = {
-    diagnostics: "Diagnostics",
     ping: "Ping",
+    requestDiagnostics: "RequestDiagnostics",
+    responseDiagnostics: "ResponseDiagnostics",
     sourdoughData: "SourdoughData",
 } as const;
 
 // Response type constants
 export const Responses = {
-    diagnosticsDataSubscribed: "DiagnosticsDataSubscribed",
     pong: "Pong",
+    diagnosticsResponse: "DiagnosticsResponse",
+    diagnosticsDataSubscribed: "DiagnosticsDataSubscribed",
     sourdoughDataSubscribed: "SourdoughDataSubscribed",
 } as const;
 
@@ -44,7 +46,7 @@ export const Broadcasts = {
 
 // Subscription methods
 export const SubscriptionMethods = {
-    diagnostics: "Diagnostics",
+    responseDiagnostics: "ResponseDiagnostics",
     sourdoughData: "SourdoughData",
 } as const;
 
@@ -62,15 +64,6 @@ export interface BaseBroadcast {
 }
 
 // Message interfaces
-export interface SubscribeToDiagnosticsData extends BaseMessage {
-    userId: string;
-}
-
-export interface DiagnosticsDataSubscribed extends BaseMessage {
-    userId: string;
-    connectionId: string;
-}
-
 export interface Ping extends BaseMessage {
     timestamp: number;
 }
@@ -80,16 +73,11 @@ export interface Pong extends BaseMessage {
     serverTimestamp: number;
 }
 
-export interface SubscribeToSourdoughData extends BaseMessage {
-    userId: string;
+export interface DiagnosticsRequest extends BaseMessage {
+    analyzerId: string;
 }
 
-export interface SourdoughDataSubscribed extends BaseMessage {
-    userId: string;
-    connectionId: string;
-}
-
-export interface DiagnosticsResponse extends BaseBroadcast {
+export interface DiagnosticsResponse extends BaseMessage {
     analyzerId: string;
     epochTime: number;
     timestamp: string;
@@ -100,6 +88,24 @@ export interface DiagnosticsResponse extends BaseBroadcast {
     wifi: any;
     sensors: any;
     humidity: number;
+}
+
+export interface SubscribeToDiagnosticsData extends BaseMessage {
+    userId: string;
+}
+
+export interface DiagnosticsDataSubscribed extends BaseMessage {
+    userId: string;
+    connectionId: string;
+}
+
+export interface SubscribeToSourdoughData extends BaseMessage {
+    userId: string;
+}
+
+export interface SourdoughDataSubscribed extends BaseMessage {
+    userId: string;
+    connectionId: string;
 }
 
 export interface SourdoughReading extends BaseBroadcast {
@@ -113,8 +119,9 @@ export interface SourdoughReading extends BaseBroadcast {
 
 // Request-response type mapping
 export type RequestResponseMap = {
-    [Requests.diagnostics]: [SubscribeToDiagnosticsData, DiagnosticsDataSubscribed];
     [Requests.ping]: [Ping, Pong];
+    [Requests.requestDiagnostics]: [DiagnosticsRequest, DiagnosticsResponse];
+    [Requests.responseDiagnostics]: [SubscribeToDiagnosticsData, DiagnosticsDataSubscribed];
     [Requests.sourdoughData]: [SubscribeToSourdoughData, SourdoughDataSubscribed];
 };
 
@@ -396,11 +403,14 @@ export class WebSocketClient {
 
 
     send = {
-    diagnostics: (payload: Omit<SubscribeToDiagnosticsData, 'requestId'>): Promise<DiagnosticsDataSubscribed> => {
-        return this.sendRequest<DiagnosticsDataSubscribed>('Diagnostics', payload);
-    },
     ping: (payload: Omit<Ping, 'requestId'>): Promise<Pong> => {
         return this.sendRequest<Pong>('Ping', payload);
+    },
+    requestDiagnostics: (payload: Omit<DiagnosticsRequest, 'requestId'>): Promise<DiagnosticsResponse> => {
+        return this.sendRequest<DiagnosticsResponse>('RequestDiagnostics', payload);
+    },
+    responseDiagnostics: (payload: Omit<SubscribeToDiagnosticsData, 'requestId'>): Promise<DiagnosticsDataSubscribed> => {
+        return this.sendRequest<DiagnosticsDataSubscribed>('ResponseDiagnostics', payload);
     },
     sourdoughData: (payload: Omit<SubscribeToSourdoughData, 'requestId'>): Promise<SourdoughDataSubscribed> => {
         return this.sendRequest<SourdoughDataSubscribed>('SourdoughData', payload);

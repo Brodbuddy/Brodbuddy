@@ -137,7 +137,14 @@ export function DiagnosticsAdmin() {
                 cleanup = client.on(Broadcasts.diagnosticsResponse, handleDiagnosticsData);
 
                 await new Promise(resolve => setTimeout(resolve, 100));
-                await client.send.diagnostics({ userId: "" });
+
+                if (analyzers.length > 0) {
+                    for (const analyzer of analyzers) {
+                        if (analyzer.isActivated) {
+                            await client.send.requestDiagnostics({ analyzerId: analyzer.id });
+                        }
+                    }
+                }
 
                 setTimeout(() => setLoading(false), 5000);
             } catch (error) {
@@ -148,7 +155,7 @@ export function DiagnosticsAdmin() {
 
         setupDiagnostics();
         return () => cleanup?.();
-    }, [connected, client, diagnostics.length, handleDiagnosticsData]);
+    }, [connected, client, analyzers, handleDiagnosticsData]);
 
     if (loading) {
         return (

@@ -79,7 +79,7 @@ public static class Extensions
     private static IServiceCollection AddMqttPublisher(this IServiceCollection services)
     {
         services.AddScoped<IMqttPublisher, HiveMqttPublisher>();
-        services.AddScoped<IDevicePublisher, TestMqttDevicePublisher>();
+        services.AddScoped<IAnalyzerPublisher, AnalyzerPublisher>();
         return services;
     }
 
