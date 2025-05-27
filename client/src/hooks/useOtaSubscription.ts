@@ -3,7 +3,7 @@ import { useWebSocket } from './useWebsocket';
 import { Broadcasts, OtaProgressUpdate } from '@/api/websocket-client';
 import { toast } from 'sonner';
 
-export const useOtaSubscription = (analyzerIds: string[], onComplete?: () => void) => {
+export const useOtaSubscription = (_analyzerIds: string[], onComplete?: () => void) => {
     const [otaProgress, setOtaProgress] = useState<Record<string, number>>({});
     const [updatingAnalyzers, setUpdatingAnalyzers] = useState<Set<string>>(new Set());
     const [subscribedAnalyzers, setSubscribedAnalyzers] = useState<Set<string>>(new Set());
