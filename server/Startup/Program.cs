@@ -45,6 +45,7 @@ public class Program
         services.AddTcpProxyService();
         
         services.AddScoped<ISeederService, SeederService>();
+     
     }
     
     private static void TryHandleWebSocketClientGeneration(IServiceCollection services)

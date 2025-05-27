@@ -67,7 +67,7 @@ public class PasswordlessAuthService : IPasswordlessAuthService
             var user = await _userIdentityService.GetAsync(userId);
             var roles = await _userRoleService.GetUserRolesAsync(userId);
             var firstRole = roles.FirstOrDefault();
-            return (user.Email, role: firstRole?.Name ?? Role.Member);
+            return (email: user.Email, role: firstRole?.Name ?? Role.Member);
         });
     }
 }

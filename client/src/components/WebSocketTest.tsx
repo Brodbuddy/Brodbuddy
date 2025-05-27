@@ -8,6 +8,7 @@ export function WebSocketTest() {
     const [pingResult, setPingResult] = useState<string>('');
     const [readings, setReadings] = useState<string[]>([]);
 
+
     useEffect(() => {
         if (!client) return;
         
@@ -22,7 +23,7 @@ export function WebSocketTest() {
     const handleTelemetrySubscribe = async () => {
         try {
             const result = await client.send.sourdoughData({
-                userId: '38915d56-2322-4a6b-8506-a1831535e62b'
+                userId: '36099cb3-ef0c-482c-ad3e-13c779d31882'
             });
             setTelemetryResult(`Connected: ${result.connectionId} for User: ${result.userId}`);
         } catch (err) {

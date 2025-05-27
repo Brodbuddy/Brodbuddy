@@ -50,8 +50,6 @@ public partial class PgDbContext : DbContext
 
             entity.ToTable("analyzer_readings");
 
-            entity.HasIndex(e => new { e.AnalyzerId, e.EpochTime }, "analyzer_readings_analyzer_id_epoch_time_key").IsUnique();
-
             entity.HasIndex(e => e.AnalyzerId, "idx_analyzer_readings_analyzer_id");
 
             entity.HasIndex(e => e.CreatedAt, "idx_analyzer_readings_created_at");

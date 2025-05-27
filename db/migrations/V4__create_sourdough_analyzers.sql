@@ -51,9 +51,7 @@ CREATE TABLE analyzer_readings (
     temperature DECIMAL(10,8),
     humidity DECIMAL(5,2),
     rise DECIMAL(10,8),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    UNIQUE(analyzer_id, epoch_time)
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_analyzer_readings_analyzer_id ON analyzer_readings(analyzer_id);

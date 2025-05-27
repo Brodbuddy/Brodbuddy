@@ -28,6 +28,7 @@ public static class Extensions
         // Sourdough
         services.AddScoped<ISourdoughTelemetryService, SourdoughTelemetryService>();
         services.AddScoped<ISourdoughAnalyzerService, SourdoughAnalyzerService>();
+        services.AddScoped<SourdoughReadingsService>();
         
         // Andet
         services.AddScoped<IFeatureToggleService, FeatureToggleService>();
