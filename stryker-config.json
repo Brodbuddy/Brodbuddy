@@ -39,7 +39,8 @@
       "!/**/RedisSubscriptionListener.cs",
       "!/**/EfTransactionManager.cs",
       "!/**/Brodbuddy.WebSocket/**/*",
-      "!/**/Brodbuddy.TcpProxy/**/*"
+      "!/**/Brodbuddy.TcpProxy/**/*",
+      "!/**/FirmwareUpdate.Extensions.cs"
     ],
     "reporters": ["html", "progress"],
     "coverage-analysis": "perTest",
