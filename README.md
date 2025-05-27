@@ -19,8 +19,12 @@ Hjem går du. Brodbuddy bestiller du og lige pludselig har du ikke længere brug
 
 Brodbuddy, kommer til dig anno 2025.
 
+# Links
+https://brodbuddy.com  
+
 # Overordnet systemarkitektur
 Systemet følger en distribueret arkitektur hvor der kommmunikeres fra en React frontend til en ESP32 gennem en backend via WebSocket, HTTP og MQTT protokoller.
+
 
 ## Onion-arkitektur
 ![brodbuddy onion](https://github.com/user-attachments/assets/74be8b43-79cc-4c1d-903e-eacd2f59b3fc)
