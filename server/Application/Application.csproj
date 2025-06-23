@@ -6,9 +6,9 @@
 
     <ItemGroup>
         <PackageReference Include="JWT" Version="11.0.0"/>
-        <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.3"/>
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.3"/>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3"/>
+        <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.6"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.6"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6"/>
     </ItemGroup>
 
     <PropertyGroup>

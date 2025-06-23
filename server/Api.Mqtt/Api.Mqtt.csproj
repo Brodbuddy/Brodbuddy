@@ -6,10 +6,10 @@
 
     <ItemGroup>
         <PackageReference Include="HiveMQtt" Version="0.26.1"/>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.3" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.3"/>
-        <PackageReference Include="FluentValidation" Version="11.11.0" />
-        <PackageReference Include="NSwag.AspNetCore" Version="14.3.0"/> <!-- Bare lige så vi kan tilgå WebApplication finder bedre løsning senere -->
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.6" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.6"/>
+        <PackageReference Include="FluentValidation" Version="12.0.0" />
+        <PackageReference Include="NSwag.AspNetCore" Version="14.4.0"/> <!-- Bare lige så vi kan tilgå WebApplication finder bedre løsning senere -->
     </ItemGroup>
 
     <PropertyGroup>
