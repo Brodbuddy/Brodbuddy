@@ -34,9 +34,9 @@
       },
       "HiveMQtt": {
         "type": "Direct",
-        "requested": "[0.26.1, )",
-        "resolved": "0.26.1",
-        "contentHash": "pbF6sMVu9vMR9+tv/s55PRq4mle8QIJMkP79KV2G/ahiv/6eUL++Y1fAsKErRJyz+rOtgkw/9gEl5Kwdm5A+lg==",
+        "requested": "[0.27.0, )",
+        "resolved": "0.27.0",
+        "contentHash": "q5SF373d2fGIg+8Sn5+7GxHnPK1o3tjj+ZbpCz86vLEo6A0lA+CcoCILHbOKfXSuDYE/Sesbag41QzgVGZ7m5Q==",
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.1",
           "NLog": "5.2.3",
