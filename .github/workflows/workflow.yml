@@ -102,7 +102,7 @@ jobs:
           python .github/scripts/generate_sonarqube_summary.py
 
       - name: Upload test report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: test-report
@@ -111,7 +111,7 @@ jobs:
 
       - name: Upload code coverage report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-report
           path: coverage-report
@@ -203,7 +203,7 @@ jobs:
 
       - name: Upload Stryker JSON report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: mutation-json-report-${{ strategy.job-index }}
           path: ${{ env.OUTPUT_DIR }}/reports/mutation-report.json
@@ -211,7 +211,7 @@ jobs:
 
       - name: Upload Stryker HTML report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: stryker-html-report-${{ env.PROJECT_NAME }}
           path: ${{ env.OUTPUT_DIR }}/reports/mutation-report.html
@@ -286,7 +286,7 @@ jobs:
           echo "firmware_artifact_name=${FIRMWARE_TARGET_NAME}" >> $GITHUB_OUTPUT 
 
       - name: Upload IoT firmware artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: iot-firmware-${{ steps.vars.outputs.sha }}
           path: ${{ steps.build-iot.outputs.firmware_artifact_name }}
@@ -549,7 +549,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: playwright-report-${{ matrix.browser }}-${{ github.sha }}
           path: ${{ env.E2E_TEST_DIR }}/TestResults
@@ -627,7 +627,7 @@ jobs:
           path: firmware-download
 
       - name: Upload firmware with semantic version
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: iot-firmware-${{ steps.semantic.outputs.version }}
           path: firmware-download/
