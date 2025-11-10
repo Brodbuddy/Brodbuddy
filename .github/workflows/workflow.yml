@@ -465,7 +465,7 @@ jobs:
           target: ${{ vars.APP_DIR }}
 
       - name: Prepare server
-        uses: appleboy/ssh-action@v1.2.1
+        uses: appleboy/ssh-action@v1.2.3
         with:
           host: ${{ vars.SERVER_IP }}
           username: ${{ vars.SERVER_USERNAME }}
@@ -740,7 +740,7 @@ jobs:
           target: ${{ vars.APP_DIR }}
 
       - name: Prepare server
-        uses: appleboy/ssh-action@v1.2.1
+        uses: appleboy/ssh-action@v1.2.3
         with:
           host: ${{ vars.SERVER_IP }}
           username: ${{ vars.SERVER_USERNAME }}
