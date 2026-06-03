@@ -11,6 +11,12 @@ on:
       - 'deploy/**'
     branches:
       - '**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to roll back to, e.g. 1.2.3'
+        required: true
+        type: string
 
 jobs:
   continuous-integration:
@@ -764,3 +770,99 @@ jobs:
             echo "Waiting briefly before reloading Nginx..."
             sleep 5
             docker compose exec $NGINX_CONTAINER_NAME nginx -s reload
+
+  # ---------------------------------------------------------------------------
+  # ROLLBACK JOBS
+  #
+  # These jobs restore a previous version of the application (images + compose).
+  # They do NOT roll back database migrations. If a migration ran as part of the
+  # failed/rolled-back release, the schema may be incompatible with the older
+  # image. For migration-heavy releases, prefer fixing forward over rolling back.
+  # ---------------------------------------------------------------------------
+
+  rollback-manual:
+    name: Manual rollback to a specific version
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    environment:
+      name: production
+      url: http://${{ vars.DOMAIN_NAME }}
+    steps:
+      - name: Set lowercase repository name
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Pull and deploy version ${{ inputs.version }}
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ vars.SERVER_IP }}
+          username: ${{ vars.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+            VERSION="${{ inputs.version }}"
+
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ vars.GHCR_USERNAME }} --password-stdin
+
+            docker pull ghcr.io/${REPO_NAME}-backend:${VERSION}
+            docker pull ghcr.io/${REPO_NAME}-frontend:${VERSION}
+
+            cd ${{ vars.APP_DIR }}
+            SERVER_IMAGE_TAG="ghcr.io/${REPO_NAME}-backend:${VERSION}" \
+            CLIENT_IMAGE_TAG="ghcr.io/${REPO_NAME}-frontend:${VERSION}" \
+            docker compose --profile production up -d --remove-orphans
+
+      - name: Write job summary
+        run: |
+          echo "🔁 Manual rollback to v${{ inputs.version }} completed at $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_STEP_SUMMARY
+
+  rollback-automatic:
+    name: Automatic rollback on deploy failure
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: failure()
+    environment:
+      name: production
+      url: http://${{ vars.DOMAIN_NAME }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get previous git tag
+        id: prev-tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
+          echo "PREV_TAG=${PREV_TAG}" >> $GITHUB_ENV
+          echo "Previous tag: ${PREV_TAG}"
+
+      - name: Set lowercase repository name
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Pull and deploy previous version
+        uses: appleboy/ssh-action@v1.2.1
+        with:
+          host: ${{ vars.SERVER_IP }}
+          username: ${{ vars.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            REPO_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+            PREV_TAG="${{ env.PREV_TAG }}"
+            # Strip leading 'v' if present to match image tag format (e.g. v1.2.3 → 1.2.3)
+            VERSION="${PREV_TAG#v}"
+
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ vars.GHCR_USERNAME }} --password-stdin
+
+            docker pull ghcr.io/${REPO_NAME}-backend:${VERSION}
+            docker pull ghcr.io/${REPO_NAME}-frontend:${VERSION}
+
+            cd ${{ vars.APP_DIR }}
+            SERVER_IMAGE_TAG="ghcr.io/${REPO_NAME}-backend:${VERSION}" \
+            CLIENT_IMAGE_TAG="ghcr.io/${REPO_NAME}-frontend:${VERSION}" \
+            docker compose --profile production up -d --remove-orphans
+
+      - name: Write job summary
+        run: |
+          echo "⚠️ Automatic rollback triggered — deploy failed. Rolled back to v${{ env.PREV_TAG }}" >> $GITHUB_STEP_SUMMARY
