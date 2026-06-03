@@ -814,7 +814,7 @@ jobs:
 
       - name: Write job summary
         run: |
-          echo "🔁 Manual rollback to v${{ inputs.version }} completed at $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_STEP_SUMMARY
+          echo "🔁 Manual rollback to v${{ inputs.version }} completed at $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_STEP_SUMMARY"
 
   rollback-automatic:
     name: Automatic rollback on deploy failure
@@ -833,7 +833,7 @@ jobs:
       - name: Get previous git tag
         id: prev-tag
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 $(git rev-list --tags --skip=1 --max-count=1))
+          PREV_TAG=$(git describe --tags --abbrev=0 "$(git rev-list --tags --skip=1 --max-count=1)")
           echo "PREV_TAG=${PREV_TAG}" >> $GITHUB_ENV
           echo "Previous tag: ${PREV_TAG}"
 
@@ -865,4 +865,4 @@ jobs:
 
       - name: Write job summary
         run: |
-          echo "⚠️ Automatic rollback triggered — deploy failed. Rolled back to v${{ env.PREV_TAG }}" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ Automatic rollback triggered — deploy failed. Rolled back to v${{ env.PREV_TAG }}" >> "$GITHUB_STEP_SUMMARY"
