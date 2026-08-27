@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -230,7 +230,7 @@ jobs:
     if: always() # For at få overordnet summary tabel selvom en fejler
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Download all JSON reports
         uses: actions/download-artifact@v4
@@ -272,7 +272,7 @@ jobs:
       iot_firmware_artifact_name: ${{ steps.build-iot.outputs.firmware_artifact_name }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set variables
         id: vars
@@ -310,7 +310,7 @@ jobs:
       server_image_ci_tag: ${{ steps.build-push-docker.outputs.server_image_ci_tag }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set variables
         id: vars
@@ -354,7 +354,7 @@ jobs:
       client_image_ci_tag: ${{ steps.build-push-docker.outputs.client_image_ci_tag }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set variables
         id: vars
@@ -393,7 +393,7 @@ jobs:
       url: http://${{ vars.DOMAIN_NAME }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Create .env file
         id: create-dotenv
@@ -510,7 +510,7 @@ jobs:
       E2E_TEST_DIR: PlaywrightTests
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -574,7 +574,7 @@ jobs:
       version_tag: ${{ steps.semantic.outputs.version_tag }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -668,7 +668,7 @@ jobs:
       url: http://${{ vars.DOMAIN_NAME }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Create .env file
         id: create-dotenv
